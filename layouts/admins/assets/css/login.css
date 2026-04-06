@@ -21,12 +21,14 @@ body {
     width: 100%;
     height: 100%;
     z-index: 1;
+    pointer-events: none; /* CRITICAL: Prevents blocking clicks */
 }
 
 .background-shapes {
     position: relative;
     width: 100%;
     height: 100%;
+    pointer-events: none; /* CRITICAL: Prevents blocking clicks */
 }
 
 .shape {
@@ -34,6 +36,7 @@ body {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
     animation: float 6s ease-in-out infinite;
+    pointer-events: none; /* CRITICAL: Prevents blocking clicks */
 }
 
 .shape-1 {
@@ -74,17 +77,19 @@ body {
 /* Login Container */
 .login-container {
     position: relative;
-    z-index: 2;
+    z-index: 10; /* HIGHER z-index to ensure it's always on top */
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    pointer-events: none; /* Allow clicks to pass through container */
 }
 
 .login-wrapper {
     width: 100%;
     max-width: 450px;
+    pointer-events: auto; /* Re-enable clicks for login wrapper */
 }
 
 /* Login Card */
@@ -96,6 +101,9 @@ body {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     animation: slideUp 0.8s ease-out;
+    position: relative;
+    z-index: 20; /* HIGHEST z-index for login card */
+    pointer-events: auto; /* Ensure all interactions work */
 }
 
 @keyframes slideUp {
@@ -132,11 +140,6 @@ body {
     font-weight: 700;
 }
 
-.login-header p {
-    color: #666;
-    font-size: 1rem;
-}
-
 /* Form Styles */
 .login-form {
     display: flex;
@@ -169,6 +172,7 @@ body {
     font-size: 1.1rem;
     z-index: 3;
     transition: color 0.3s ease;
+    pointer-events: none; /* Prevent icon from blocking input clicks */
 }
 
 .input-wrapper.focused .input-icon {
@@ -181,14 +185,16 @@ body {
     border: 2px solid #e0e0e0;
     border-radius: 12px;
     font-size: 1rem;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.7);
     transition: all 0.3s ease;
     outline: none;
+    position: relative;
+    z-index: 5; /* Ensure inputs are clickable */
 }
 
 .input-wrapper input:focus {
     border-color: #d32f2f;
-    background: rgba(255, 255, 255, 1);
+    background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
 }
 
@@ -202,6 +208,7 @@ body {
     font-size: 1.1rem;
     padding: 5px;
     transition: color 0.3s ease;
+    z-index: 6; /* Ensure button is clickable */
 }
 
 .toggle-password:hover {
@@ -227,6 +234,7 @@ body {
     width: 18px;
     height: 18px;
     accent-color: #d32f2f;
+    z-index: 5;
 }
 
 .remember-me label {
@@ -264,6 +272,8 @@ body {
     justify-content: center;
     gap: 10px;
     margin-top: 10px;
+    position: relative;
+    z-index: 5; /* Ensure button is clickable */
 }
 
 .login-btn:hover {
@@ -363,10 +373,6 @@ body {
     
     .login-header h1 {
         font-size: 1.5rem;
-    }
-    
-    .login-header p {
-        font-size: 0.9rem;
     }
     
     .input-wrapper input {
@@ -499,10 +505,6 @@ body {
     
     .login-header h1 {
         color: white;
-    }
-    
-    .login-header p {
-        color: #ccc;
     }
     
     .form-group label {

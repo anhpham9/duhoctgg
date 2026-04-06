@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Du Học NB Admin</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="assets/images/logo01.png" alt="Du Học NB" class="logo-img">
+                <h3 class="logo-text">Du Học NB</h3>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item active">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="users.html" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Người dùng</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="contacts.html" class="nav-link">
+                        <i class="fas fa-address-book"></i>
+                        <span>Liên hệ</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="schools.html" class="nav-link">
+                        <i class="fas fa-university"></i>
+                        <span>Trường học</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="applications.html" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Đơn đăng ký</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="news.html" class="nav-link">
+                        <i class="fas fa-newspaper"></i>
+                        <span>Tin tức</span>
+                    </a>
+                </li>
+                <li class="nav-item has-submenu">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Cài đặt</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="settings-general.html">Chung</a></li>
+                        <li><a href="settings-users.html">Người dùng</a></li>
+                        <li><a href="settings-email.html">Email</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="reports.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Báo cáo</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="sidebar-bottom">
+            <a href="login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Đăng xuất</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <button class="sidebar-toggle mobile-toggle" id="mobileToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item">Trang chủ</span>
+                    <i class="fas fa-chevron-right"></i>
+                    <span class="breadcrumb-item active">Dashboard</span>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="header-search">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Tìm kiếm...">
+                    </div>
+                </div>
+                
+                <div class="header-notifications">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+                
+                <div class="header-profile">
+                    <div class="profile-dropdown">
+                        <button class="profile-btn">
+                            <img src="assets/images/logo01.png" alt="Admin" class="profile-avatar">
+                            <span class="profile-name">Admin</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="profile-menu">
+                            <a href="profile.html"><i class="fas fa-user"></i> Hồ sơ</a>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Cài đặt</a>
+                            <hr>
+                            <a href="login.html"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Page Title -->
+            <div class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Tổng quan hệ thống quản lý Du Học NB</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">2,543</h3>
+                        <p class="stat-label">Học sinh đăng ký</p>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +12% so với tháng trước
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">156</h3>
+                        <p class="stat-label">Trường đối tác</p>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +5% so với tháng trước
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">89</h3>
+                        <p class="stat-label">Đơn chờ duyệt</p>
+                        <span class="stat-change neutral">
+                            <i class="fas fa-minus"></i>
+                            Không thay đổi
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon danger">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">98.5%</h3>
+                        <p class="stat-label">Tỷ lệ thành công</p>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +2.1% so với tháng trước
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Chart Section -->
+                <div class="dashboard-card chart-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Thống kê đăng ký theo tháng</h3>
+                        <div class="card-actions">
+                            <select class="year-select">
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="chart-placeholder">
+                            <div class="chart-bars">
+                                <div class="chart-bar" style="height: 60%;" data-value="120"></div>
+                                <div class="chart-bar" style="height: 40%;" data-value="80"></div>
+                                <div class="chart-bar" style="height: 80%;" data-value="160"></div>
+                                <div class="chart-bar" style="height: 90%;" data-value="180"></div>
+                                <div class="chart-bar" style="height: 70%;" data-value="140"></div>
+                                <div class="chart-bar" style="height: 100%;" data-value="200"></div>
+                                <div class="chart-bar" style="height: 85%;" data-value="170"></div>
+                                <div class="chart-bar" style="height: 95%;" data-value="190"></div>
+                                <div class="chart-bar" style="height: 75%;" data-value="150"></div>
+                                <div class="chart-bar" style="height: 65%;" data-value="130"></div>
+                                <div class="chart-bar" style="height: 55%;" data-value="110"></div>
+                                <div class="chart-bar" style="height: 45%;" data-value="90"></div>
+                            </div>
+                            <div class="chart-labels">
+                                <span>T1</span><span>T2</span><span>T3</span><span>T4</span>
+                                <span>T5</span><span>T6</span><span>T7</span><span>T8</span>
+                                <span>T9</span><span>T10</span><span>T11</span><span>T12</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Hoạt động gần đây</h3>
+                        <a href="activities.html" class="view-all-btn">Xem tất cả</a>
+                    </div>
+                    <div class="card-content">
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-avatar">
+                                    <img src="assets/images/av.png" alt="User">
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Nguyễn Văn A</strong> đã nộp đơn đăng ký</p>
+                                    <span class="activity-time">2 phút trước</span>
+                                </div>
+                                <div class="activity-status new">
+                                    <i class="fas fa-circle"></i>
+                                </div>
+                            </div>
+
+                            <div class="activity-item">
+                                <div class="activity-avatar">
+                                    <img src="assets/images/av.png" alt="User">
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Trần Thị B</strong> đã được duyệt hồ sơ</p>
+                                    <span class="activity-time">15 phút trước</span>
+                                </div>
+                                <div class="activity-status approved">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                            </div>
+
+                            <div class="activity-item">
+                                <div class="activity-avatar">
+                                    <img src="assets/images/av.png" alt="User">
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Lê Văn C</strong> đã đăng ký tư vấn</p>
+                                    <span class="activity-time">1 giờ trước</span>
+                                </div>
+                                <div class="activity-status pending">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+
+                            <div class="activity-item">
+                                <div class="activity-avatar">
+                                    <img src="assets/images/av.png" alt="User">
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>Phạm Thị D</strong> đã hoàn thành thanh toán</p>
+                                    <span class="activity-time">2 giờ trước</span>
+                                </div>
+                                <div class="activity-status completed">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Thao tác nhanh</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="quick-actions">
+                            <a href="users-add.html" class="quick-action-btn">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Thêm học sinh</span>
+                            </a>
+                            <a href="schools-add.html" class="quick-action-btn">
+                                <i class="fas fa-plus"></i>
+                                <span>Thêm trường</span>
+                            </a>
+                            <a href="news-add.html" class="quick-action-btn">
+                                <i class="fas fa-newspaper"></i>
+                                <span>Đăng tin tức</span>
+                            </a>
+                            <a href="reports.html" class="quick-action-btn">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Xem báo cáo</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Schools -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Trường phổ biến nhất</h3>
+                        <a href="schools.html" class="view-all-btn">Xem tất cả</a>
+                    </div>
+                    <div class="card-content">
+                        <div class="school-list">
+                            <div class="school-item">
+                                <div class="school-rank">1</div>
+                                <div class="school-info">
+                                    <h4>ISI Language School</h4>
+                                    <p>Tokyo, Nhật Bản</p>
+                                </div>
+                                <div class="school-stats">
+                                    <span class="student-count">245 học sinh</span>
+                                </div>
+                            </div>
+
+                            <div class="school-item">
+                                <div class="school-rank">2</div>
+                                <div class="school-info">
+                                    <h4>KAI Japanese Language School</h4>
+                                    <p>Tokyo, Nhật Bản</p>
+                                </div>
+                                <div class="school-stats">
+                                    <span class="student-count">198 học sinh</span>
+                                </div>
+                            </div>
+
+                            <div class="school-item">
+                                <div class="school-rank">3</div>
+                                <div class="school-info">
+                                    <h4>Waseda EDU Japanese</h4>
+                                    <p>Tokyo, Nhật Bản</p>
+                                </div>
+                                <div class="school-stats">
+                                    <span class="student-count">167 học sinh</span>
+                                </div>
+                            </div>
+
+                            <div class="school-item">
+                                <div class="school-rank">4</div>
+                                <div class="school-info">
+                                    <h4>Human Academy</h4>
+                                    <p>Osaka, Nhật Bản</p>
+                                </div>
+                                <div class="school-stats">
+                                    <span class="student-count">134 học sinh</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <script src="assets/js/dashboard.js"></script>
+</body>
+
+</html>
