@@ -16,6 +16,7 @@ body {
     line-height: 1.6;
     display: flex;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 /* ========================================
@@ -210,10 +211,13 @@ body {
     display: flex;
     flex-direction: column;
     transition: margin-left 0.3s ease;
+    width: calc(100vw - 260px);
+    overflow-x: hidden;
 }
 
 .sidebar.collapsed + .main-content {
     margin-left: 0;
+    width: 100vw;
 }
 
 /* ========================================

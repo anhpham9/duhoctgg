@@ -12,6 +12,7 @@
     
     .main-content {
         margin-left: 240px;
+        width: calc(100vw - 240px);
     }
     
     .search-box input {
@@ -75,7 +76,7 @@
     
     .main-content {
         margin-left: 0;
-        width: 100%;
+        width: 100vw;
     }
     
     /* Header Mobile */
@@ -587,5 +588,74 @@
     .stat-card {
         background: #2d2d2d;
         border-color: #404040;
+    }
+    
+    /* Users Table Mobile */
+    .users-container {
+        padding: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filters-container {
+        padding: 15px;
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .table-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .table-info {
+        justify-content: center;
+    }
+    
+    .table-wrapper {
+        border-radius: 4px;
+        max-height: 60vh;
+    }
+    
+    .users-table {
+        min-width: 800px;
+        font-size: 0.8rem;
+    }
+    
+    .users-table th,
+    .users-table td {
+        padding: 8px 12px;
+    }
+    
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .action-buttons {
+        gap: 5px;
+    }
+    
+    .action-btn {
+        padding: 6px;
+        font-size: 0.8rem;
     }
 }
