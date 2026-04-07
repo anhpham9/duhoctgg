@@ -1124,7 +1124,7 @@ body {
 /* WAVE BASE */
 .wave {
     position: absolute;
-    bottom: 0;
+    bottom: -1px;
     left: 0;
     width: 100%;
     overflow: hidden;
@@ -1135,7 +1135,6 @@ body {
 .wave svg {
     display: block;
     width: 200%;
-    transform: translateY(40px);
 }
 
 /* Contact Main Section */

@@ -1166,10 +1166,6 @@
         height: 45px;
         font-size: 1.1rem;
     }
-
-    .wave svg {
-        transform: translateY(20px);
-    }
 }
 
 /* Small Mobile - About Page */
@@ -1251,10 +1247,6 @@
         width: 40px;
         height: 40px;
         font-size: 1rem;
-    }
-
-    .wave svg {
-        transform: translateY(10px);
     }
 }
 

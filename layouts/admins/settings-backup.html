@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài Đặt Sao lưu & Khôi phục - Du Học NB Admin</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/notifications.css">
+    <link rel="stylesheet" href="assets/css/settings-general.css">
+    <link rel="stylesheet" href="assets/css/toast.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="assets/images/logo01.png" alt="Du Học NB" class="logo-img">
+                <h3 class="logo-text">Du Học NB</h3>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="notifications.html" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Thông báo</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="users.html" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Người dùng</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="contacts.html" class="nav-link">
+                        <i class="fas fa-address-book"></i>
+                        <span>Liên hệ</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="schools.html" class="nav-link">
+                        <i class="fas fa-university"></i>
+                        <span>Trường học</span>
+                    </a>
+                </li>
+                <li class="nav-item has-submenu">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-newspaper"></i>
+                        <span>Tin tức</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="news.html">Danh sách tin</a></li>
+                        <li><a href="news-categories.html">Danh mục</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item has-submenu">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Nội dung</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="homepage-content.html">Trang chủ</a></li>
+                        <li><a href="about-content.html">Giới thiệu</a></li>
+                        <li><a href="conditions-content.html">Điều kiện</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item has-submenu active">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Cài đặt</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="settings-general.html">Chung</a></li>
+                        <li><a href="settings-seo.html">SEO</a></li>
+                        <li><a href="settings-backup.html" class="active">Sao lưu & Khôi phục</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="sidebar-bottom">
+            <a href="login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Đăng xuất</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <button class="sidebar-toggle mobile-toggle" id="mobileToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item">Trang chủ</span>
+                    <i class="fas fa-chevron-right"></i>
+                    <span class="breadcrumb-item">Cài đặt</span>
+                    <i class="fas fa-chevron-right"></i>
+                    <span class="breadcrumb-item active">Sao lưu & Khôi phục</span>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="header-search">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Tìm kiếm...">
+                    </div>
+                </div>
+                
+                <div class="header-notifications">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    
+                    <!-- Notifications Dropdown -->
+                    <div class="notifications-dropdown" id="notificationsDropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-title">
+                                <i class="fas fa-bell"></i>
+                                <span>Thông báo (<span id="notificationCount">3</span>)</span>
+                            </div>
+                            <button class="mark-all-btn" id="markAllReadBtn" onclick="notificationsManager.markAllAsRead()" title="Đánh dấu tất cả đã đọc">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="dropdown-body">
+                            <div class="notifications-list" id="notificationsList">
+                                <!-- Notifications will be loaded here by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-footer">
+                            <a href="notifications.html" class="view-all-link">
+                                <i class="fas fa-external-link-alt"></i>
+                                Xem tất cả thông báo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="header-profile">
+                    <div class="profile-dropdown">
+                        <button class="profile-btn">
+                            <img src="assets/images/av.png" alt="Admin" class="profile-avatar">
+                            <span class="profile-name">Admin</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="profile-menu">
+                            <a href="profile.html"><i class="fas fa-user"></i> Hồ sơ</a>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Cài đặt</a>
+                            <hr>
+                            <a href="login.html"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Settings Content -->
+        <div class="settings-container">
+            <div class="page-header">
+                <div class="header-info">
+                    <h1 class="page-title">
+                        <i class="fas fa-cog"></i>
+                        Cài Đặt Sao lưu & Khôi phục
+                    </h1>
+                    <p class="page-description">Quản lý cấu hình hệ thống, sao lưu và khôi phục dữ liệu</p>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="resetBtn">
+                            <i class="fas fa-undo"></i>
+                            Khôi phục mặc định
+                        </button>
+                        <button class="btn btn-success" id="saveBtn">
+                            <i class="fas fa-save"></i>
+                            Lưu cài đặt
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Form -->
+            <div class="settings-content">
+                <form id="settingsForm" class="settings-form">
+                    
+                    <!-- System Settings Section -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-server"></i>
+                                Cài đặt Hệ thống
+                            </h3>
+                            <p>Cấu hình kỹ thuật và bảo mật</p>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="maintenanceMode">Chế độ bảo trì</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="maintenanceMode" name="maintenanceMode">
+                                    <label for="maintenanceMode" class="switch">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small>Ẩn website khỏi khách truy cập</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="allowRegistration">Cho phép đăng ký</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="allowRegistration" name="allowRegistration" checked>
+                                    <label for="allowRegistration" class="switch">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small>Người dùng có thể tự đăng ký tài khoản</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="emailVerification">Xác thực email</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="emailVerification" name="emailVerification" checked>
+                                    <label for="emailVerification" class="switch">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small>Yêu cầu xác thực email khi đăng ký</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cacheEnabled">Bật cache</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="cacheEnabled" name="cacheEnabled" checked>
+                                    <label for="cacheEnabled" class="switch">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small>Cache giúp trang web tải nhanh hơn</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="maxFileSize">Kích thước file tối đa (MB)</label>
+                                <input type="number" id="maxFileSize" name="maxFileSize" value="10" min="1" max="100">
+                                <small>Giới hạn kích thước file upload</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="sessionTimeout">Thời gian phiên (phút)</label>
+                                <input type="number" id="sessionTimeout" name="sessionTimeout" value="120" min="15" max="1440">
+                                <small>Thời gian tự động đăng xuất</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backup Settings Section -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-database"></i>
+                                Sao lưu & Khôi phục
+                            </h3>
+                            <p>Quản lý sao lưu dữ liệu hệ thống</p>
+                        </div>
+                        
+                        <div class="backup-controls">
+                            <div class="backup-info">
+                                <div class="backup-status">
+                                    <div class="status-item">
+                                        <h4>Sao lưu gần nhất</h4>
+                                        <p id="lastBackup">07/04/2026 - 14:30</p>
+                                    </div>
+                                    <div class="status-item">
+                                        <h4>Kích thước</h4>
+                                        <p>2.5 GB</p>
+                                    </div>
+                                    <div class="status-item">
+                                        <h4>Trạng thái</h4>
+                                        <span class="status-badge success">
+                                            <i class="fas fa-check-circle"></i>
+                                            Thành công
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="autoBackup">Sao lưu tự động</label>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="autoBackup" name="autoBackup" checked>
+                                            <label for="autoBackup" class="switch">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="backupFrequency">Tần suất sao lưu</label>
+                                        <select id="backupFrequency" name="backupFrequency">
+                                            <option value="daily" selected>Hằng ngày</option>
+                                            <option value="weekly">Hằng tuần</option>
+                                            <option value="monthly">Hằng tháng</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="backupRetention">Lưu trữ (ngày)</label>
+                                        <input type="number" id="backupRetention" name="backupRetention" value="30" min="7" max="365">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="backup-actions">
+                                <button type="button" class="btn btn-primary" id="createBackupBtn">
+                                    <i class="fas fa-download"></i>
+                                    Tạo sao lưu ngay
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="downloadBackupBtn">
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                    Tải xuống
+                                </button>
+                                <button type="button" class="btn btn-warning" id="restoreBackupBtn">
+                                    <i class="fas fa-upload"></i>
+                                    Khôi phục
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal" style="display: none;">
+        <div class="modal-container confirm-modal">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Xác nhận</h3>
+                <button class="modal-close" onclick="closeConfirmModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-content">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p id="confirmMessage">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Hủy</button>
+                <button class="btn btn-danger" id="confirmBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="assets/js/dashboard.js"></script>
+    <script src="assets/js/notifications.js"></script>
+    <script src="assets/js/settings-general.js"></script>
+</body>
+</html>

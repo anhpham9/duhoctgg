@@ -30,6 +30,7 @@ class GeneralSettingsManager {
             contactHotline: '1900 xxxx',
             companyAddress: '123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh',
             businessHours: '8:00 - 17:00 (T2-T6)',
+            googleMapsIframe: '',
             facebookUrl: '',
             youtubeUrl: '',
             zaloUrl: '',
@@ -70,54 +71,113 @@ class GeneralSettingsManager {
 
     setupEventListeners() {
         // Form submission
-        document.getElementById('settingsForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveSettings();
-        });
+        const settingsForm = document.getElementById('settingsForm');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveSettings();
+            });
+        }
 
         // Save button
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            this.saveSettings();
-        });
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                this.saveSettings();
+            });
+        }
 
         // Reset button
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            this.showResetConfirmation();
-        });
+        const resetBtn = document.getElementById('resetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.showResetConfirmation();
+            });
+        }
 
         // Cancel button
-        document.getElementById('cancelBtn').addEventListener('click', () => {
-            this.resetForm();
-        });
+        const cancelBtn = document.getElementById('cancelBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.resetForm();
+            });
+        }
 
         // Backup buttons
-        document.getElementById('createBackupBtn').addEventListener('click', () => {
-            this.createBackup();
-        });
+        const createBackupBtn = document.getElementById('createBackupBtn');
+        if (createBackupBtn) {
+            createBackupBtn.addEventListener('click', () => {
+                this.createBackup();
+            });
+        }
 
-        document.getElementById('downloadBackupBtn').addEventListener('click', () => {
-            this.downloadBackup();
-        });
+        const downloadBackupBtn = document.getElementById('downloadBackupBtn');
+        if (downloadBackupBtn) {
+            downloadBackupBtn.addEventListener('click', () => {
+                this.downloadBackup();
+            });
+        }
 
-        document.getElementById('restoreBackupBtn').addEventListener('click', () => {
-            this.showRestoreConfirmation();
-        });
+        const restoreBackupBtn = document.getElementById('restoreBackupBtn');
+        if (restoreBackupBtn) {
+            restoreBackupBtn.addEventListener('click', () => {
+                this.showRestoreConfirmation();
+            });
+        }
 
         // File input preview
-        document.getElementById('siteLogo').addEventListener('change', (e) => {
-            this.handleLogoUpload(e);
-        });
+        const siteLogo = document.getElementById('siteLogo');
+        if (siteLogo) {
+            siteLogo.addEventListener('change', (e) => {
+                this.handleLogoUpload(e, 'siteLogo');
+            });
+        }
+        
+        const loadingLogo = document.getElementById('loadingLogo');
+        if (loadingLogo) {
+            loadingLogo.addEventListener('change', (e) => {
+                this.handleLogoUpload(e, 'loadingLogo');
+            });
+        }
+        
+        // Logo preview click handlers
+        const siteLogoPreview = document.getElementById('siteLogoPreview');
+        if (siteLogoPreview && siteLogo) {
+            siteLogoPreview.addEventListener('click', () => {
+                siteLogo.click();
+            });
+        }
+        
+        const loadingLogoPreview = document.getElementById('loadingLogoPreview');
+        if (loadingLogoPreview && loadingLogo) {
+            loadingLogoPreview.addEventListener('click', () => {
+                loadingLogo.click();
+            });
+        }
+        
+        // Google Maps iframe preview
+        const googleMapsIframe = document.getElementById('googleMapsIframe');
+        if (googleMapsIframe) {
+            googleMapsIframe.addEventListener('input', () => {
+                this.updateMapsPreview();
+            });
+            
+            // Initial preview update
+            setTimeout(() => this.updateMapsPreview(), 100);
+        }
 
         // Form change detection
-        document.getElementById('settingsForm').addEventListener('input', () => {
-            this.hasUnsavedChanges = true;
-            this.updateUI();
-        });
+        if (settingsForm) {
+            settingsForm.addEventListener('input', () => {
+                this.hasUnsavedChanges = true;
+                this.updateUI();
+            });
 
-        document.getElementById('settingsForm').addEventListener('change', () => {
-            this.hasUnsavedChanges = true; 
-            this.updateUI();
-        });
+            settingsForm.addEventListener('change', () => {
+                this.hasUnsavedChanges = true; 
+                this.updateUI();
+            });
+        }
 
         // Prevent navigation with unsaved changes
         window.addEventListener('beforeunload', (e) => {
@@ -136,7 +196,10 @@ class GeneralSettingsManager {
 
         counters.forEach(counter => {
             const element = document.getElementById(counter.element);
+            if (!element) return; // Skip if element doesn't exist
+            
             const counterElement = element.parentNode.querySelector('.char-count');
+            if (!counterElement) return; // Skip if counter element doesn't exist
             
             const updateCounter = () => {
                 const currentLength = element.value.length;
@@ -182,7 +245,10 @@ class GeneralSettingsManager {
     }
 
     checkForChanges() {
-        const formData = new FormData(document.getElementById('settingsForm'));
+        const settingsForm = document.getElementById('settingsForm');
+        if (!settingsForm) return;
+        
+        const formData = new FormData(settingsForm);
         const currentSettings = {};
 
         formData.forEach((value, key) => {
@@ -206,13 +272,22 @@ class GeneralSettingsManager {
         const saveBtn = document.getElementById('saveBtn');
         const resetBtn = document.getElementById('resetBtn');
         
+        if (saveBtn) {
+            if (this.hasUnsavedChanges) {
+                saveBtn.classList.add('pulse');
+            } else {
+                saveBtn.classList.remove('pulse');
+            }
+        }
+        
+        if (resetBtn) {
+            resetBtn.disabled = !this.hasUnsavedChanges;
+        }
+        
+        // Update document title
         if (this.hasUnsavedChanges) {
-            saveBtn.classList.add('pulse');
-            resetBtn.disabled = false;
             document.title = '• Cài Đặt Chung - Du Học NB Admin';
         } else {
-            saveBtn.classList.remove('pulse');
-            resetBtn.disabled = true;
             document.title = 'Cài Đặt Chung - Du Học NB Admin';
         }
     }
@@ -222,7 +297,14 @@ class GeneralSettingsManager {
             this.showLoadingState(true);
             
             // Collect form data
-            const formData = new FormData(document.getElementById('settingsForm'));
+            const settingsForm = document.getElementById('settingsForm');
+            if (!settingsForm) {
+                console.warn('Settings form not found');
+                this.showNotification('Settings form not found', 'error');
+                return;
+            }
+            
+            const formData = new FormData(settingsForm);
             const settings = {};
 
             formData.forEach((value, key) => {
@@ -330,7 +412,10 @@ class GeneralSettingsManager {
             },
             () => {
                 // Disable maintenance mode
-                document.getElementById('maintenanceMode').checked = false;
+                const maintenanceMode = document.getElementById('maintenanceMode');
+                if (maintenanceMode) {
+                    maintenanceMode.checked = false;
+                }
             }
         );
     }
@@ -342,7 +427,10 @@ class GeneralSettingsManager {
             await this.simulateApiCall(3000); // Simulate longer backup process
             
             // Update last backup time
-            document.getElementById('lastBackup').textContent = this.formatDateTime(new Date());
+            const lastBackupElement = document.getElementById('lastBackup');
+            if (lastBackupElement) {
+                lastBackupElement.textContent = this.formatDateTime(new Date());
+            }
             
             this.showNotification('Đã tạo bản sao lưu thành công!', 'success');
             
@@ -413,22 +501,158 @@ class GeneralSettingsManager {
         }
     }
 
-    handleLogoUpload(event) {
+    handleLogoUpload(event, logoType) {
         const file = event.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) { // 2MB limit
-                this.showNotification('Kích thước logo không được vượt quá 2MB', 'warning');
-                event.target.value = '';
+        if (!file) return;
+        
+        // Validate file size (2MB limit)
+        if (file.size > 2 * 1024 * 1024) {
+            this.showNotification('Kích thước logo không được vượt quá 2MB', 'warning');
+            event.target.value = '';
+            return;
+        }
+        
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            this.showNotification('Chỉ chấp nhận các file ảnh: JPG, PNG, SVG, WebP', 'error');
+            event.target.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // Update preview image
+            this.updateLogoPreview(logoType, e.target.result, file.name);
+            this.hasUnsavedChanges = true;
+            this.updateUI();
+            this.showNotification(`Đã chọn ${logoType === 'siteLogo' ? 'logo website' : 'logo loading'} thành công`, 'success');
+        };
+        
+        reader.onerror = () => {
+            this.showNotification('Có lỗi xảy ra khi đọc file', 'error');
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    updateLogoPreview(logoType, imageSrc, fileName) {
+        const previewId = logoType === 'siteLogo' ? 'siteLogoPreview' : 'loadingLogoPreview';
+        const preview = document.getElementById(previewId);
+        
+        if (!preview) return;
+        
+        const img = preview.querySelector('.preview-img');
+        if (img) {
+            img.src = imageSrc;
+            img.alt = fileName;
+            
+            // Add fade effect
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.style.transition = 'opacity 0.3s ease';
+                img.style.opacity = '1';
+            }, 50);
+        }
+        
+        // Update overlay text
+        const overlay = preview.querySelector('.preview-overlay span');
+        if (overlay) {
+            overlay.textContent = 'Thay đổi logo';
+        }
+    }
+    
+    updateMapsPreview() {
+        const textarea = document.getElementById('googleMapsIframe');
+        const preview = document.getElementById('mapsPreview');
+        const placeholder = preview?.querySelector('.preview-placeholder');
+        const content = preview?.querySelector('.preview-content');
+        
+        if (!textarea || !preview || !placeholder || !content) {
+            return;
+        }
+        
+        const iframeCode = textarea.value.trim();
+        
+        // Clear previous content
+        content.innerHTML = '';
+        preview.classList.remove('has-content', 'has-error');
+        
+        if (!iframeCode) {
+            // Show placeholder
+            placeholder.style.display = 'flex';
+            content.classList.remove('active');
+            return;
+        }
+        
+        // Validate iframe code
+        if (!this.isValidIframeCode(iframeCode)) {
+            this.showMapsError('Mã iframe không hợp lệ. Vui lòng kiểm tra lại.');
+            return;
+        }
+        
+        try {
+            // Create iframe element
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = iframeCode;
+            const iframe = tempDiv.querySelector('iframe');
+            
+            if (!iframe) {
+                this.showMapsError('Không tìm thấy thẻ iframe trong mã đã nhập.');
                 return;
             }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                // In real app, would show preview and upload to server
-                this.showNotification('Đã chọn logo thành công', 'success');
-            };
-            reader.readAsDataURL(file);
+            
+            // Check if it's a valid Google Maps embed
+            const src = iframe.getAttribute('src');
+            if (!src || !src.includes('google.com/maps/embed')) {
+                this.showMapsError('Đây không phải là mã iframe Google Maps hợp lệ.');
+                return;
+            }
+            
+            // Clone and insert iframe
+            const clonedIframe = iframe.cloneNode(true);
+            clonedIframe.style.width = '100%';
+            clonedIframe.style.height = '100%';
+            clonedIframe.style.border = 'none';
+            
+            content.appendChild(clonedIframe);
+            
+            // Show preview
+            placeholder.style.display = 'none';
+            content.classList.add('active');
+            preview.classList.add('has-content');
+            
+        } catch (error) {
+            console.error('Maps preview error:', error);
+            this.showMapsError('Có lỗi xảy ra khi hiển thị bản đồ.');
         }
+    }
+    
+    isValidIframeCode(code) {
+        // Basic validation for iframe structure
+        return code.includes('<iframe') && 
+               code.includes('</iframe>') && 
+               code.includes('src=');
+    }
+    
+    showMapsError(message) {
+        const preview = document.getElementById('mapsPreview');
+        const placeholder = preview?.querySelector('.preview-placeholder');
+        const content = preview?.querySelector('.preview-content');
+        
+        if (!preview || !placeholder || !content) return;
+        
+        preview.classList.add('has-error');
+        placeholder.style.display = 'none';
+        content.classList.add('active');
+        
+        content.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Lỗi hiển thị bản đồ</h4>
+                <p>${message}</p>
+            </div>
+        `;
     }
 
     showLoadingState(loading, message = 'Đang xử lý...') {
@@ -436,25 +660,41 @@ class GeneralSettingsManager {
         const form = document.getElementById('settingsForm');
         
         if (loading) {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
-            form.style.opacity = '0.6';
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
+            }
+            if (form) {
+                form.style.opacity = '0.6';
+            }
         } else {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Lưu cài đặt';
-            form.style.opacity = '1';
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Lưu cài đặt';
+            }
+            if (form) {
+                form.style.opacity = '1';
+            }
         }
     }
 
     showConfirmModal(title, message, onConfirm, onCancel) {
-        document.getElementById('confirmTitle').textContent = title;
-        document.getElementById('confirmMessage').textContent = message;
-        
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
         const modal = document.getElementById('confirmModal');
+        const confirmBtn = document.getElementById('confirmBtn');
+        
+        if (!confirmTitle || !confirmMessage || !modal || !confirmBtn) {
+            console.warn('Modal elements not found');
+            return;
+        }
+        
+        confirmTitle.textContent = title;
+        confirmMessage.textContent = message;
+        
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('show'), 10);
         
-        const confirmBtn = document.getElementById('confirmBtn');
         confirmBtn.onclick = () => {
             this.closeConfirmModal();
             if (onConfirm) onConfirm();
@@ -469,6 +709,11 @@ class GeneralSettingsManager {
 
     closeConfirmModal() {
         const modal = document.getElementById('confirmModal');
+        if (!modal) {
+            console.warn('Confirm modal element not found');
+            return;
+        }
+        
         modal.classList.remove('show');
         setTimeout(() => {
             modal.style.display = 'none';
