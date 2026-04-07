@@ -7,6 +7,7 @@
     <title>Cài Đặt Chung - Du Học NB Admin</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/notifications.css">
     <link rel="stylesheet" href="assets/css/settings-general.css">
     <link rel="stylesheet" href="assets/css/toast.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -127,6 +128,32 @@
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge">3</span>
                     </button>
+                    
+                    <!-- Notifications Dropdown -->
+                    <div class="notifications-dropdown" id="notificationsDropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-title">
+                                <i class="fas fa-bell"></i>
+                                <span>Thông báo (<span id="notificationCount">3</span>)</span>
+                            </div>
+                            <button class="mark-all-btn" id="markAllReadBtn" onclick="notificationsManager.markAllAsRead()" title="Đánh dấu tất cả đã đọc">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="dropdown-body">
+                            <div class="notifications-list" id="notificationsList">
+                                <!-- Notifications will be loaded here by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-footer">
+                            <a href="notifications.html" class="view-all-link">
+                                <i class="fas fa-external-link-alt"></i>
+                                Xem tất cả thông báo
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="header-profile">
@@ -571,6 +598,7 @@
 
     <!-- JavaScript Files -->
     <script src="assets/js/dashboard.js"></script>
+    <script src="assets/js/notifications.js"></script>
     <script src="assets/js/settings-general.js"></script>
 </body>
 </html>
