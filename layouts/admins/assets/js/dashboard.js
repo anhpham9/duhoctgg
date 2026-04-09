@@ -391,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // INITIALIZATION COMPLETE
     // ========================================
     console.log('Dashboard initialized successfully');
-    showNotification('Dashboard đã sẵn sàng!', 'success');
+    // showNotification('Dashboard đã sẵn sàng!', 'success');
     
     // Hide loading spinner if exists
     const loadingSpinner = document.querySelector('.loading-spinner');
