@@ -415,10 +415,7 @@ class ProfileManager {
 
     async saveProfile() {
         try {
-            // Use CommonUtils loading spinner
-            if (CommonUtils?.showLoadingSpinner) {
-                CommonUtils.showLoadingSpinner();
-            }
+            this.showLoadingState(true);
             
             const formData = this.getFormData();
             
@@ -441,10 +438,7 @@ class ProfileManager {
             console.error('Error saving profile:', error);
             this.showNotification('Có lỗi xảy ra khi lưu hồ sơ!', 'error');
         } finally {
-            // Use CommonUtils to hide loading
-            if (CommonUtils?.hideLoadingSpinner) {
-                CommonUtils.hideLoadingSpinner();
-            }
+            this.showLoadingState(false);
         }
     }
 
@@ -475,10 +469,7 @@ class ProfileManager {
         }
 
         try {
-            // Use CommonUtils loading spinner
-            if (CommonUtils?.showLoadingSpinner) {
-                CommonUtils.showLoadingSpinner();
-            }
+            this.showLoadingState(true);
 
             // In real app, send to API
             await this.simulateApiCall();
@@ -500,10 +491,7 @@ class ProfileManager {
             console.error('Error changing password:', error);
             this.showNotification('Có lỗi xảy ra khi đổi mật khẩu!', 'error');
         } finally {
-            // Use CommonUtils to hide loading
-            if (CommonUtils?.hideLoadingSpinner) {
-                CommonUtils.hideLoadingSpinner();
-            }
+            this.showLoadingState(false);
         }
     }
 
@@ -551,37 +539,44 @@ class ProfileManager {
     }
 
     resetForm() {
-        // Use CommonUtils confirm modal instead of browser confirm
-        if (CommonUtils?.confirm) {
-            CommonUtils.confirm({
-                title: 'Khôi phục dữ liệu',
-                message: 'Bạn có chắc chắn muốn khôi phục về dữ liệu ban đầu?',
-                icon: 'fas fa-undo',
-                iconType: 'warning',
-                confirmText: 'Khôi phục',
-                confirmType: 'warning',
-                onConfirm: () => {
-                    this.populateForm();
-                    this.hasUnsavedChanges = false;
-                    this.updateUI();
-                    this.showNotification('Đã khôi phục dữ liệu ban đầu', 'success');
-                }
-            });
-        } else {
-            // Fallback to browser confirm
-            if (confirm('Bạn có chắc chắn muốn khôi phục về dữ liệu ban đầu?')) {
+        this.showConfirmDialog(
+            'Khôi phục dữ liệu',
+            'Bạn có chắc chắn muốn khôi phục về dữ liệu ban đầu?',
+            () => {
                 this.populateForm();
                 this.hasUnsavedChanges = false;
                 this.updateUI();
                 this.showNotification('Đã khôi phục dữ liệu ban đầu', 'success');
             }
+        );
+    }
+
+    showLoadingState(loading) {
+        const saveBtn = document.getElementById('saveProfileBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+        if (loading) {
+            if (saveBtn) saveBtn.disabled = true;
+            if (cancelBtn) cancelBtn.disabled = true;
+            if (changePasswordBtn) changePasswordBtn.disabled = true;
+        } else {
+            if (saveBtn) saveBtn.disabled = false;
+            if (cancelBtn) cancelBtn.disabled = false;
+            if (changePasswordBtn) changePasswordBtn.disabled = false;
+        }
+    }
+
+    showConfirmDialog(title, message, onConfirm) {
+        if (confirm(`${title}\n\n${message}`)) {
+            onConfirm();
         }
     }
 
     showNotification(message, type = 'info') {
-        // Use notifications system from notifications.js
-        if (window.notificationsManager?.showToast) {
-            window.notificationsManager.showToast(message, type);
+        // Use the existing notification system
+        if (window.showNotification) {
+            window.showNotification(message, type);
         } else {
             // Fallback to alert if notification system not available
             alert(message);

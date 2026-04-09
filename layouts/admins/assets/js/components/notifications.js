@@ -1,6 +1,13 @@
 /**
  * Notifications System - Admin Dashboard
  * Handles notification dropdown, real-time updates, bell animations, and user interactions
+ * 🚀 CÁCH TEST THỬ NGHIỆM
+ * Mở Developer Tools > Console và chạy:
+ * window.notificationsManager.showToast('Thành công!', 'success');
+ * window.notificationsManager.showToast('Bảo trì hệ thống', 'danger');
+ * window.notificationsManager.showToast('Hồ sơ mới cần duyệt', 'warning');
+ * window.notificationsManager.showToast('Liên hệ mới', 'info');
+ * window.notificationsManager.addNotification('Sao lưu dữ liệu thất bại!', 'error');
  */
 
 class NotificationsManager {
@@ -15,7 +22,6 @@ class NotificationsManager {
     init() {
         this.loadNotifications();
         this.setupEventListeners();
-        this.setupAutoRefresh();
         this.updateBadge();
         this.initBellAnimation();
     }
@@ -112,13 +118,6 @@ class NotificationsManager {
                 this.closeDropdown();
             }
         });
-    }
-
-    setupAutoRefresh() {
-        // Refresh notifications every 30 seconds
-        setInterval(() => {
-            this.refreshNotifications();
-        }, 10000);
     }
 
     // ========================================
@@ -356,48 +355,6 @@ class NotificationsManager {
         }, 500);
     }
 
-    refreshNotifications() {
-        // Simulate receiving new notifications
-        const randomChance = Math.random();
-        
-        if (randomChance < 0.1) { // 10% chance of new notification
-            const newNotification = this.generateRandomNotification();
-            this.notifications.unshift(newNotification);
-            this.updateUnreadCount();
-            
-            // Show toast for new notification
-            this.showToast('Có thông báo mới!', 'info');
-            
-            // If dropdown is open, refresh the list
-            if (this.isDropdownOpen) {
-                this.renderNotifications();
-            }
-        }
-    }
-
-    generateRandomNotification() {
-        const types = ['info', 'warning', 'success'];
-        const notifications = [
-            { title: 'Hồ sơ mới', message: 'Có hồ sơ du học mới cần xử lý', action: 'applications' },
-            { title: 'Liên hệ mới', message: 'Khách hàng vừa gửi yêu cầu tư vấn', action: 'contacts' },
-            { title: 'Cập nhật hệ thống', message: 'Phiên bản mới đã sẵn sàng', action: 'maintenance' }
-        ];
-        
-        const template = notifications[Math.floor(Math.random() * notifications.length)];
-        const type = types[Math.floor(Math.random() * types.length)];
-        
-        return {
-            id: Date.now(),
-            type: type,
-            title: template.title,
-            message: template.message,
-            timestamp: new Date(),
-            isRead: false,
-            icon: this.getIconByType(type),
-            action: template.action
-        };
-    }
-
     formatTimeAgo(timestamp) {
         const now = new Date();
         const diffInSeconds = Math.floor((now - timestamp) / 1000);
@@ -477,7 +434,7 @@ class NotificationsManager {
         });
         
         if (type === 'warning') {
-            toast.style.color = '#212529';
+            toast.style.color = '#e90000';
         }
         
         document.body.appendChild(toast);
@@ -502,11 +459,11 @@ class NotificationsManager {
 
     getToastIcon(type) {
         const icons = {
-            'success': 'check-circle',
-            'warning': 'exclamation-triangle',
-            'danger': 'exclamation-circle',
-            'error': 'exclamation-circle',
-            'info': 'info-circle'
+            'success': 'circle-check',
+            'warning': 'triangle-exclamation',
+            'danger': 'circle-exclamation',
+            'error': 'circle-xmark',
+            'info': 'circle-info'
         };
         return icons[type] || 'bell';
     }

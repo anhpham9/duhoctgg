@@ -19,10 +19,11 @@
         width: 200px;
     }
 
-    .dashboard-container {
+    .content-container {
         padding: 20px;
     }
 
+    /* Dashboard Grid Layout */
     .dashboard-grid {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -33,7 +34,7 @@
     }
 
     .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 15px;
     }
 
@@ -49,6 +50,7 @@
     .quick-action-btn span {
         font-size: 0.75rem;
     }
+    
 }
 
 /* ========================================
@@ -79,7 +81,6 @@
         width: 100vw;
     }
 
-    /* Header Mobile */
     .main-header {
         padding: 15px 20px;
         flex-wrap: wrap;
@@ -105,15 +106,14 @@
         flex: 1 1 100%;
     }
 
-    .search-box input {
-        width: 100%;
-    }
-
     .breadcrumb {
         font-size: 0.8rem;
     }
 
-    /* Profile Mobile */
+    .search-box input {
+        width: 100%;
+    }
+
     .profile-name {
         display: none;
     }
@@ -123,8 +123,7 @@
         min-width: 160px;
     }
 
-    /* Dashboard Mobile */
-    .dashboard-container {
+    .content-container {
         padding: 15px;
     }
 
@@ -133,7 +132,7 @@
     }
 
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 12px;
     }
 
@@ -150,26 +149,16 @@
         height: 50px;
         font-size: 1.2rem;
     }
-
-    /* Cards Mobile */
+    
     .dashboard-card {
         padding: 16px;
         border-radius: 8px;
-    }
-
-    .card-header {
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
     }
 
     .card-title {
         font-size: 1.1rem;
     }
 
-    /* Chart Mobile */
     .chart-bars {
         height: 150px;
         gap: 4px;
@@ -179,7 +168,6 @@
         font-size: 0.7rem;
     }
 
-    /* Quick Actions Mobile */
     .quick-actions {
         grid-template-columns: 1fr 1fr;
         gap: 12px;
@@ -196,16 +184,10 @@
     .quick-action-btn span {
         font-size: 0.8rem;
     }
-
-    /* Activity List Mobile */
+    
     .activity-item {
         gap: 10px;
         padding: 10px 0;
-    }
-
-    .activity-avatar img {
-        width: 35px;
-        height: 35px;
     }
 
     .activity-content p {
@@ -215,8 +197,7 @@
     .activity-time {
         font-size: 0.75rem;
     }
-
-    /* School List Mobile */
+    
     .school-item {
         gap: 12px;
         padding: 12px 0;
@@ -235,18 +216,6 @@
     .school-info p {
         font-size: 0.75rem;
     }
-
-    .student-count {
-        font-size: 0.7rem;
-        padding: 3px 6px;
-    }
-
-    /* Pagination Mobile */
-    .pagination-container {
-        flex-direction: column-reverse;
-        text-align: center;
-        gap: 15px;
-    }
     
     .page-header {
         flex-direction: column;
@@ -259,16 +228,6 @@
         align-items: stretch;
     }
     
-    .stats-summary {
-        order: -1;
-        justify-content: space-around;
-    }
-
-    .table-controls {
-        flex-direction: column;
-        gap: 15px;
-        align-items: stretch;
-    }
 }
 
 /* ========================================
@@ -279,7 +238,7 @@
         padding: 12px 15px;
     }
 
-    .dashboard-container {
+    .content-container {
         padding: 12px;
     }
 
@@ -287,11 +246,12 @@
         font-size: 1.4rem;
     }
 
-    .page-subtitle {
+    .page-description {
         font-size: 0.9rem;
     }
 
     .stats-grid {
+        grid-template-columns: 1fr;
         gap: 10px;
     }
 
@@ -306,6 +266,10 @@
 
     .card-header {
         margin-bottom: 12px;
+        padding-bottom: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
     }
 
     .dashboard-grid {
@@ -330,6 +294,7 @@
         padding: 0 5px;
         font-size: 0.65rem;
     }
+    
 }
 
 /* ========================================
@@ -365,7 +330,7 @@
         font-size: 1.1rem;
     }
 
-    .dashboard-container {
+    .content-container {
         padding: 10px;
     }
 
@@ -414,10 +379,6 @@
         gap: 8px;
     }
 
-    .activity-avatar {
-        align-self: flex-start;
-    }
-
     .school-item {
         flex-direction: column;
         align-items: flex-start;
@@ -427,6 +388,11 @@
     .school-rank {
         align-self: flex-start;
     }
+    .activity-status {
+        position: absolute;
+        right: 10px;
+    }
+    
 }
 
 /* ========================================
@@ -437,7 +403,7 @@
         padding: 8px 10px;
     }
 
-    .dashboard-container {
+    .content-container {
         padding: 8px;
     }
 
@@ -493,16 +459,8 @@
         padding: 10px 20px;
     }
 
-    .dashboard-container {
+    .content-container {
         padding: 15px 20px;
-    }
-
-    .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-
-    .stat-card {
-        padding: 15px;
     }
 
     .page-header {
@@ -520,6 +478,15 @@
     .dashboard-card {
         padding: 15px;
     }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+    
 }
 
 /* ========================================
@@ -533,11 +500,6 @@
     }
 
     .profile-avatar {
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-    }
-
-    .activity-avatar img {
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
     }
@@ -559,7 +521,7 @@
         display: none;
     }
 
-    .dashboard-container {
+    .content-container {
         padding: 0;
     }
 
@@ -580,6 +542,7 @@
     .notification-toast {
         display: none;
     }
+    
 }
 
 /* ========================================
@@ -590,153 +553,5 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-
-    /* Dark mode support can be added here if needed */
-    body {
-        background-color: #1a1a1a;
-        color: #ffffff;
-    }
-
-    .sidebar {
-        background: #2d2d2d;
-        border-right: 1px solid #404040;
-    }
-
-    .main-header {
-        background: #2d2d2d;
-        border-bottom: 1px solid #404040;
-    }
-
-    .dashboard-card {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-
-    .stat-card {
-        background: #2d2d2d;
-        border-color: #404040;
-    }
-
-    /* Users & Contacts Table Mobile */
-    .users-container,
-    .contacts-container {
-        padding: 15px;
-    }
-
-    .page-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-    }
-
-    .header-actions {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .stats-summary {
-        flex-direction: row;
-        justify-content: center;
-        gap: 15px;
-    }
-
-    .filters-container {
-        padding: 15px;
-    }
-
-    .filter-group {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .filter-controls {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .table-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    .table-info {
-        justify-content: center;
-    }
-
-    .bulk-actions {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .table-wrapper {
-        border-radius: 4px;
-        max-height: 60vh;
-    }
-
-    .users-table,
-    .contacts-table {
-        min-width: 800px;
-        font-size: 0.8rem;
-    }
-
-    .users-table th,
-    .users-table td,
-    .contacts-table th,
-    .contacts-table td {
-        padding: 8px 12px;
-    }
-
-    .user-avatar {
-        width: 30px;
-        height: 30px;
-    }
-
-    .action-buttons {
-        gap: 5px;
-    }
-
-    .action-btn {
-        padding: 6px;
-        font-size: 0.8rem;
-    }
-
-    /* Contact Modal Mobile */
-    .modal-container {
-        width: 95%;
-        max-height: 90vh;
-    }
-
-    .modal-header,
-    .modal-footer {
-        padding: 15px 20px;
-    }
-
-    .modal-body {
-        padding: 20px;
-    }
-
-    .info-row {
-        flex-direction: column;
-        gap: 5px;
-    }
-
-    .info-row label {
-        min-width: auto;
-        font-weight: 600;
-    }
-
-    .modal-footer {
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .modal-footer .btn {
-        flex: 1;
-        min-width: 120px;
     }
 }

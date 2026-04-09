@@ -4,11 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hồ Sơ Cá Nhân - Du Học NB Admin</title>
+    <title>Hồ sơ cá nhân - Du Học Nhật Bản</title>
     <link rel="stylesheet" href="assets/css/style.css">
+
+    <link rel="stylesheet" href="assets/css/profile.css">
+
     <link rel="stylesheet" href="assets/css/responsive.css">
     <link rel="stylesheet" href="assets/css/notifications.css">
-    <link rel="stylesheet" href="assets/css/profile.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 
@@ -24,7 +26,7 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
+
         <nav class="sidebar-nav">
             <ul class="nav-list">
                 <li class="nav-item">
@@ -71,7 +73,11 @@
                     <ul class="submenu">
                         <li><a href="homepage-content.html">Trang chủ</a></li>
                         <li><a href="about-content.html">Giới thiệu</a></li>
+                        <li><a href="schools-content.html">Trường học</a></li>
+                        <li><a href="conditions-content.html">Điều kiện</a></li>
+                        <li><a href="news-content.html">Tin tức</a></li>
                         <li><a href="contact-content.html">Liên hệ</a></li>
+                        <li><a href="faq-content.html">FAQ</a></li>
                     </ul>
                 </li>
                 <li class="nav-item has-submenu">
@@ -88,7 +94,7 @@
                 </li>
             </ul>
         </nav>
-        
+
         <div class="sidebar-bottom">
             <a href="login.html" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i>
@@ -105,29 +111,57 @@
                 <button class="sidebar-toggle mobile-toggle" id="mobileToggle">
                     <i class="fas fa-bars"></i>
                 </button>
-                
+
                 <div class="breadcrumb">
                     <span class="breadcrumb-item">Trang chủ</span>
                     <i class="fas fa-chevron-right"></i>
                     <span class="breadcrumb-item active">Hồ sơ cá nhân</span>
                 </div>
             </div>
-            
+
             <div class="header-right">
                 <div class="header-search">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Tìm kiếm...">
+                        <label for="searchInput" hidden></label>
+                        <input type="text" id="searchInput" placeholder="Tìm kiếm...">
                     </div>
                 </div>
-                
+
                 <div class="header-notifications">
-                    <button class="notification-btn">
+                    <button class="notification-btn" id="notificationToggle">
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge">3</span>
                     </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div class="notifications-dropdown" id="notificationsDropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-title">
+                                <i class="fas fa-bell"></i>
+                                <span>Thông báo (<span id="notificationCount">3</span>)</span>
+                            </div>
+                            <button class="mark-all-btn" id="markAllReadBtn"
+                                onclick="notificationsManager.markAllAsRead()" title="Đánh dấu tất cả đã đọc">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                        </div>
+
+                        <div class="dropdown-body">
+                            <div class="notifications-list" id="notificationsList">
+                                <!-- Notifications will be loaded here by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="dropdown-footer">
+                            <a href="notifications.html" class="view-all-link">
+                                <i class="fas fa-external-link-alt"></i>
+                                Xem tất cả thông báo
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div class="header-profile">
                     <div class="profile-dropdown">
                         <button class="profile-btn">
@@ -138,40 +172,29 @@
                         <div class="profile-menu">
                             <a href="profile.html" class="active"><i class="fas fa-user"></i> Hồ sơ</a>
                             <hr>
-                            <a href="login.html"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                            <a href="login.html" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
+        <!-- Header End -->
 
         <!-- Content Container -->
         <div class="content-container">
+            <!-- Page Header -->
             <div class="page-header">
                 <div class="header-info">
-                    <h1>
-                        <i class="fas fa-user-circle"></i>
-                        Hồ Sơ Cá Nhân
+                    <h1 class="page-title">
+                        <i class="fas fa-id-card-clip"></i>
+                        Hồ sơ cá nhân
                     </h1>
-                    <p class="page-description">Quản lý thông tin cá nhân và cài đặt tài khoản</p>
-                </div>
-                
-                <div class="header-actions">
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-outline" id="cancelBtn">
-                            <i class="fas fa-times"></i>
-                            Hủy bỏ
-                        </button>
-                        <button type="button" class="btn btn-success pulse" id="saveProfileBtn">
-                            <i class="fas fa-save"></i>
-                            Lưu thay đổi
-                        </button>
-                    </div>
+                    <p class="page-description">Tổng quan hồ sơ cá nhân</p>
                 </div>
             </div>
 
-            <!-- Profile Content -->
-            <div class="profile-container">
+            <!-- Content Sections -->
+            <div class="content-sections">
                 <!-- Profile Navigation -->
                 <div class="profile-nav">
                     <div class="nav-tabs">
@@ -196,7 +219,7 @@
 
                 <!-- Profile Content Sections -->
                 <div class="profile-content">
-                    
+
                     <!-- Personal Information Tab -->
                     <div class="tab-content active" id="personal-info">
                         <form id="personalInfoForm">
@@ -208,7 +231,7 @@
                                     </h3>
                                     <p>Cập nhật thông tin cá nhân của bạn</p>
                                 </div>
-                                
+
                                 <div class="profile-form-grid">
                                     <!-- Avatar Section -->
                                     <div class="avatar-section">
@@ -221,7 +244,8 @@
                                                 </div>
                                             </div>
                                             <input type="file" id="avatarInput" accept="image/*" style="display: none;">
-                                            <button type="button" class="btn btn-outline" onclick="document.getElementById('avatarInput').click()">
+                                            <button type="button" class="btn btn-outline"
+                                                onclick="document.getElementById('avatarInput').click()">
                                                 <i class="fas fa-upload"></i>
                                                 Tải ảnh lên
                                             </button>
@@ -233,53 +257,91 @@
                                         <div class="form-grid">
                                             <div class="form-group">
                                                 <label for="fullName">Họ và tên</label>
-                                                <input type="text" id="fullName" name="fullName" value="Nguyễn Văn Admin" placeholder="Nhập họ và tên">
+                                                <input type="text" id="fullName" name="fullName"
+                                                    value="Nguyễn Văn Admin" placeholder="Nhập họ và tên">
                                             </div>
-                                            
+
                                             <div class="form-group">
                                                 <label for="email">Email</label>
-                                                <input type="email" id="email" name="email" value="admin@duhocnb.com" placeholder="Nhập email">
+                                                <input type="email" id="email" name="email" value="admin@duhocnb.com"
+                                                    placeholder="Nhập email">
                                             </div>
-                                            
+
                                             <div class="form-group">
                                                 <label for="phone">Số điện thoại</label>
-                                                <input type="tel" id="phone" name="phone" value="+84 123 456 789" placeholder="Nhập số điện thoại">
+                                                <input type="tel" id="phone" name="phone" value="+84 123 456 789"
+                                                    placeholder="Nhập số điện thoại">
                                             </div>
-                                            
+
+                                            <div class="form-group">
+                                                <label for="zalo">Zalo</label>
+                                                <input type="tel" id="zalo" name="zalo" value="+84 123 456 789"
+                                                    placeholder="Nhập số Zalo">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="facebook">Facebook</label>
+                                                <input type="text" id="facebook" name="facebook"
+                                                    value="https://www.facebook.com/admin"
+                                                    placeholder="Nhập đường dẫn Facebook">
+                                            </div>
+
                                             <div class="form-group">
                                                 <label for="position">Chức vụ</label>
-                                                <input type="text" id="position" name="position" value="Quản trị viên" readonly>
-                                                <small class="form-note readonly-note">Thông tin này do công ty quản lý</small>
+                                                <input type="text" id="position" name="position" value="Quản trị viên"
+                                                    readonly>
+                                                <small class="form-note readonly-note">Thông tin này do công ty quản
+                                                    lý</small>
                                             </div>
-                                            
+
                                             <div class="form-group">
                                                 <label for="department">Phòng ban</label>
-                                                <input type="text" id="department" name="department" value="Hành chính" readonly>
-                                                <small class="form-note readonly-note">Thông tin này do công ty quản lý</small>
+                                                <input type="text" id="department" name="department" value="Hành chính"
+                                                    readonly>
+                                                <small class="form-note readonly-note">Thông tin này do công ty quản
+                                                    lý</small>
                                             </div>
-                                            
+
                                             <div class="form-group">
                                                 <label for="joinDate">Ngày vào làm</label>
-                                                <input type="text" id="joinDate" name="joinDate" value="15/01/2020" readonly>
-                                                <small class="form-note readonly-note">Thông tin này do công ty quản lý</small>
+                                                <input type="text" id="joinDate" name="joinDate" value="15/01/2020"
+                                                    readonly>
+                                                <small class="form-note readonly-note">Thông tin này do công ty quản
+                                                    lý</small>
                                             </div>
                                         </div>
-                                        
-                                        <div class="form-group full-width">
+
+                                        <div class="form-group full-width pt-10">
                                             <label for="address">Địa chỉ</label>
-                                            <input type="text" id="address" name="address" value="123 Nguyễn Huệ, Q.1, TP.HCM" placeholder="Nhập địa chỉ">
+                                            <input type="text" id="address" name="address"
+                                                value="123 Nguyễn Huệ, Q.1, TP.HCM" placeholder="Nhập địa chỉ">
                                         </div>
-                                        
-                                        <div class="form-group full-width">
+
+                                        <div class="form-group full-width pt-10">
                                             <label for="bio">Giới thiệu bản thân</label>
-                                            <textarea id="bio" name="bio" rows="4" placeholder="Viết một vài dòng giới thiệu về bản thân...">Quản trị viên hệ thống với 5+ năm kinh nghiệm trong lĩnh vực tư vấn du học. Chuyên trách quản lý và vận hành hệ thống admin.</textarea>
+                                            <textarea id="bio" name="bio" rows="4"
+                                                placeholder="Viết một vài dòng giới thiệu về bản thân...">Quản trị viên hệ thống với 5+ năm kinh nghiệm trong lĩnh vực tư vấn du học. Chuyên trách quản lý và vận hành hệ thống admin.</textarea>
                                         </div>
+
+                                        <div class="form-group pt-20">
+                                            <div class="action-buttons justify-content-end">
+                                                <button type="button" class="btn btn-outline">
+                                                    <i class="fas fa-times"></i>
+                                                    Hủy bỏ
+                                                </button>
+                                                <button type="button" class="btn btn-success pulse">
+                                                    <i class="fas fa-save"></i>
+                                                    Lưu thay đổi
+                                                </button>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- Account Settings Tab -->
                     <div class="tab-content" id="account-settings">
                         <form id="accountSettingsForm">
@@ -291,14 +353,14 @@
                                     </h3>
                                     <p>Quản lý thông tin đăng nhập và cài đặt tài khoản</p>
                                 </div>
-                                
+
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="username">Tên đăng nhập</label>
                                         <input type="text" id="username" name="username" value="admin" readonly>
                                         <small class="form-note">Tên đăng nhập không thể thay đổi</small>
                                     </div>
-                                    
+
                                     <div class="form-group">
                                         <label for="language">Ngôn ngữ</label>
                                         <select id="language" name="language">
@@ -307,7 +369,7 @@
                                             <option value="ja">日本語</option>
                                         </select>
                                     </div>
-                                    
+
                                     <div class="form-group">
                                         <label for="timezone">Múi giờ</label>
                                         <select id="timezone" name="timezone">
@@ -316,7 +378,7 @@
                                             <option value="UTC">GMT+0 (UTC)</option>
                                         </select>
                                     </div>
-                                    
+
                                     <div class="form-group">
                                         <label for="dateFormat">Định dạng ngày</label>
                                         <select id="dateFormat" name="dateFormat">
@@ -326,7 +388,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                
+
                                 <div class="settings-toggles">
                                     <div class="toggle-item">
                                         <div class="toggle-info">
@@ -339,10 +401,24 @@
                                         </label>
                                     </div>
                                 </div>
+
+                                <div class="form-group pt-20">
+                                    <div class="action-buttons justify-content-end">
+                                        <button type="button" class="btn btn-outline">
+                                            <i class="fas fa-times"></i>
+                                            Hủy bỏ
+                                        </button>
+                                        <button type="button" class="btn btn-success pulse">
+                                            <i class="fas fa-save"></i>
+                                            Lưu thay đổi
+                                        </button>
+                                    </div>
+                                </div>
+
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- Security Tab -->
                     <div class="tab-content" id="security">
                         <form id="securityForm">
@@ -354,23 +430,27 @@
                                     </h3>
                                     <p>Cập nhật mật khẩu để bảo mật tài khoản</p>
                                 </div>
-                                
+
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="currentPassword">Mật khẩu hiện tại</label>
                                         <div class="password-input">
-                                            <input type="password" id="currentPassword" name="currentPassword" placeholder="Nhập mật khẩu hiện tại">
-                                            <button type="button" class="password-toggle" onclick="togglePassword('currentPassword')">
+                                            <input type="password" id="currentPassword" name="currentPassword"
+                                                placeholder="Nhập mật khẩu hiện tại">
+                                            <button type="button" class="password-toggle"
+                                                onclick="togglePassword('currentPassword')">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="form-group">
                                         <label for="newPassword">Mật khẩu mới</label>
                                         <div class="password-input">
-                                            <input type="password" id="newPassword" name="newPassword" placeholder="Nhập mật khẩu mới">
-                                            <button type="button" class="password-toggle" onclick="togglePassword('newPassword')">
+                                            <input type="password" id="newPassword" name="newPassword"
+                                                placeholder="Nhập mật khẩu mới">
+                                            <button type="button" class="password-toggle"
+                                                onclick="togglePassword('newPassword')">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
@@ -379,29 +459,34 @@
                                             <span class="strength-text">Độ mạnh mật khẩu</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="form-group">
                                         <label for="confirmPassword">Xác nhận mật khẩu mới</label>
                                         <div class="password-input">
-                                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu mới">
-                                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                                            <input type="password" id="confirmPassword" name="confirmPassword"
+                                                placeholder="Nhập lại mật khẩu mới">
+                                            <button type="button" class="password-toggle"
+                                                onclick="togglePassword('confirmPassword')">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="password-requirements">
                                     <h4>Yêu cầu mật khẩu:</h4>
                                     <ul>
-                                        <li><i class="fas fa-circle requirement" id="length-req"></i> Ít nhất 8 ký tự</li>
+                                        <li><i class="fas fa-circle requirement" id="length-req"></i> Ít nhất 8 ký tự
+                                        </li>
                                         <li><i class="fas fa-circle requirement" id="uppercase-req"></i> Có chữ hoa</li>
-                                        <li><i class="fas fa-circle requirement" id="lowercase-req"></i> Có chữ thường</li>
+                                        <li><i class="fas fa-circle requirement" id="lowercase-req"></i> Có chữ thường
+                                        </li>
                                         <li><i class="fas fa-circle requirement" id="number-req"></i> Có số</li>
-                                        <li><i class="fas fa-circle requirement" id="special-req"></i> Có ký tự đặc biệt</li>
+                                        <li><i class="fas fa-circle requirement" id="special-req"></i> Có ký tự đặc biệt
+                                        </li>
                                     </ul>
                                 </div>
-                                
+
                                 <div class="form-actions">
                                     <button type="button" class="btn btn-primary" id="changePasswordBtn">
                                         <i class="fas fa-key"></i>
@@ -409,7 +494,7 @@
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div class="content-section">
                                 <div class="section-header">
                                     <h3>
@@ -418,7 +503,7 @@
                                     </h3>
                                     <p>Cài đặt bảo mật bổ sung cho tài khoản</p>
                                 </div>
-                                
+
                                 <div class="security-options">
                                     <div class="security-item">
                                         <div class="security-info">
@@ -431,7 +516,7 @@
                                             Kích hoạt 2FA
                                         </button>
                                     </div>
-                                    
+
                                     <div class="security-item">
                                         <div class="security-info">
                                             <h4>Thiết bị đăng nhập</h4>
@@ -447,7 +532,7 @@
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- Preferences Tab -->
                     <div class="tab-content" id="preferences">
                         <form id="preferencesForm">
@@ -459,7 +544,7 @@
                                     </h3>
                                     <p>Cài đặt thông báo và email</p>
                                 </div>
-                                
+
                                 <div class="notification-settings">
                                     <div class="notification-category">
                                         <h4>Thông báo hệ thống</h4>
@@ -473,7 +558,7 @@
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
-                                            
+
                                             <div class="toggle-item">
                                                 <div class="toggle-info">
                                                     <span>Cập nhật trạng thái hồ sơ</span>
@@ -483,7 +568,7 @@
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
-                                            
+
                                             <div class="toggle-item">
                                                 <div class="toggle-info">
                                                     <span>Tin nhắn từ học sinh</span>
@@ -495,7 +580,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="notification-category">
                                         <h4>Email thông báo</h4>
                                         <div class="notification-options">
@@ -508,7 +593,7 @@
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
-                                            
+
                                             <div class="toggle-item">
                                                 <div class="toggle-info">
                                                     <span>Thông báo bảo mật</span>
@@ -520,17 +605,38 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="form-group pt-20">
+                                        <div class="action-buttons justify-content-end">
+                                            <button type="button" class="btn btn-outline">
+                                                <i class="fas fa-times"></i>
+                                                Hủy bỏ
+                                            </button>
+                                            <button type="button" class="btn btn-success pulse">
+                                                <i class="fas fa-save"></i>
+                                                Lưu thay đổi
+                                            </button>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
+
             </div>
         </div>
+        <!-- Content Container End -->
     </main>
 
-    <script src="assets/js/dashboard.js"></script>
-    <script src="assets/js/notifications.js"></script>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <script src="assets/js/common.js"></script>
+    <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/notifications.js"></script>
+    <script src="assets/js/components/header-profile.js"></script>
     <script src="assets/js/profile.js"></script>
 </body>
 
