@@ -1,40 +1,18 @@
-/**
+﻿/**
  * Users Management JavaScript
  * Handles table functionality, filtering, pagination, sorting
  */
 
-// Sample users data
+// Sample users data (reduced from 30 to 8 entries)
 const SAMPLE_USERS = [
-    { id: 1, name: 'Nguyễn Văn An', username: 'admin', email: 'admin@duhocnb.com', role: 'admin', status: 'active', created: '2024-01-15', avatar: 'assets/images/av.png' },
-    { id: 2, name: 'Trần Thị Bích', username: 'manager01', email: 'bich.tran@duhocnb.com', role: 'manager', status: 'active', created: '2024-01-20', avatar: 'assets/images/av.png' },
-    { id: 3, name: 'Lê Văn Cường', username: 'staff01', email: 'cuong.le@duhocnb.com', role: 'staff', status: 'active', created: '2024-02-01', avatar: 'assets/images/av.png' },
-    { id: 4, name: 'Phạm Thị Dung', username: 'student01', email: 'dung.pham@email.com', role: 'student', status: 'pending', created: '2024-02-10', avatar: 'assets/images/av.png' },
-    { id: 5, name: 'Hoàng Văn Em', username: 'student02', email: 'em.hoang@email.com', role: 'student', status: 'active', created: '2024-02-15', avatar: 'assets/images/av.png' },
-    { id: 6, name: 'Vũ Thị Phương', username: 'staff02', email: 'phuong.vu@duhocnb.com', role: 'staff', status: 'inactive', created: '2024-02-20', avatar: 'assets/images/av.png' },
-    { id: 7, name: 'Đỗ Văn Giang', username: 'student03', email: 'giang.do@email.com', role: 'student', status: 'active', created: '2024-03-01', avatar: 'assets/images/av.png' },
-    { id: 8, name: 'Ngô Thị Hậu', username: 'manager02', email: 'hau.ngo@duhocnb.com', role: 'manager', status: 'active', created: '2024-03-05', avatar: 'assets/images/av.png' },
-    { id: 9, name: 'Bùi Văn Ích', username: 'student04', email: 'ich.bui@email.com', role: 'student', status: 'pending', created: '2024-03-10', avatar: 'assets/images/av.png' },
-    { id: 10, name: 'Tô Thị Kim', username: 'staff03', email: 'kim.to@duhocnb.com', role: 'staff', status: 'active', created: '2024-03-15', avatar: 'assets/images/av.png' },
-    { id: 11, name: 'Lý Văn Long', username: 'student05', email: 'long.ly@email.com', role: 'student', status: 'active', created: '2024-03-20', avatar: 'assets/images/av.png' },
-    { id: 12, name: 'Mai Thị Minh', username: 'student06', email: 'minh.mai@email.com', role: 'student', status: 'inactive', created: '2024-03-25', avatar: 'assets/images/av.png' },
-    { id: 13, name: 'Chu Văn Nam', username: 'student07', email: 'nam.chu@email.com', role: 'student', status: 'active', created: '2024-04-01', avatar: 'assets/images/av.png' },
-    { id: 14, name: 'Đinh Thị Oanh', username: 'staff04', email: 'oanh.dinh@duhocnb.com', role: 'staff', status: 'active', created: '2024-04-05', avatar: 'assets/images/av.png' },
-    { id: 15, name: 'Hà Văn Phúc', username: 'student08', email: 'phuc.ha@email.com', role: 'student', status: 'pending', created: '2024-04-05', avatar: 'assets/images/av.png' },
-    { id: 16, name: 'Trịnh Thị Quỳnh', username: 'manager03', email: 'quynh.trinh@duhocnb.com', role: 'manager', status: 'active', created: '2024-01-10', avatar: 'assets/images/av.png' },
-    { id: 17, name: 'Đặng Văn Rạng', username: 'student09', email: 'rang.dang@email.com', role: 'student', status: 'active', created: '2024-01-25', avatar: 'assets/images/av.png' },
-    { id: 18, name: 'Cao Thị Sen', username: 'staff05', email: 'sen.cao@duhocnb.com', role: 'staff', status: 'inactive', created: '2024-02-05', avatar: 'assets/images/av.png' },
-    { id: 19, name: 'Phan Văn Tài', username: 'student10', email: 'tai.phan@email.com', role: 'student', status: 'active', created: '2024-02-18', avatar: 'assets/images/av.png' },
-    { id: 20, name: 'Võ Thị Uyên', username: 'student11', email: 'uyen.vo@email.com', role: 'student', status: 'pending', created: '2024-03-08', avatar: 'assets/images/av.png' },
-    { id: 21, name: 'Lưu Văn Việt', username: 'student12', email: 'viet.luu@email.com', role: 'student', status: 'active', created: '2024-03-18', avatar: 'assets/images/av.png' },
-    { id: 22, name: 'Dương Thị Xuân', username: 'staff06', email: 'xuan.duong@duhocnb.com', role: 'staff', status: 'active', created: '2024-03-28', avatar: 'assets/images/av.png' },
-    { id: 23, name: 'Kiều Văn Yên', username: 'student13', email: 'yen.kieu@email.com', role: 'student', status: 'active', created: '2024-04-02', avatar: 'assets/images/av.png' },
-    { id: 24, name: 'Thái Thị Zung', username: 'student14', email: 'zung.thai@email.com', role: 'student', status: 'inactive', created: '2024-04-04', avatar: 'assets/images/av.png' },
-    { id: 25, name: 'Huỳnh Văn Anh', username: 'student15', email: 'anh.huynh@email.com', role: 'student', status: 'pending', created: '2024-04-06', avatar: 'assets/images/av.png' },
-    { id: 26, name: 'Lại Thị Bảo', username: 'manager04', email: 'bao.lai@duhocnb.com', role: 'manager', status: 'active', created: '2024-01-08', avatar: 'assets/images/av.png' },
-    { id: 27, name: 'Ông Văn Công', username: 'staff07', email: 'cong.ong@duhocnb.com', role: 'staff', status: 'active', created: '2024-01-30', avatar: 'assets/images/av.png' },
-    { id: 28, name: 'Tôn Thị Đào', username: 'student16', email: 'dao.ton@email.com', role: 'student', status: 'active', created: '2024-02-12', avatar: 'assets/images/av.png' },
-    { id: 29, name: 'Lâm Văn Ế', username: 'student17', email: 'e.lam@email.com', role: 'student', status: 'inactive', created: '2024-02-22', avatar: 'assets/images/av.png' },
-    { id: 30, name: 'Ứng Thị Phượng', username: 'staff08', email: 'phuong.ung@duhocnb.com', role: 'staff', status: 'active', created: '2024-03-12', avatar: 'assets/images/av.png' }
+    { id: 1, name: 'Nguyễn Văn An', username: 'admin', email: 'admin@duhocnb.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/admin', role: 'admin', status: 'active', created: '2024-01-15', avatar: 'assets/images/av.png' },
+    { id: 2, name: 'Trần Thị Bích', username: 'manager01', email: 'bich.tran@duhocnb.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/manager01', role: 'manager', status: 'active', created: '2024-01-20', avatar: 'assets/images/av.png' },
+    { id: 3, name: 'Lê Văn Cường', username: 'consultant01', email: 'cuong.le@duhocnb.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/consultant01', role: 'consultant', status: 'active', created: '2024-02-01', avatar: 'assets/images/av.png' },
+    { id: 4, name: 'Phạm Thị Dung', username: 'content_writer01', email: 'dung.pham@email.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/content_writer01', role: 'content_writer', status: 'pending', created: '2024-02-10', avatar: 'assets/images/av.png' },
+    { id: 5, name: 'Hoàng Văn Em', username: 'content_writer02', email: 'em.hoang@email.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/content_writer02', role: 'content_writer', status: 'active', created: '2024-02-15', avatar: 'assets/images/av.png' },
+    { id: 6, name: 'Vũ Thị Phương', username: 'consultant02', email: 'phuong.vu@duhocnb.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/consultant02', role: 'consultant', status: 'inactive', created: '2024-02-20', avatar: 'assets/images/av.png' },
+    { id: 7, name: 'Đỗ Văn Giang', username: 'content_writer03', email: 'giang.do@email.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/content_writer03', role: 'content_writer', status: 'active', created: '2024-03-01', avatar: 'assets/images/av.png' },
+    { id: 8, name: 'Ngô Thị Hậu', username: 'manager02', email: 'hau.ngo@duhocnb.com', phone: '0123456789', zalo: '0123456789', facebook: 'facebook.com/manager02', role: 'manager', status: 'active', created: '2024-03-05', avatar: 'assets/images/av.png' }
 ];
 
 // Table state management
@@ -55,6 +33,50 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeElements();
     initializeEventListeners();
     renderTable();
+    
+    // Modal event listeners
+    const modal = document.getElementById('userDetailModal');
+    const closeBtn = document.getElementById('userDetailClose');
+    const cancelBtn = document.getElementById('userDetailCancel');
+    
+    // Close modal events
+    closeBtn?.addEventListener('click', closeUserDetailModal);
+    cancelBtn?.addEventListener('click', closeUserDetailModal);
+    
+    // Click outside modal to close
+    modal?.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeUserDetailModal();
+        }
+    });
+    
+    // ESC key to close
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (modal.classList.contains('show')) {
+                closeUserDetailModal();
+            }
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            if (deleteModal && deleteModal.classList.contains('show')) {
+                closeDeleteConfirmModal();
+            }
+        }
+    });
+    
+    // Delete confirmation modal event listeners
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    cancelDeleteBtn?.addEventListener('click', closeDeleteConfirmModal);
+    confirmDeleteBtn?.addEventListener('click', confirmUserDeletion);
+    
+    // Click outside delete modal to close
+    deleteModal?.addEventListener('click', function(e) {
+        if (e.target === deleteModal) {
+            closeDeleteConfirmModal();
+        }
+    });
 });
 
 function initializeElements() {
@@ -123,18 +145,6 @@ function initializeEventListeners() {
     if (prevPageBtn) prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
     if (nextPageBtn) nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
     if (lastPageBtn) lastPageBtn.addEventListener('click', () => goToPage(getTotalPages()));
-    
-    // Add user button
-    const addUserBtn = document.getElementById('addUserBtn');
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', handleAddUser);
-    }
-    
-    // Export button  
-    const exportBtn = document.getElementById('exportBtn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', handleExport);
-    }
 }
 
 // Search with debounce
@@ -151,7 +161,10 @@ function applyFilters() {
         const matchesSearch = !searchTerm || 
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
-            user.username.toLowerCase().includes(searchTerm);
+            user.username.toLowerCase().includes(searchTerm) ||
+            user.phone.toLowerCase().includes(searchTerm) ||
+            user.zalo.toLowerCase().includes(searchTerm) ||
+            user.facebook.toLowerCase().includes(searchTerm);
             
         const matchesRole = !roleValue || user.role === roleValue;
         const matchesStatus = !statusValue || user.status === statusValue;
@@ -179,7 +192,10 @@ function clearAllFilters() {
     currentPage = 1;
     renderTable();
     
-    showNotification('Đã xóa tất cả bộ lọc', 'success');
+    // Show notification if available
+    if (typeof showNotification === 'function') {
+        showNotification('Đã xóa tất cả bộ lọc', 'success');
+    }
 }
 
 function handleSort(header) {
@@ -230,18 +246,14 @@ function getTotalPages() {
 }
 
 function renderTable() {
-    showLoading(true);
+    if (filteredUsers.length === 0) {
+        showEmptyState();
+        return;
+    }
     
-    setTimeout(() => {
-        if (filteredUsers.length === 0) {
-            showEmptyState();
-            return;
-        }
-        
-        populateTable();
-        updatePagination();
-        showLoading(false);
-    }, 500); // Simulate loading delay
+    populateTable();
+    updatePagination();
+    showLoading(false);
 }
 
 function populateTable() {
@@ -408,8 +420,8 @@ function getRoleText(role) {
     const roleTexts = {
         'admin': 'Admin',
         'manager': 'Manager', 
-        'staff': 'Staff',
-        'student': 'Học sinh'
+        'content_writer': 'Viết tin tức',
+        'consultant': 'Tư vấn viên'
     };
     return roleTexts[role] || role;
 }
@@ -432,47 +444,6 @@ function formatDate(dateString) {
     });
 }
 
-// Action handlers
-function viewUser(userId) {
-    const user = filteredUsers.find(u => u.id === userId);
-    if (user) {
-        showNotification(`Xem chi tiết người dùng: ${user.name}`, 'info');
-        // In real app: navigate to user detail page
-    }
-}
-
-function editUser(userId) {
-    const user = filteredUsers.find(u => u.id === userId);
-    if (user) {
-        showNotification(`Chỉnh sửa người dùng: ${user.name}`, 'info');
-        // In real app: open edit modal or navigate to edit page
-    }
-}
-
-function deleteUser(userId) {
-    const user = filteredUsers.find(u => u.id === userId);
-    if (user && confirm(`Bạn có chắc muốn xóa người dùng "${user.name}"?`)) {
-        // Remove from data
-        currentUsers = currentUsers.filter(u => u.id !== userId);
-        applyFilters(); // Re-apply filters and re-render
-        showNotification(`Đã xóa người dùng: ${user.name}`, 'success');
-    }
-}
-
-function handleAddUser() {
-    showNotification('Chức năng thêm người dùng đang được phát triển', 'info');
-    // In real app: open add user modal or navigate to add page
-}
-
-function handleExport() {
-    showNotification('Đang xuất dữ liệu Excel...', 'info');
-    // In real app: export table data to Excel file
-    setTimeout(() => {
-        showNotification('Xuất Excel thành công!', 'success');
-    }, 2000);
-}
-
-// Debounce utility (use the one from dashboard.js if available)
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -483,4 +454,157 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// User Detail Modal Management
+function viewUser(userId) {
+    const user = SAMPLE_USERS.find(u => u.id === parseInt(userId));
+    if (!user) {
+        console.error('User not found:', userId);
+        return;
+    }
+    
+    openUserDetailModal(user);
+}
+
+function openUserDetailModal(user) {
+    const modal = document.getElementById('userDetailModal');
+    const loading = document.getElementById('userDetailLoading');
+    const content = document.getElementById('userDetailContent');
+    
+    // Show modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    // Show loading
+    loading.style.display = 'block';
+    content.style.display = 'none';
+    
+    // Simulate loading delay (remove in production)
+    setTimeout(() => {
+        populateUserDetail(user);
+        loading.style.display = 'none';
+        content.style.display = 'block';
+    }, 500);
+}
+
+function populateUserDetail(user) {
+    // Populate avatar
+    const avatar = document.getElementById('detailAvatar');
+    avatar.src = user.avatar;
+    avatar.alt = user.name;
+    avatar.onerror = function() { this.src = 'assets/images/av.png'; };
+    
+    // Populate basic info
+    document.getElementById('detailId').textContent = user.id;
+    document.getElementById('detailName').textContent = user.name;
+    document.getElementById('detailUsername').textContent = user.username;
+    document.getElementById('detailEmail').textContent = user.email;
+    
+    // Check if phone, zalo, facebook fields exist before populating
+    const phoneElement = document.getElementById('detailPhone');
+    if (phoneElement) phoneElement.textContent = user.phone || '';
+    
+    const zaloElement = document.getElementById('detailZalo');
+    if (zaloElement) zaloElement.textContent = user.zalo || '';
+    
+    const facebookElement = document.getElementById('detailFacebook');
+    if (facebookElement) facebookElement.textContent = user.facebook || '';
+    
+    // Populate role with styling
+    const roleElement = document.getElementById('detailRole');
+    roleElement.textContent = getRoleText(user.role);
+    roleElement.className = `role-badge ${user.role}`;
+    
+    // Populate status with styling
+    const statusElement = document.getElementById('detailStatus');
+    statusElement.textContent = getStatusText(user.status);
+    statusElement.className = `status-badge ${user.status}`;
+    
+    // Populate created date
+    document.getElementById('detailCreated').textContent = formatDate(user.created);
+    
+    // Setup edit button
+    const editButton = document.getElementById('userDetailEdit');
+    editButton.onclick = () => {
+        closeUserDetailModal();
+        editUser(user.id);
+    };
+}
+
+function closeUserDetailModal() {
+    const modal = document.getElementById('userDetailModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Delete Confirmation Modal Management
+let userToDelete = null;
+
+function deleteUser(userId) {
+    const user = SAMPLE_USERS.find(u => u.id === parseInt(userId));
+    if (!user) {
+        console.error('User not found:', userId);
+        return;
+    }
+    
+    openDeleteConfirmModal(user);
+}
+
+function openDeleteConfirmModal(user) {
+    userToDelete = user;
+    const modal = document.getElementById('deleteConfirmModal');
+    const userNameElement = document.getElementById('deleteUserName');
+    
+    // Set user name in modal
+    if (userNameElement) {
+        userNameElement.textContent = user.name;
+    }
+    
+    // Show modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function confirmUserDeletion() {
+    if (!userToDelete) return;
+    
+    // Remove user from arrays
+    const userIndex = currentUsers.findIndex(u => u.id === userToDelete.id);
+    if (userIndex > -1) {
+        currentUsers.splice(userIndex, 1);
+    }
+    
+    const filteredIndex = filteredUsers.findIndex(u => u.id === userToDelete.id);
+    if (filteredIndex > -1) {
+        filteredUsers.splice(filteredIndex, 1);
+    }
+    
+    // Show success notification if available
+    if (typeof showToast === 'function') {
+        showToast(`Đã xóa người dùng "${userToDelete.name}" thành công`, 'success');
+    } else if (typeof showNotification === 'function') {
+        showNotification(`Đã xóa người dùng "${userToDelete.name}" thành công`, 'success');
+    }
+    
+    console.log(`User deleted: ${userToDelete.id}`);
+    
+    // Close modal and refresh table
+    closeDeleteConfirmModal();
+    renderTable();
+    
+    // Clear reference
+    userToDelete = null;
+}
+
+function closeDeleteConfirmModal() {
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    userToDelete = null;
+}
+
+function editUser(userId) {
+    console.log('Edit user:', userId);
+    // Implementation for edit user functionality
 }

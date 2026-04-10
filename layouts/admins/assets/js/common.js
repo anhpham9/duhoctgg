@@ -30,7 +30,7 @@ class ModalManager {
 
         const styles = `
             <style id="modal-styles">
-                .modal-overlay {
+                .common-modal-overlay {
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -46,7 +46,7 @@ class ModalManager {
                     animation: fadeIn 0.3s ease-out forwards;
                 }
 
-                .modal-content {
+                .common-modal-content {
                     background: white;
                     border-radius: 12px;
                     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -57,12 +57,12 @@ class ModalManager {
                     animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
 
-                .modal-header {
+                .common-modal-header {
                     padding: 24px 24px 16px 24px;
                     border-bottom: 1px solid #eee;
                 }
 
-                .modal-title {
+                .common-modal-title {
                     font-size: 1.25rem;
                     font-weight: 600;
                     color: #333;
@@ -72,24 +72,24 @@ class ModalManager {
                     gap: 10px;
                 }
 
-                .modal-body {
+                .common-modal-body {
                     padding: 20px 24px;
                 }
 
-                .modal-message {
+                .common-modal-message {
                     color: #666;
                     line-height: 1.6;
                     margin: 0;
                 }
 
-                .modal-footer {
+                .common-modal-footer {
                     padding: 16px 24px 24px 24px;
                     display: flex;
                     gap: 12px;
                     justify-content: flex-end;
                 }
 
-                .modal-btn {
+                .common-modal-btn {
                     padding: 10px 20px;
                     border: none;
                     border-radius: 6px;
@@ -99,50 +99,50 @@ class ModalManager {
                     min-width: 80px;
                 }
 
-                .modal-btn-cancel {
+                .common-modal-btn-cancel {
                     background: #f8f9fa;
                     color: #666;
                     border: 1px solid #ddd;
                 }
 
-                .modal-btn-cancel:hover {
+                .common-modal-btn-cancel:hover {
                     background: #e9ecef;
                     color: #333;
                 }
 
-                .modal-btn-danger {
+                .common-modal-btn-danger {
                     background: #dc3545;
                     color: white;
                 }
 
-                .modal-btn-danger:hover {
+                .common-modal-btn-danger:hover {
                     background: #c82333;
                     transform: translateY(-1px);
                 }
 
-                .modal-btn-primary {
+                .common-modal-btn-primary {
                     background: #007bff;
                     color: white;
                 }
 
-                .modal-btn-primary:hover {
+                .common-modal-btn-primary:hover {
                     background: #0056b3;
                     transform: translateY(-1px);
                 }
 
-                .modal-icon {
+                .common-modal-icon {
                     font-size: 1.2rem;
                 }
 
-                .modal-icon.danger {
+                .common-modal-icon.danger {
                     color: #dc3545;
                 }
 
-                .modal-icon.warning {
+                .common-modal-icon.warning {
                     color: #ffc107;
                 }
 
-                .modal-icon.info {
+                .common-modal-icon.info {
                     color: #007bff;
                 }
 
@@ -157,16 +157,16 @@ class ModalManager {
                 }
 
                 @media (max-width: 480px) {
-                    .modal-content {
+                    .common-modal-content {
                         min-width: auto;
                         margin: 20px;
                     }
                     
-                    .modal-footer {
+                    .common-modal-footer {
                         flex-direction: column-reverse;
                     }
                     
-                    .modal-btn {
+                    .common-modal-btn {
                         width: 100%;
                     }
                 }
@@ -196,22 +196,22 @@ class ModalManager {
 
         // Create modal HTML
         const modalHTML = `
-            <div class="modal-overlay" id="commonModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3 class="modal-title">
-                            <i class="${icon} modal-icon ${iconType}"></i>
+            <div class="common-modal-overlay" id="commonModal">
+                <div class="common-modal-content">
+                    <div class="common-modal-header">
+                        <h3 class="common-modal-title">
+                            <i class="${icon} common-modal-icon ${iconType}"></i>
                             ${title}
                         </h3>
                     </div>
-                    <div class="modal-body">
-                        <p class="modal-message">${message}</p>
+                    <div class="common-modal-body">
+                        <p class="common-modal-message">${message}</p>
                     </div>
-                    <div class="modal-footer">
-                        <button class="modal-btn modal-btn-cancel" id="modalCancel">
+                    <div class="common-modal-footer">
+                        <button class="common-modal-btn common-modal-btn-cancel" id="modalCancel">
                             ${cancelText}
                         </button>
-                        <button class="modal-btn modal-btn-${confirmType}" id="modalConfirm">
+                        <button class="common-modal-btn common-modal-btn-${confirmType}" id="modalConfirm">
                             ${confirmText}
                         </button>
                     </div>
