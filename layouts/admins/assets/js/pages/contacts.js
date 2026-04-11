@@ -10,8 +10,8 @@ const SAMPLE_CONTACTS = [
         name: 'Nguyễn Thị Mai', 
         email: 'mai.nguyen@email.com', 
         phone: '0901234567', 
-        category: 'general', 
         status: 'new', 
+        method: '',
         priority: 'high',
         message: 'Xin chào, tôi muốn tìm hiểu về các chương trình du học Nhật Bản. Gia đình tôi đang quan tâm đến việc cho con du học sau khi tốt nghiệp cấp 3. Mong được tư vấn chi tiết.',
         created: '2024-04-06', 
@@ -21,9 +21,9 @@ const SAMPLE_CONTACTS = [
         id: 2, 
         name: 'Lê Văn Đức', 
         email: 'duc.le@email.com', 
-        phone: '0912345678', 
-        category: 'programs', 
+        phone: '0912345678',
         status: 'in-progress', 
+        method: 'email',
         priority: 'medium',
         message: 'Tôi muốn biết thêm thông tin về học phí và chi phí sinh hoạt khi du học Nhật Bản. Hiện tại tôi đang học năm cuối đại học.',
         created: '2024-04-05', 
@@ -34,8 +34,8 @@ const SAMPLE_CONTACTS = [
         name: 'Trần Thị Hồng', 
         email: 'hong.tran@email.com', 
         phone: '0923456789', 
-        category: 'application', 
         status: 'replied', 
+        method: 'phone',
         priority: 'high',
         message: 'Em đang chuẩn bị hồ sơ du học và cần hỗ trợ về thủ tục visa. Em có thể liên hệ trực tiếp không ạ?',
         created: '2024-04-04', 
@@ -46,8 +46,8 @@ const SAMPLE_CONTACTS = [
         name: 'Phạm Văn Tuấn', 
         email: 'tuan.pham@email.com', 
         phone: '0934567890', 
-        category: 'visa', 
         status: 'completed', 
+        method: 'email',
         priority: 'medium',
         message: 'Xin hỏi quy trình xin visa du học có phức tạp không? Thời gian xử lý bao lâu và cần chuẩn bị những giấy tờ gì?',
         created: '2024-04-03', 
@@ -58,8 +58,8 @@ const SAMPLE_CONTACTS = [
         name: 'Hoàng Thị Linh', 
         email: 'linh.hoang@email.com', 
         phone: '0945678901', 
-        category: 'accommodation', 
         status: 'new', 
+        method: '',
         priority: 'low',
         message: 'Tôi quan tâm đến việc thuê nhà ở bên Nhật. Có dịch vụ hỗ trợ tìm nhà cho du học sinh không?',
         created: '2024-04-02', 
@@ -70,8 +70,8 @@ const SAMPLE_CONTACTS = [
         name: 'Đỗ Văn Quang', 
         email: 'quang.do@email.com', 
         phone: '0956789012', 
-        category: 'general', 
         status: 'in-progress', 
+        method: 'phone',
         priority: 'medium',
         message: 'Con tôi đang học lớp 11, muốn tìm hiểu sớm về du học để chuẩn bị kỹ càng. Bên công ty có tổ chức seminar không?',
         created: '2024-04-01', 
@@ -82,8 +82,8 @@ const SAMPLE_CONTACTS = [
         name: 'Vũ Thị Nga', 
         email: 'nga.vu@email.com', 
         phone: '0967890123', 
-        category: 'programs', 
         status: 'replied', 
+        method: 'email',
         priority: 'high',
         message: 'Em muốn du học ngành công nghệ thông tin. Xin tư vấn các trường tốt và điều kiện đầu vào.',
         created: '2024-03-31', 
@@ -94,8 +94,8 @@ const SAMPLE_CONTACTS = [
         name: 'Bùi Văn Nam', 
         email: 'nam.bui@email.com', 
         phone: '0978901234', 
-        category: 'application', 
         status: 'completed', 
+        method: 'email',
         priority: 'medium',
         message: 'Tôi cần hỗ trợ dịch thuật hồ sơ và công chứng các giấy tờ cần thiết cho việc du học.',
         created: '2024-03-30', 
@@ -106,8 +106,8 @@ const SAMPLE_CONTACTS = [
         name: 'Lý Thị Thúy', 
         email: 'thuy.ly@email.com', 
         phone: '0989012345', 
-        category: 'visa', 
         status: 'archived', 
+        method: 'phone',
         priority: 'low',
         message: 'Xin hỏi về thủ tục gia hạn visa du học khi đã ở Nhật Bản.',
         created: '2024-03-29', 
@@ -118,8 +118,8 @@ const SAMPLE_CONTACTS = [
         name: 'Cao Văn Hải', 
         email: 'hai.cao@email.com', 
         phone: '0990123456', 
-        category: 'other', 
         status: 'new', 
+        method: '',
         priority: 'medium',
         message: 'Tôi muốn biết về cơ hội việc làm part-time cho du học sinh tại Nhật Bản.',
         created: '2024-03-28', 
@@ -130,8 +130,8 @@ const SAMPLE_CONTACTS = [
         name: 'Đinh Thị Hương', 
         email: 'huong.dinh@email.com', 
         phone: '0901234568', 
-        category: 'general', 
         status: 'in-progress', 
+        method: 'phone',
         priority: 'high',
         message: 'Gia đình tôi muốn đặt lịch tư vấn trực tiếp tại văn phòng. Xin cho biết thời gian làm việc.',
         created: '2024-03-27', 
@@ -142,8 +142,8 @@ const SAMPLE_CONTACTS = [
         name: 'Tạ Văn Dũng', 
         email: 'dung.ta@email.com', 
         phone: '0912345679', 
-        category: 'programs', 
         status: 'completed', 
+        method: 'email',
         priority: 'medium',
         message: 'Em muốn tìm hiểu về chương trình học tiếng Nhật trước khi du học chính thức.',
         created: '2024-03-26', 
@@ -154,8 +154,8 @@ const SAMPLE_CONTACTS = [
         name: 'Nghiêm Thị Lan', 
         email: 'lan.nghiem@email.com', 
         phone: '0923456780', 
-        category: 'accommodation', 
         status: 'replied', 
+        method: 'email',
         priority: 'low',
         message: 'Tôi muốn biết về các loại hình ở như ký túc xá, homestay hay thuê nhà riêng.',
         created: '2024-03-25', 
@@ -166,8 +166,8 @@ const SAMPLE_CONTACTS = [
         name: 'Phan Văn Long', 
         email: 'long.phan@email.com', 
         phone: '0934567891', 
-        category: 'application', 
         status: 'new', 
+        method: '',
         priority: 'high',
         message: 'Em cần hỗ trợ chuẩn bị hồ sơ xin học bổng du học Nhật Bản. Xin tư vấn chi tiết.',
         created: '2024-03-24', 
@@ -178,8 +178,8 @@ const SAMPLE_CONTACTS = [
         name: 'Vương Thị Mai', 
         email: 'mai.vuong@email.com', 
         phone: '0945678902', 
-        category: 'other', 
         status: 'archived', 
+        method: 'phone',
         priority: 'low',
         message: 'Tôi muốn biết về quyền lợi bảo hiểm y tế cho du học sinh tại Nhật Bản.',
         created: '2024-03-23', 
@@ -196,7 +196,7 @@ let sortColumn = '';
 let sortDirection = 'asc';
 
 // DOM elements
-let searchInput, statusFilter, priorityFilter, categoryFilter, dateFromFilter, dateToFilter;
+let searchInput, statusFilter, priorityFilter, dateFromFilter, dateToFilter;
 let contactsTableBody, paginationInfo, paginationNumbers;
 let tableLoading, tableEmpty;
 let firstPageBtn, prevPageBtn, nextPageBtn, lastPageBtn;
@@ -207,6 +207,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     renderTable();
     updateStats();
+
+    const closeBtn = document.getElementById('modalClose');
+    const cancelBtn = document.getElementById('detailCancel');
+
+    // Close modal events
+    closeBtn?.addEventListener('click', closeDetailModal);
+    cancelBtn?.addEventListener('click', closeDetailModal);
 });
 
 function initializeElements() {
@@ -214,7 +221,6 @@ function initializeElements() {
     searchInput = document.getElementById('searchInput');
     statusFilter = document.getElementById('statusFilter');
     priorityFilter = document.getElementById('priorityFilter');
-    categoryFilter = document.getElementById('categoryFilter');
     dateFromFilter = document.getElementById('dateFromFilter');
     dateToFilter = document.getElementById('dateToFilter');
     
@@ -243,7 +249,6 @@ function initializeEventListeners() {
     if (searchInput) searchInput.addEventListener('input', debounceSearch);
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
     if (priorityFilter) priorityFilter.addEventListener('change', applyFilters);
-    if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
     if (dateFromFilter) dateFromFilter.addEventListener('change', applyFilters);
     if (dateToFilter) dateToFilter.addEventListener('change', applyFilters);
     
@@ -298,7 +303,6 @@ function applyFilters() {
     const searchTerm = searchInput?.value.toLowerCase() || '';
     const statusValue = statusFilter?.value || '';
     const priorityValue = priorityFilter?.value || '';
-    const categoryValue = categoryFilter?.value || '';
     const dateFromValue = dateFromFilter?.value || '';
     const dateToValue = dateToFilter?.value || '';
     
@@ -311,13 +315,12 @@ function applyFilters() {
             
         const matchesStatus = !statusValue || contact.status === statusValue;
         const matchesPriority = !priorityValue || contact.priority === priorityValue;
-        const matchesCategory = !categoryValue || contact.category === categoryValue;
         
         const matchesDateFrom = !dateFromValue || contact.created >= dateFromValue;
         const matchesDateTo = !dateToValue || contact.created <= dateToValue;
         
         return matchesSearch && matchesStatus && matchesPriority && 
-               matchesCategory && matchesDateFrom && matchesDateTo;
+               matchesDateFrom && matchesDateTo;
     });
     
     currentPage = 1; // Reset to first page
@@ -337,7 +340,6 @@ function clearAllFilters() {
     if (searchInput) searchInput.value = '';
     if (statusFilter) statusFilter.value = '';
     if (priorityFilter) priorityFilter.value = '';
-    if (categoryFilter) categoryFilter.value = '';
     if (dateFromFilter) dateFromFilter.value = '';
     if (dateToFilter) dateToFilter.value = '';
     
@@ -439,7 +441,7 @@ function populateTable() {
             <td>${contact.email}</td>
             <td>${formatPhone(contact.phone)}</td>
             <td>
-                <span class="category-badge ${contact.category}">${getCategoryText(contact.category)}</span>
+                <span class="message-preview">${truncateText(contact.message, 20)}</span>
             </td>
             <td>
                 <span class="status-badge ${contact.status}">${getStatusText(contact.status)}</span>
@@ -612,18 +614,6 @@ function getPriorityText(priority) {
     return priorityTexts[priority] || priority;
 }
 
-function getCategoryText(category) {
-    const categoryTexts = {
-        'general': 'Tư vấn chung',
-        'programs': 'Chương trình',
-        'application': 'Hồ sơ',
-        'visa': 'Visa',
-        'accommodation': 'Nhà ở',
-        'other': 'Khác'
-    };
-    return categoryTexts[category] || category;
-}
-
 function getStatusText(status) {
     const statusTexts = {
         'new': 'Mới',
@@ -666,37 +656,84 @@ function viewContact(contactId) {
 
 function showContactModal(contact) {
     const modal = document.getElementById('contactModal');
+    const loading = document.getElementById('modalLoading');
+    const content = document.getElementById('modalContent');
+
     const modalTitle = document.getElementById('modalTitle');
     const modalName = document.getElementById('modalName');
     const modalEmail = document.getElementById('modalEmail');
     const modalPhone = document.getElementById('modalPhone');
-    const modalCategory = document.getElementById('modalCategory');
     const modalStatus = document.getElementById('modalStatus');
     const modalDate = document.getElementById('modalDate');
     const modalMessage = document.getElementById('modalMessage');
+    const modalMethod = document.getElementById('modalMethod');
     
     if (modalTitle) modalTitle.textContent = `Liên hệ #${contact.id} - ${contact.name}`;
     if (modalName) modalName.textContent = contact.name;
     if (modalEmail) modalEmail.textContent = contact.email;
     if (modalPhone) modalPhone.textContent = formatPhone(contact.phone);
-    if (modalCategory) modalCategory.textContent = getCategoryText(contact.category);
-    if (modalStatus) modalStatus.textContent = getStatusText(contact.status);
     if (modalDate) modalDate.textContent = formatDate(contact.created);
     if (modalMessage) modalMessage.textContent = contact.message;
     
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
+    // Set status with badge styling
+    if (modalStatus) {
+        modalStatus.textContent = getStatusText(contact.status);
+        modalStatus.className = `status-badge w-fit ${contact.status}`;
+    }
+    
+    // Set contact method with icon
+    if (modalMethod) {
+        let methodIcon = '';
+        let methodText = '';
+        
+        switch (contact.method) {
+            case 'phone':
+                methodIcon = '<i class="fas fa-phone-volume phone"></i>';
+                methodText = 'Điện thoại';
+                break;
+            case 'email':
+                methodIcon = '<i class="fas fa-envelope-open-text email"></i>';
+                methodText = 'Email';
+                break;
+            default:
+                methodIcon = '<i class="fas fa-question-circle unknown"></i>';
+                methodText = contact.method || 'Chưa xác định';
+                break;
+        }
+        
+        modalMethod.innerHTML = `${methodIcon} ${methodText}`;
+    }
+    
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    // Show loading
+    loading.style.display = 'block';
+    content.style.display = 'none';
     
     // Store current contact ID for actions
     modal.dataset.contactId = contact.id;
+
+    setTimeout(() => {
+        loading.style.display = 'none';
+        content.style.display = 'block';
+    }, 500);
 }
 
-function closeContactModal() {
+// function closeContactModal() {
+//     const modal = document.getElementById('contactModal');
+//     modal.classList.remove('show');
+//     setTimeout(() => {
+//         modal.style.display = 'none';
+//     }, 300);
+// }
+
+
+
+function closeDetailModal() {
     const modal = document.getElementById('contactModal');
     modal.classList.remove('show');
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 300);
+    document.body.style.overflow = '';
 }
 
 function replyContactFromModal() {
@@ -745,8 +782,8 @@ function markAsCompleted(contactId) {
         contact.status = 'completed';
         applyFilters();
         updateStats();
-        showNotification(`Đã đánh dấu hoàn thành liên hệ từ ${contact.name}`, 'success');
-        closeContactModal();
+        // showNotification(`Đã đánh dấu hoàn thành liên hệ từ ${contact.name}`, 'success');
+        // closeContactModal();
     }
 }
 

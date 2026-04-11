@@ -245,7 +245,7 @@
                 </div>
 
                 <!-- Users Table -->
-                <div class="users-table-container">
+                <div class="table-container">
                     <div class="table-controls">
                         <div class="table-info">
                             <span>Hiển thị:</span>
@@ -266,6 +266,24 @@
                         </div>
                     </div>
 
+                    <!-- Loading State -->
+                    <div class="table-loading" id="tableLoading" style="display: none;">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="table-empty" id="tableEmpty" style="display: none;">
+                        <div class="empty-content">
+                            <i class="fas fa-users"></i>
+                            <h3>Không tìm thấy người dùng</h3>
+                            <p>Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
+                        </div>
+                    </div>
+
+                    <!-- Table Wrapper -->
                     <div class="table-wrapper">
                         <table class="users-table" id="usersTable">
                             <thead>
@@ -313,23 +331,6 @@
                         </table>
                     </div>
 
-                    <!-- Loading State -->
-                    <div class="table-loading" id="tableLoading" style="display: none;">
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <span>Đang tải dữ liệu...</span>
-                        </div>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div class="table-empty" id="tableEmpty" style="display: none;">
-                        <div class="empty-state">
-                            <i class="fas fa-users"></i>
-                            <h3>Không tìm thấy người dùng</h3>
-                            <p>Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
-                        </div>
-                    </div>
-
                     <!-- Table Footer -->
                     <div class="table-footer">
                         <div class="table-pagination-info">
@@ -375,54 +376,56 @@
                 <span class="modal-close" id="userDetailClose">&times;</span>
             </div>
             <div class="modal-body" id="userDetailBody">
-                <div class="user-detail-loading" id="userDetailLoading">
+                <div class="modal-loading" id="userDetailLoading">
                     <i class="fas fa-spinner fa-spin"></i>
                     <span>Đang tải...</span>
                 </div>
-                <div class="user-detail-content" id="userDetailContent" style="display: none;">
-                    <div class="user-detail-avatar">
-                        <img id="detailAvatar" src="" alt="" class="detail-avatar-img">
-                    </div>
-                    <div class="user-detail-info">
-                        <div class="detail-row">
-                            <label>ID:</label>
-                            <span id="detailId"></span>
+                <div id="userDetailContent" style="display: none;">
+                    <div class="detail-content">
+                        <div class="user-detail-avatar">
+                            <img id="detailAvatar" src="" alt="" class="detail-avatar-img">
                         </div>
-                        <div class="detail-row">
-                            <label>Họ tên:</label>
-                            <span id="detailName"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Username:</label>
-                            <span id="detailUsername"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Email:</label>
-                            <span id="detailEmail"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Số điện thoại:</label>
-                            <span id="detailPhone"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Zalo:</label>
-                            <span id="detailZalo"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Facebook:</label>
-                            <span id="detailFacebook"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Vai trò:</label>
-                            <span id="detailRole" class="role-badge"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Trạng thái:</label>
-                            <span id="detailStatus" class="status-badge"></span>
-                        </div>
-                        <div class="detail-row">
-                            <label>Ngày tạo:</label>
-                            <span id="detailCreated"></span>
+                        <div class="user-detail-info">
+                            <div class="detail-row">
+                                <label>ID:</label>
+                                <span id="detailId"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Họ tên:</label>
+                                <span id="detailName"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Username:</label>
+                                <span id="detailUsername"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Email:</label>
+                                <span id="detailEmail"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Số điện thoại:</label>
+                                <span id="detailPhone"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Zalo:</label>
+                                <span id="detailZalo"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Facebook:</label>
+                                <span id="detailFacebook"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Vai trò:</label>
+                                <span id="detailRole" class="role-badge"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Trạng thái:</label>
+                                <span id="detailStatus" class="status-badge"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Ngày tạo:</label>
+                                <span id="detailCreated"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -460,7 +463,7 @@
     <script src="assets/js/components/sidebar.js"></script>
     <script src="assets/js/components/notifications.js"></script>
     <script src="assets/js/components/header-profile.js"></script>
-    <script src="assets/js/users.js"></script>
+    <script src="assets/js/pages/users.js"></script>
 </body>
 
 </html>

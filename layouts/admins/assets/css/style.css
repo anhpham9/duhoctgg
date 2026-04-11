@@ -858,6 +858,19 @@ body {
     width: auto;
 }
 
+.flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.gap-10 {
+    gap: 10px;
+}
+
+.w-fit {
+    flex: 0 0 auto !important;
+}
+
 /* Mobile Responsive */
 @media (max-width: 480px) {
     .loading-spinner .spinner-container {
