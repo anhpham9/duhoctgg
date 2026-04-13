@@ -53,9 +53,48 @@ if (navToggle && navMenu) {
         navToggle.classList.toggle('active');
     });
 
-    // Close menu when clicking on nav links
+    // Close menu when clicking on nav links (but handle dropdown differently)
     navLinks.forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+            const parentLi = link.closest('li');
+            
+            // Check if this is a dropdown parent
+            if (parentLi && parentLi.classList.contains('nav-dropdown')) {
+                // This is a dropdown parent link
+                e.preventDefault();
+                
+                // On mobile, toggle dropdown instead of closing menu
+                if (window.innerWidth <= 768) {
+                    // Check if dropdown is currently open
+                    const isOpen = parentLi.classList.contains('dropdown-open');
+                    
+                    // Close all dropdowns first
+                    document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+                        dropdown.classList.remove('dropdown-open');
+                    });
+                    
+                    // If it wasn't open, open it
+                    if (!isOpen) {
+                        parentLi.classList.add('dropdown-open');
+                    }
+                    
+                    // Force icon update (debug helper)
+                    console.log('Dropdown toggled:', !isOpen ? 'opened' : 'closed');
+                } else {
+                    // On desktop, let CSS handle hover
+                    return;
+                }
+            } else {
+                // Regular link - close mobile menu
+                navMenu.classList.remove('active');
+                navToggle.classList.remove('active');
+            }
+        });
+    });
+    
+    // Handle dropdown sub-links (close menu when clicking sub-items)
+    document.querySelectorAll('.dropdown-content a').forEach(subLink => {
+        subLink.addEventListener('click', () => {
             navMenu.classList.remove('active');
             navToggle.classList.remove('active');
         });
@@ -66,43 +105,6 @@ if (navToggle && navMenu) {
         if (!navToggle.contains(e.target) && !navMenu.contains(e.target)) {
             navMenu.classList.remove('active');
             navToggle.classList.remove('active');
-        }
-    });
-}
-
-// Smooth Scrolling for Navigation Links
-navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('href');
-        const targetSection = document.querySelector(targetId);
-        
-        if (targetSection) {
-            const offsetTop = targetSection.offsetTop - 125; // Account for header-top + header
-            window.scrollTo({
-                top: offsetTop,
-                behavior: 'smooth'
-            });
-        }
-    });
-});
-
-// Active Navigation Link on Scroll
-function updateActiveNavLink() {
-    const scrollPos = window.scrollY + 160; // Adjusted for new header height
-    const sections = document.querySelectorAll('section[id]');
-    
-    sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.offsetHeight;
-        const sectionId = section.getAttribute('id');
-        const navLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
-        
-        if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
-            navLinks.forEach(link => link.classList.remove('active'));
-            if (navLink) {
-                navLink.classList.add('active');
-            }
         }
     });
 }
@@ -354,13 +356,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add scroll event listeners
     window.addEventListener('scroll', () => {
-        updateActiveNavLink();
         requestTick();
         animateOnScroll();
     });
     
     // Initial calls
-    updateActiveNavLink();
     animateOnScroll();
     
     // Add keyboard navigation support

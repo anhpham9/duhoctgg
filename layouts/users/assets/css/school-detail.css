@@ -178,7 +178,7 @@
     transform: translateY(-2px);
 }
 
-.stat-number {
+.stat-number, .stat-number1 {
     display: block;
     font-size: 1.8rem;
     font-weight: 700;

@@ -213,7 +213,8 @@ body {
     border-radius: 0;
 }
 
-.dropdown-content a:hover {
+.dropdown-content a:hover,
+.dropdown-content a.active {
     background: #f8f9fa;
     color: #d32f2f;
     padding-left: 25px;

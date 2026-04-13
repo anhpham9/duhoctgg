@@ -245,6 +245,10 @@
         height: 35px;
         margin: 0 auto;
     }
+
+    .step-number span {
+        font-size: 28px;
+    }
 }
 
 /* Landscape Mobile - School Detail */
@@ -320,11 +324,6 @@
 
     .roadmap-timeline .roadmap-step {
         margin-bottom: 30px;
-    }
-
-    .step-number {
-        width: 180px;
-        font-size: 24px;
     }
 
     .step-number span {
@@ -433,6 +432,12 @@
         margin: 0 0 30px 0;
     }
 
+    .nav-dropdown > .nav-link {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
     .nav-toggle {
         display: flex;
     }
@@ -456,23 +461,49 @@
         visibility: visible;
         transform: none;
         box-shadow: none;
-        background: #f8f9fa;
+        /* background: #f8f9fa; */
         border-radius: 8px;
-        margin: 10px 0;
+        /* margin: 10px 0; */
         padding: 0;
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
+        min-width: auto;
     }
 
-    .nav-dropdown:hover .dropdown-content {
+    /* Mobile dropdown open state - triggered by JavaScript */
+    .nav-dropdown.dropdown-open .dropdown-content {
         max-height: 200px;
+        padding: 10px 0;
+    }
+
+    .nav-dropdown.dropdown-open .nav-link i,
+    .nav-dropdown.dropdown-open>a i {
+        transform: rotate(180deg) !important;
+        transition: transform 0.3s ease !important;
+    }
+
+    /* Ensure default state on mobile */
+    .nav-dropdown .nav-link i,
+    .nav-dropdown>a i {
+        transform: rotate(0deg);
+        transition: transform 0.3s ease;
+    }
+
+    /* Disable desktop hover on mobile */
+    .nav-dropdown:hover .nav-link i {
+        transform: none;
     }
 
     .dropdown-content a {
         padding: 10px 20px;
         font-size: 0.9rem;
         border-bottom: 1px solid #e9ecef;
+        text-align: center;
+    }
+
+    .dropdown-content a.active {
+        background-color: transparent;
     }
 
     .dropdown-content a:last-child {
@@ -1363,8 +1394,8 @@
     }
 
     .step-number {
-        width: 38px;
-        height: 38px;
+        width: 116px;
+        height: 46px;
         font-size: 1.05rem;
     }
 
@@ -1646,13 +1677,6 @@
         gap: 15px;
         flex-direction: column;
         text-align: center;
-    }
-
-    .step-number {
-        width: 50px;
-        height: 50px;
-        font-size: 1.2rem;
-        margin: 0 auto 10px;
     }
 
     .step-content {
