@@ -45,6 +45,8 @@
 
 .stats-summary {
     display: flex;
+    width: 100%;
+    justify-content: space-around;
     gap: 20px;
     background: #fff;
     padding: 15px 20px;
@@ -180,9 +182,10 @@
 
 .table-controls {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 16px 20px;
     background: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
 }
@@ -200,10 +203,12 @@
 }
 
 .table-info select {
-    padding: 4px 8px;
+    padding: 6px 10px;
     border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.8rem;
+    border-radius: 6px;
+    outline: none;
+    background: white;
+    cursor: pointer;
 }
 
 .table-actions {
@@ -443,19 +448,19 @@
     letter-spacing: 0.5px;
 }
 
-.type-badge.public {
+.type-badge.japanese {
     background: #e8f5e8;
     color: #2e7d32;
     border: 1px solid #4caf50;
 }
 
-.type-badge.private {
+.type-badge.senmon {
     background: #e3f2fd;
     color: #1565c0;
     border: 1px solid #2196f3;
 }
 
-.type-badge.corporate {
+.type-badge.both {
     background: #fff3e0;
     color: #ef6c00;
     border: 1px solid #ff9800;
@@ -510,41 +515,33 @@
 
 /* Status Badges */
 .status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
+    display: inline-block;
+    padding: 4px 8px;
     border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: capitalize;
-    border: 1px solid;
-    min-width: 90px;
-    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .status-badge.active {
-    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
-    color: #2e7d32;
-    border-color: #66bb6a;
+    background: #d4edda;
+    color: #155724;
 }
 
 .status-badge.inactive {
-    background: linear-gradient(135deg, #ffebee, #ffcdd2);
-    color: #c62828;
-    border-color: #ef5350;
+    background: #f8d7da;
+    color: #721c24;
 }
 
 .status-badge.partner {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    background: #c7e6ff;
     color: #1565c0;
-    border-color: #42a5f5;
-    animation: pulse-partner 2s infinite;
 }
 
 .status-badge.pending {
-    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-    color: #ef6c00;
-    border-color: #ffb74d;
+    background: #fff3cd;
+    color: #856404;
 }
 
 @keyframes pulse-partner {
@@ -776,17 +773,19 @@
     color: #999;
 }
 
-/* Pagination */
-.pagination-container {
+
+
+/* Table Footer */
+.table-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 16px 20px;
     background: #f8f9fa;
     border-top: 1px solid #dee2e6;
 }
 
-.pagination-info {
+.table-pagination-info {
     font-size: 0.9rem;
     color: #666;
 }
@@ -797,27 +796,18 @@
     gap: 5px;
 }
 
-.pagination-btn,
-.page-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.pagination-btn {
     width: 36px;
     height: 36px;
     border: 1px solid #dee2e6;
-    background: #fff;
-    color: #495057;
-    text-decoration: none;
+    background: white;
     border-radius: 6px;
-    transition: all 0.3s ease;
     cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.pagination-btn:hover:not(:disabled),
-.page-number:hover {
-    background: #e9ecef;
-    border-color: #adb5bd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #495057;
 }
 
 .pagination-btn:disabled {
@@ -825,16 +815,46 @@
     cursor: not-allowed;
 }
 
-.page-number.active {
-    background: #d32f2f;
-    color: white;
-    border-color: #d32f2f;
+.pagination-btn:not(:disabled):hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
 }
 
 .pagination-numbers {
     display: flex;
     gap: 2px;
     margin: 0 10px;
+}
+
+.page-number {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #dee2e6;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #495057;
+    font-size: 0.9rem;
+    padding: 0 8px;
+}
+
+.page-number:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.page-number.active {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    color: white;
+    border-color: #d32f2f;
+}
+
+.page-number.active:hover {
+    background: linear-gradient(135deg, #b71c1c, #8e0000);
 }
 
 /* School Detail Modal */
@@ -1010,4 +1030,27 @@
     gap: 10px;
     justify-content: flex-end;
     background: #f8f9fa;
+}
+
+
+/* Checkbox Styles */
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #d32f2f;
+    cursor: pointer;
+}
+
+@media (max-width: 480px) {
+    .table-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .table-footer {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 12px;
+    }
 }
