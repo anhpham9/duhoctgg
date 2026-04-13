@@ -1,6 +1,215 @@
 /* School Detail Page Specific Styles */
 
 /* ===============================================
+   SCHOOL HERO SECTION
+   =============================================== */
+
+/* School Hero Layout */
+.school-hero {
+    padding: 140px 0 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.school-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 32, 44, 0.3);
+    z-index: 1;
+}
+
+.school-hero .container {
+    position: relative;
+    z-index: 2;
+}
+
+.school-hero-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    margin-bottom: 30px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.breadcrumb a {
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb span {
+    margin: 0 8px;
+    opacity: 0.7;
+}
+
+/* School Hero Main */
+.school-hero-main {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.school-info-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.school-badge {
+    background: rgba(255, 193, 7, 0.9);
+    color: #1a202c;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.school-badge.featured {
+    background: #ff6b6b;
+    color: white;
+}
+
+.school-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 15px;
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
+}
+
+.school-rating .stars {
+    display: flex;
+    gap: 2px;
+}
+
+.school-rating .stars i {
+    color: #fbbf24;
+    font-size: 14px;
+}
+
+.school-rating span {
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.school-rating small {
+    opacity: 0.8;
+    margin-left: 5px;
+}
+
+/* School Title and Info */
+.school-hero-main h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.school-location {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    opacity: 0.9;
+}
+
+.school-location i {
+    font-size: 16px;
+}
+
+.school-hero-desc {
+    font-size: 1.2rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    opacity: 0.95;
+}
+
+/* School Key Stats */
+.school-key-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin: 40px 0;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.school-detail-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 20px 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* School Hero Actions */
+.school-hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+
+.editable-section p {
+    color: #4a5568;
+}
+
+
+
+
+/* ===============================================
    SECTION PATTERN STYLES - MATCHING HOMEPAGE
    =============================================== */
 
@@ -111,7 +320,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    justify-content: center;
+    justify-content: space-around;
 }
 
 .info-item {
@@ -384,7 +593,7 @@
 
 /* Main sidebar container */
 .school-detail-sidebar {
-    padding-left: 40px;
+    /* padding-left: 40px; */
     position: sticky;
     top: 20px;
     height: fit-content;
@@ -845,7 +1054,7 @@
 @media (max-width: 768px) {
     .school-detail-sidebar {
         padding-left: 0;
-        margin-top: 30px;
+        /* margin-top: 30px; */
         position: static;
     }
     

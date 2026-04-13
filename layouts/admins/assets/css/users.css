@@ -294,11 +294,18 @@
 .status-badge, .role-badge {
     display: inline-block;
     padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.role-badge {
+    color: #fff;
 }
 
 .status-badge.active {
@@ -312,28 +319,24 @@
 }
 
 .status-badge.pending {
-    background: #fff3cd;
-    color: #856404;
+    background: #fff3e0;
+    color: #f57c00;
 }
 
 .role-badge.admin {
-    background: linear-gradient(135deg, #d32f2f, #b71c1c);
-    color: white;
+    background: #d32f2f;
 }
 
 .role-badge.manager {
-    background: linear-gradient(135deg, #17a2b8, #138496);
-    color: white;
+    background: #1976d2;
 }
 
 .role-badge.content_writer {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
+    background: #388e3c;
 }
 
 .role-badge.consultant {
-    background: linear-gradient(135deg, #6f42c1, #5a32a3);
-    color: white;
+    background: #7b1fa2;
 }
 
 /* Action Buttons */
