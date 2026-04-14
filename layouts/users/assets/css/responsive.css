@@ -508,6 +508,60 @@
         font-size: 1rem;
     }
 
+    /* contact style */
+    .contact-main-section {
+        padding: 60px 0 40px;
+    }
+
+    .contact-main-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .contact-info-left h2 {
+        font-size: 1.6rem;
+        text-align: center;
+    }
+
+    .contact-info-left>p {
+        font-size: 1rem;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .contact-info-list {
+        gap: 25px;
+    }
+
+    .contact-item {
+        gap: 15px;
+    }
+
+    .contact-item-icon {
+        width: 50px;
+        height: 50px;
+    }
+
+    .contact-item-icon i {
+        font-size: 1.2rem;
+    }
+
+    .contact-item-content h4 {
+        font-size: 1.1rem;
+    }
+
+    .contact-map-right {
+        padding: 25px 20px;
+    }
+
+    .map-wrapper h3 {
+        font-size: 1.3rem;
+    }
+
+    .map-container {
+        height: 300px;
+    }
+
 }
 
 /* Small Mobile */
