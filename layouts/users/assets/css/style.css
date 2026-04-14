@@ -1066,7 +1066,8 @@ about
     text-align: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
-    position: relative;
+    /* position: relative; */
+    border-top: 4px solid #e53e3e;
     overflow: hidden;
 }
 
@@ -1075,19 +1076,6 @@ about
 .values-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 20px 40px rgba(211, 47, 47, 0.2);
-}
-
-.vision-card::before,
-.mission-card::before,
-.values-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(135deg, #d32f2f, #b71c1c);
-    border-radius: 0 0 20px 20px;
 }
 
 .vm-icon {
@@ -1716,5 +1704,353 @@ contact page style
 .map-container iframe {
     width: 100%;
     height: 100%;
+}
+/* ========== JAPANESE SCHOOLS PAGE ========== */
+
+/* Schools Section */
+.schools-section {
+    padding: 80px 0;
+    background: #fff;
+}
+
+/* Filter and Search */
+.schools-filter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 40px 0 50px;
+    gap: 20px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: #d32f2f;
+    border-color: #d32f2f;
+    color: white;
+}
+
+.search-box {
+    position: relative;
+    max-width: 300px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 40px 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: #d32f2f;
+}
+
+.search-box i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+/* Schools Grid */
+.schools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+/* School Card */
+.school-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+}
+
+.school-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* School Image */
+.school-image {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+.school-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.school-card:hover .school-image img {
+    transform: scale(1.05);
+}
+
+/* School Badges */
+.school-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.school-badge.featured {
+    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    color: white;
+}
+
+.school-badge.popular {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+}
+
+.school-badge.cultural {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    color: white;
+}
+
+.school-badge.international {
+    background: linear-gradient(135deg, #fa709a, #fee140);
+    color: white;
+}
+
+.school-badge.affordable {
+    background: linear-gradient(135deg, #a8edea, #fed6e3);
+    color: #333;
+}
+
+/* School Rating */
+.school-rating {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
+}
+
+.stars i {
+    font-size: 0.8rem;
+    color: #ffd700;
+}
+
+.school-rating span {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* School Content */
+.school-content {
+    padding: 25px;
+}
+
+.school-location {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.school-location i {
+    color: #d32f2f;
+}
+
+.school-content h3 {
+    color: #333;
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.school-description {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
+/* School Highlights */
+.school-highlights {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.highlight-item i {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.highlight-item div span {
+    display: block;
+    color: #999;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+}
+
+.highlight-item div strong {
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* School Features */
+.school-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.feature-tag {
+    padding: 5px 12px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* School Pricing */
+.school-pricing {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.price {
+    display: flex;
+    flex-direction: column;
+}
+
+.price-label {
+    color: #999;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
+
+.price-amount {
+    color: #d32f2f;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.school-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Comparison Section */
+.comparison-section {
+    margin-top: 60px;
+    padding: 40px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.comparison-section h3 {
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.comparison-table {
+    overflow-x: auto;
+}
+
+.comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.comparison-table th {
+    background: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.comparison-table td {
+    color: #666;
+}
+
+.comparison-table tr:hover {
+    background: #fafafa;
 }
 

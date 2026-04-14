@@ -131,6 +131,50 @@
     .timeline-item:nth-child(even) .timeline-content {
         margin-right: calc(50% + 30px);
     }
+
+    /* Japanese Schools - Tablet */
+    .schools-filter {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .filter-tabs {
+        justify-content: center;
+    }
+
+    .schools-grid {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+    }
+
+    .school-highlights {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        padding: 18px;
+    }
+
+    .highlight-item div span,
+    .highlight-item div strong {
+        font-size: 0.85rem;
+    }
+
+    .school-content h3 {
+        font-size: 1.2rem;
+    }
+
+    .school-description {
+        font-size: 0.9rem;
+    }
+
+    .comparison-section {
+        padding: 30px 20px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
 }
 
 /* Mobile */
@@ -560,6 +604,87 @@
 
     .map-container {
         height: 300px;
+    }
+
+    /* Japanese Schools - Mobile */
+    .schools-filter {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 20px;
+    }
+
+    .filter-tabs {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    .search-box {
+        max-width: 100%;
+    }
+
+    .schools-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .school-card {
+        margin: 0 10px;
+    }
+
+    .school-highlights {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 15px;
+    }
+
+    .highlight-item {
+        justify-content: center;
+        text-align: center;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .highlight-item i {
+        margin-bottom: 5px;
+    }
+
+    .school-features {
+        justify-content: center;
+    }
+
+    .feature-tag {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+    }
+
+    .school-pricing {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .school-actions {
+        justify-content: center;
+    }
+
+    .comparison-section {
+        padding: 20px 15px;
+        margin: 40px 10px 0;
+    }
+
+    .comparison-table {
+        font-size: 0.8rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 8px 6px;
+        font-size: 0.75rem;
     }
 
 }

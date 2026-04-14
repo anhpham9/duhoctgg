@@ -34,26 +34,10 @@
     margin: 0 auto;
 }
 
-/* Breadcrumb */
-.breadcrumb {
-    margin-bottom: 30px;
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-.breadcrumb a {
-    color: white;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.breadcrumb a:hover {
-    text-decoration: underline;
-}
-
-.breadcrumb span {
-    margin: 0 8px;
-    opacity: 0.7;
+.editable-paragraph {
+    color: #fff;
+    line-height: 1.7;
+    font-size: 1rem;
 }
 
 /* School Hero Main */
@@ -124,6 +108,11 @@
     font-weight: 700;
     margin-bottom: 20px;
     line-height: 1.2;
+    color: #333;
+    text-shadow:
+        0 0 3px #fff,
+        0 0 6px #fff,
+        0 0 10px #fff;
 }
 
 .school-location {
@@ -178,7 +167,8 @@
     transform: translateY(-2px);
 }
 
-.stat-number, .stat-number1 {
+.stat-number,
+.stat-number1 {
     display: block;
     font-size: 1.8rem;
     font-weight: 700;
@@ -206,7 +196,60 @@
     color: #4a5568;
 }
 
+.editable-image {
+    margin: 25px 0;
+    text-align: center;
+    position: relative;
+}
 
+.editable-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.editable-image .image-caption {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+}
+
+.quote-box[data-style="highlighted"] {
+    background: linear-gradient(135deg, #fff5f5, #ffebee);
+    border-left: 5px solid #d32f2f;
+    box-shadow: 0 4px 15px rgba(211, 47, 47, 0.1);
+}
+
+.editable-quote {
+    margin: 30px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-left: 5px solid #d32f2f;
+    border-radius: 0 10px 10px 0;
+    position: relative;
+}
+
+.quote-box blockquote,
+.editable-quote blockquote {
+    margin: 0;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #333;
+    line-height: 1.6;
+    position: relative;
+}
+
+.quote-box blockquote:before {
+    content: '"';
+    font-size: 3rem;
+    color: #d32f2f;
+    position: absolute;
+    top: -10px;
+    left: -15px;
+    font-family: serif;
+}
 
 
 /* ===============================================
@@ -243,30 +286,6 @@
     background: #f8fafc;
 }
 
-.faq {
-    background: #fff;
-}
-
-/* Section Headers */
-.section-header {
-    text-align: center;
-    margin-bottom: 60px;
-}
-
-.section-header h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #1a202c;
-    margin-bottom: 15px;
-}
-
-.section-header p {
-    font-size: 1.1rem;
-    color: #64748b;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
 /* Content Grid */
 .content-grid {
     display: grid;
@@ -279,11 +298,13 @@
     background: #fff;
     border-radius: 16px;
     padding: 30px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    border-top: 4px solid #3182ce;
     text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    border-top: 4px solid #e53e3e;
 }
+
 
 .course-item:hover {
     transform: translateY(-8px);
@@ -293,7 +314,8 @@
 .course-icon {
     width: 70px;
     height: 70px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #d32f2f, #f44336);
+    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -332,9 +354,18 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .info-item i {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #fff;
 }
 
@@ -441,7 +472,8 @@
 .facility-icon {
     width: 70px;
     height: 70px;
-    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    background: linear-gradient(135deg, #d32f2f, #f44336);
+    /* background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -605,13 +637,13 @@
     border-radius: 16px;
     padding: 25px 20px;
     margin-bottom: 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
 }
 
 .sidebar-widget:hover {
-    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
 }
 
@@ -676,7 +708,7 @@
     color: #3182ce;
 }
 
-.contact-details .contact-item > div {
+.contact-details .contact-item>div {
     flex: 1;
 }
 
@@ -803,7 +835,7 @@
     background: #f7fafc;
     border-radius: 16px;
     padding: 20px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
 }
 
 .program-schedule.beautiful-table {
@@ -812,7 +844,7 @@
     background: #fff;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     font-family: 'Arial', sans-serif;
 }
 
@@ -827,7 +859,7 @@
     text-align: center;
     font-weight: 600;
     font-size: 14px;
-    border-right: 1px solid rgba(255,255,255,0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
     min-width: 120px;
 }
 
@@ -1047,54 +1079,103 @@
     font-style: italic;
 }
 
+
+
+
+.content-section[data-layout="two-column"] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+
 /* =====================================
    RESPONSIVE STYLES
    ===================================== */
 
+
+@media (max-width: 1024px) {
+
+    .about-school,
+    .programs,
+    .admission-requirements,
+    .facilities,
+    .testimonials,
+    .faq {
+        padding: 60px 0;
+    }
+
+    .school-detail-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .content-section[data-layout="two-column"] {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
 @media (max-width: 768px) {
+
+    .about-school,
+    .programs,
+    .admission-requirements,
+    .facilities,
+    .testimonials,
+    .faq {
+        padding: 40px 0;
+    }
+
     .school-detail-sidebar {
         padding-left: 0;
         /* margin-top: 30px; */
         position: static;
     }
-    
+
     .sidebar-widget {
         padding: 20px 15px;
         margin-bottom: 20px;
     }
-    
+
     .table-container {
         padding: 15px;
     }
-    
+
     .schedule-table h3 {
         font-size: 24px;
     }
-    
+
     .table-header th {
         padding: 15px 10px;
         font-size: 12px;
         min-width: 100px;
     }
-    
-    .time-cell, .subject-cell {
+
+    .time-cell,
+    .subject-cell {
         padding: 12px 8px;
     }
-    
+
     .time-text {
         font-size: 14px;
     }
-    
+
     .session-label {
         font-size: 10px;
     }
-    
+
     .subject-wrapper i {
         font-size: 16px;
     }
-    
+
     .subject-wrapper span {
         font-size: 12px;
+    }
+
+    .content-section[data-layout="two-column"] {
+        gap: 15px;
     }
 }
 
@@ -1102,67 +1183,38 @@
     .sidebar-widget {
         padding: 15px 10px;
     }
-    
+
     .related-schools .related-school {
         padding: 12px;
     }
-    
+
     .related-schools .school-thumb {
         width: 50px;
         height: 50px;
     }
-    
+
     .contact-details .contact-item {
         padding: 8px 0;
     }
-    
+
     .table-header th {
         padding: 10px 5px;
         font-size: 10px;
         min-width: 80px;
     }
-    
-    .time-cell, .subject-cell {
+
+    .time-cell,
+    .subject-cell {
         padding: 8px 4px;
     }
-    
+
     .time-text {
         font-size: 12px;
     }
-    
+
     .subject-wrapper span {
         font-size: 10px;
     }
-}
-
-/* =====================================
-   SCROLL TO TOP BUTTON
-   ===================================== */
-
-.scroll-to-top {
-    position: fixed !important;
-    bottom: 30px !important;
-    right: 30px !important;
-    width: 50px !important;
-    height: 50px !important;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 50% !important;
-    cursor: pointer !important;
-    display: none !important;
-    z-index: 1000 !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-}
-
-.scroll-to-top:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-}
-
-.scroll-to-top i {
-    font-size: 18px !important;
 }
 
 /* =====================================
@@ -1180,14 +1232,14 @@
     background: #ffffff;
     border-radius: 16px;
     padding: 30px 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     border: 1px solid #e2e8f0;
 }
 
 .testimonial-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
 }
 
 .student-info {
@@ -1243,38 +1295,43 @@
     font-size: 14px;
 }
 
-/* =====================================
-   ADDITIONAL RESPONSIVE STYLES
-   ===================================== */
+.content-block {
+    border: 2px dashed transparent;
+    border-radius: 6px;
+    position: relative;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+}
 
-@media (max-width: 768px) {
-    .faq-question {
-        padding: 20px;
-    }
-    
-    .faq-question h4 {
-        font-size: 14px;
-        padding-right: 15px;
-    }
-    
-    .faq-answer p {
-        padding: 0 20px 20px;
-        font-size: 13px;
-    }
-    
-    .testimonials-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    
-    .testimonial-card {
-        padding: 25px 20px;
-    }
-    
-    .scroll-to-top {
-        bottom: 20px !important;
-        right: 20px !important;
-        width: 45px !important;
-        height: 45px !important;
-    }
+.content-block::before {
+    content: attr(data-component-type);
+    position: absolute;
+    top: -25px;
+    left: 0;
+    background: #d32f2f;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.content-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+.editable-section[data-type="paragraph"] {
+    margin-bottom: 15px;
+}
+
+.editable-section {
+    position: relative;
+    margin-bottom: 20px;
 }
