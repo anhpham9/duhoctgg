@@ -10,10 +10,10 @@ feature/news-api (backend)
 feature/frontend-init (frontend)
 feature/frontend-news
 
-
 ```
 
 ### Cách đẩy code lên repo và merge vào develop
+
 ```
 git checkout develop
 git merge feature/auth
@@ -26,6 +26,18 @@ git checkout develop
 
 ```
 
+## danh sách branch
+
+```
+# backend
+feature/init-backend
+feature/auth
+feature/backend-seeds
+
+# frontend
+feature/frontend-init
+
+```
 ## Các tình huống đặc biệt
 
 ### 🎯 Tình trạng 1

@@ -1034,3 +1034,187 @@ git checkout develop
 git merge feature/auth
 git push origin develop
 ```
+
+# Ngày 4
+
+## 🎯 Tạo seeds cho users, roles, permissions
+
+Nếu đã tồn tại dữ liệu cho các bảng này (đã tạo trước đó), thì xóa dữ liệu và reset index bằng lệnh dưới trong SQL
+
+```
+TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
+```
+
+### 📁 Cấu trúc đề xuất
+
+```
+backend/
+└── scripts/
+    └── seeds/
+        ├── seedRoles.js
+        ├── seedPermissions.js
+        ├── seedRolePermissions.js
+        └── seedUsers.js
+
+```
+
+### 🧱 1. seedRoles.js
+
+```
+import db from "../../src/config/db.js";
+
+const run = async () => {
+  try {
+    await db.query(`
+      INSERT INTO roles (name, description)
+      VALUES
+        ('superadmin', 'Full system access'),
+        ('admin', 'Manage system content'),
+        ('manager', 'Manage users and content'),
+        ('editor', 'Manage news'),
+        ('consultant', 'Handle contacts')
+      ON CONFLICT (name) DO NOTHING
+    `);
+
+    console.log("✅ Roles seeded");
+  } catch (err) {
+    console.error("❌ Roles seed error:", err.message);
+  }
+};
+
+run();
+```
+
+### 🧱 2. seedPermissions.js
+
+```
+import db from "../../src/config/db.js";
+
+const run = async () => {
+  try {
+    await db.query(`
+      INSERT INTO permissions (name, description)
+      VALUES
+        ('news.create', 'Create news'),
+        ('news.update', 'Update news'),
+        ('news.delete', 'Delete news'),
+
+        ('contact.view', 'View contacts'),
+        ('contact.update', 'Update contact status'),
+
+        ('user.manage', 'Manage users'),
+
+        ('settings.update', 'Update settings')
+      ON CONFLICT (name) DO NOTHING
+    `);
+
+    console.log("✅ Permissions seeded");
+  } catch (err) {
+    console.error("❌ Permissions seed error:", err.message);
+  }
+};
+
+run();
+```
+
+### 🧱 3. seedRolePermissions.js
+
+```
+import db from "../../src/config/db.js";
+
+const run = async () => {
+  try {
+    // lấy role
+    const roles = await db.query(`SELECT id, name FROM roles`);
+    const permissions = await db.query(`SELECT id, name FROM permissions`);
+
+    const roleMap = Object.fromEntries(roles.rows.map(r => [r.name, r.id]));
+    const permMap = Object.fromEntries(permissions.rows.map(p => [p.name, p.id]));
+
+    const data = [
+      // admin
+      [roleMap.admin, permMap["news.create"]],
+      [roleMap.admin, permMap["news.update"]],
+      [roleMap.admin, permMap["contact.view"]],
+      [roleMap.admin, permMap["contact.update"]],
+
+      // manager
+      [roleMap.manager, permMap["user.manage"]],
+      [roleMap.manager, permMap["settings.update"]],
+
+      // editor
+      [roleMap.editor, permMap["news.create"]],
+      [roleMap.editor, permMap["news.update"]],
+
+      // consultant
+      [roleMap.consultant, permMap["contact.view"]],
+      [roleMap.consultant, permMap["contact.update"]],
+    ];
+
+    for (const [role_id, permission_id] of data) {
+      await db.query(
+        `INSERT INTO role_permissions (role_id, permission_id)
+         VALUES ($1, $2)
+         ON CONFLICT DO NOTHING`,
+        [role_id, permission_id]
+      );
+    }
+
+    console.log("✅ Role-Permissions seeded");
+  } catch (err) {
+    console.error("❌ RolePermissions seed error:", err.message);
+  }
+};
+
+run();
+```
+
+### 🧱 4. seedUsers.js
+
+```
+import bcrypt from "bcrypt";
+import db from "../../src/config/db.js";
+
+const run = async () => {
+  try {
+    const roles = await db.query(`SELECT id, name FROM roles`);
+    const roleMap = Object.fromEntries(roles.rows.map(r => [r.name, r.id]));
+
+    const hash = await bcrypt.hash("123456", 10);
+
+    await db.query(
+      `
+      INSERT INTO users (name, username, email, password, role_id)
+      VALUES
+        ('Super Admin', 'superadmin', 'superadmin@example.com', $1, $2),
+        ('Admin User', 'admin', 'admin@example.com', $1, $3),
+        ('Consultant User', 'consultant', 'consultant@example.com', $1, $4)
+      ON CONFLICT (username) DO NOTHING
+      `,
+      [
+        hash,
+        roleMap.superadmin,
+        roleMap.admin,
+        roleMap.consultant
+      ]
+    );
+
+    console.log("✅ Users seeded");
+  } catch (err) {
+    console.error("❌ Users seed error:", err.message);
+  }
+};
+
+run();
+```
+
+### ▶️ Cách chạy
+
+👉 chạy theo thứ tự:
+
+```
+node scripts/seeds/seedRoles.js
+node scripts/seeds/seedPermissions.js
+node scripts/seeds/seedRolePermissions.js
+node scripts/seeds/seedUsers.js
+```
