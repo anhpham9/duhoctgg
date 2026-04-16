@@ -40,6 +40,7 @@ feature/rbac-backend
 feature/frontend-init
 feature/frontend-auth
 feature/frontend-rbac
+feature/frontend-layouts
 
 ```
 ## Các tình huống đặc biệt

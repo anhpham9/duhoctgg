@@ -253,3 +253,109 @@ definePageMeta({
 ✔ RBAC backend
 ✔ Protected frontend route
 ```
+
+## 🧱 PHẦN 5 — Frontend: RBAC
+
+### 🧱 2. Decode token (lấy role)
+
+👉 cài lib:
+
+```
+npm install jwt-decode
+```
+
+📁 utils/auth.js
+
+```
+import { jwtDecode } from "jwt-decode";
+
+export const getUser = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  return jwtDecode(token);
+};
+```
+
+### 🧱 3. Ẩn menu theo role
+
+📁 layouts/admin.vue
+
+```
+<script setup>
+import { getUser } from "~/utils/auth";
+
+const user = getUser();
+</script>
+
+<template>
+  <div class="admin-layout">
+    <aside>
+      <ul>
+        <li v-if="user?.role_id === 1">User Management</li>
+        <li>News</li>
+        <li v-if="user?.role_id !== 5">Settings</li>
+      </ul>
+    </aside>
+
+    <slot />
+  </div>
+</template>
+```
+
+### 🧱 4. Middleware kiểm tra quyền
+
+📁 types/user.ts
+
+```
+export interface IUser {
+  id: number;
+  role_id: number;
+}
+```
+
+📁 middleware/permission.ts
+
+```
+import { jwtDecode } from "jwt-decode";
+import type { IUser } from "~/types/user";
+
+export default defineNuxtRouteMiddleware((to) => {
+  if (import.meta.server) return;
+
+  const token = localStorage.getItem("token");
+
+  if (!token) return navigateTo("/login");
+
+  const user = jwtDecode(token) as IUser;
+
+  if (to.path.startsWith("/admin/users") && user.role_id !== 1) {
+    return navigateTo("/admin");
+  }
+});
+```
+
+### 🧱 5. Apply vào page
+
+📁 pages/admin/users.vue
+
+```
+<script setup>
+definePageMeta({
+  middleware: ["auth", "permission"],
+});
+</script>
+```
+
+### 🎯 Flow hoàn chỉnh
+
+```
+Frontend → gửi token
+Backend → authenticate
+         → checkPermission
+         → cho / chặn
+
+Frontend:
+✔ ẩn menu
+✔ chặn route
+```
