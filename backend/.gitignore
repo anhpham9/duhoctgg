@@ -3,6 +3,8 @@ node_modules/
 
 # env files (RẤT QUAN TRỌNG)
 .env
+.env.*
+!.env.example
 
 # logs
 logs

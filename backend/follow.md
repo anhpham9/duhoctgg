@@ -744,6 +744,9 @@ PORT=5000
 📁 src/config/db.js
 
 ```
+import dotenv from "dotenv";
+dotenv.config();
+
 import pkg from "pg";
 const { Pool } = pkg;
 
@@ -1002,7 +1005,7 @@ POST http://localhost:5000/api/auth/login
 
 ```
 {
-  "username": "admin",
+  "username": "superadmin",
   "password": "123456"
 }
 ```
@@ -1024,17 +1027,10 @@ authenticate → authorize
 ## 🎯 Đẩy code lên github
 
 ```
+git add .
+git commit -m "Auth (login + JWT + RBAC)"
+git push origin feature/auth
+git checkout develop
+git merge feature/auth
+git push origin develop
 ```
-```
-```
-```
-```
-```
-```
-```
-```
-
-
-
-
-
