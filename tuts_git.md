@@ -4,25 +4,25 @@
 ### Cách đặt tên
 
 ```
-# feature/auth (backend)
-# feature/news-api (backend)
+feature/auth (backend)
+feature/news-api (backend)
 
-# feature/frontend-init (frontend)
-# feature/frontend-news
+feature/frontend-init (frontend)
+feature/frontend-news
 
 
 ```
 
 ### Cách đẩy code lên repo và merge vào develop
 ```
-# git checkout develop
-# git merge feature/auth
-# git push origin develop
-# git checkout -b feature/frontend-init
-# git add .
-# git commit -m "Update .env file and db config"
-# git push origin feature/frontend-init
-# git checkout develop
+git checkout develop
+git merge feature/auth
+git push origin develop
+git checkout -b feature/frontend-init
+git add .
+git commit -m "Update .env file and db config"
+git push origin feature/frontend-init
+git checkout develop
 
 ```
 
@@ -119,4 +119,15 @@ git pull origin develop
 develop
  ├── fix/backend-env ✅
  └── feature/frontend-init (clean)
+```
+
+🔹 Bước 7 — chỉnh sửa code frontend (nếu có ) sau đó push lên repo và merge với develop
+
+```
+git add .
+git commit -m "feat: add login page UI and connect to auth API"
+git push origin feature/frontend-init
+git checkout develop
+git merge feature/auth
+git push origin develop
 ```
