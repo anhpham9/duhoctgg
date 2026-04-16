@@ -1306,5 +1306,66 @@ app.get("/api/me", authenticate, (req, res) => {
 ```
 git add .
 git commit -m "feat: add JWT auth middleware"
-git push
+git push origin feature/auth-middleware-backend
+```
+
+### 🧱 PHẦN 2 — Backend: RBAC Middleware
+
+🧱 Middleware permission
+
+📁 permission.middleware.js
+
+```
+import db from "../config/db.js";
+
+export const checkPermission = (permissionName) => {
+    return async (req, res, next) => {
+        const userId = req.user.id;
+
+        const result = await db.query(
+            `
+            SELECT p.name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            JOIN role_permissions rp ON r.id = rp.role_id
+            JOIN permissions p ON rp.permission_id = p.id
+            WHERE u.id = $1 AND p.name = $2
+            `,
+            [userId, permissionName]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        next();
+    };
+};
+```
+
+🧪 Test
+
+```
+app.post(
+  "/api/news",
+  verifyToken,
+  checkPermission("news.create"),
+  (req, res) => {
+    res.send("Create news OK");
+  }
+);
+```
+
+✅ Commit
+
+```
+git add .
+git commit -m "feat: add RBAC permission middleware"
+git push origin feature/rbac-backend
+```
+
+
+
+```
+
 ```

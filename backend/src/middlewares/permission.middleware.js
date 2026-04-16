@@ -1,21 +1,22 @@
 import db from "../config/db.js";
 
-export const authorize = (permissionName) => {
+export const checkPermission = (permissionName) => {
     return async (req, res, next) => {
-        const user = req.user;
+        const userId = req.user.id;
 
         const result = await db.query(
             `
-      SELECT p.name FROM permissions p
-      JOIN role_permissions rp ON rp.permission_id = p.id
-      WHERE rp.role_id = $1
-      `,
-            [user.role_id]
+            SELECT p.name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            JOIN role_permissions rp ON r.id = rp.role_id
+            JOIN permissions p ON rp.permission_id = p.id
+            WHERE u.id = $1 AND p.name = $2
+            `,
+            [userId, permissionName]
         );
 
-        const permissions = result.rows.map((p) => p.name);
-
-        if (!permissions.includes(permissionName)) {
+        if (result.rows.length === 0) {
             return res.status(403).json({ message: "Forbidden" });
         }
 
