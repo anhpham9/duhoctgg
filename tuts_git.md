@@ -33,9 +33,13 @@ git checkout develop
 feature/init-backend
 feature/auth
 feature/backend-seeds
+feature/auth-middleware-backend
+feature/rbac-backend
 
 # frontend
 feature/frontend-init
+feature/frontend-auth
+feature/frontend-rbac
 
 ```
 ## Các tình huống đặc biệt

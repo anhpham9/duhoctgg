@@ -7,6 +7,7 @@ export const generateToken = (user) => {
         {
             id: user.id,
             role_id: user.role_id,
+            username: user.username,
         },
         SECRET,
         { expiresIn: "1d" }

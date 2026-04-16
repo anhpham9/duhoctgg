@@ -1218,3 +1218,93 @@ node scripts/seeds/seedPermissions.js
 node scripts/seeds/seedRolePermissions.js
 node scripts/seeds/seedUsers.js
 ```
+
+## 🔥 Middleware check permission (backend)
+
+### 🎯 Cách chia branch
+
+```
+develop
+ ├── feature/auth-middleware-backend
+ ├── feature/rbac-backend
+```
+
+### 🧱 PHẦN 1 — Backend: JWT Middleware
+
+🧱 Tạo middleware
+
+📁 src/middlewares/auth.middleware.js
+
+```
+import { verifyToken } from "../utils/jwt.js";
+
+export const authenticate = (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({ message: "Token required" });
+        }
+
+        if (!authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "Invalid token format" });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const user = verifyToken(token);
+
+        req.user = user;
+
+        next();
+    } catch (err) {
+        console.error("Auth error:", err.message);
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+};
+```
+
+📁 src/utils/jwt.js
+
+```
+import jwt from "jsonwebtoken";
+
+const SECRET = process.env.JWT_SECRET;
+
+export const generateToken = (user) => {
+    return jwt.sign(
+        {
+            id: user.id,
+            role_id: user.role_id,
+            username: user.username,
+        },
+        SECRET,
+        { expiresIn: "1d" }
+    );
+};
+
+export const verifyToken = (token) => {
+    return jwt.verify(token, SECRET);
+};
+```
+
+🧪 Test nhanh
+
+```
+# 📁src/app.js
+
+import { authenticate } from "./middlewares/auth.middleware.js";
+
+// test protected route
+app.get("/api/me", authenticate, (req, res) => {
+  res.json(req.user);
+});
+```
+
+✅ Commit
+
+```
+git add .
+git commit -m "feat: add JWT auth middleware"
+git push
+```

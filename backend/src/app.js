@@ -1,4 +1,5 @@
 import "./config/env.js";
+import { authenticate } from "./middlewares/auth.middleware.js";
 
 import express from "express";
 import cors from "cors";
@@ -17,6 +18,11 @@ app.get("/", (req, res) => {
 
 // auth routes
 app.use("/api/auth", authRoutes);
+
+// test protected route
+app.get("/api/me", authenticate, (req, res) => {
+  res.json(req.user);
+});
 
 const PORT = process.env.PORT || 5000;
 
