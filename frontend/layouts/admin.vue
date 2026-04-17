@@ -217,12 +217,9 @@ onBeforeUnmount(() => {
     if (process.client) {
         // Reset body styles to clean state for next layout
         document.body.style.background = ''
-        document.body.style.overflow = ''
         document.body.style.overflowX = ''
         document.body.style.overflowY = ''
-        document.body.style.position = ''
         document.body.style.display = ''
-        document.body.style.minHeight = ''
     }
 })
 // ========================================

@@ -7,6 +7,38 @@ const contactForm = document.querySelector('.contact-form');
 const header = document.querySelector('.header');
 const headerTop = document.querySelector('.header-top');
 
+// Active Navigation Handler
+function setActiveNavigation() {
+    const currentPath = window.location.pathname;
+    const currentPage = currentPath.split('/').pop() || 'index.html';
+    
+    // Remove active class from all nav links
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Add active class to current page link
+    navLinks.forEach(link => {
+        const linkPath = link.getAttribute('href');
+        
+        if (linkPath === currentPage || 
+            (currentPage === '' && linkPath === 'index.html') ||
+            (currentPage === '/' && linkPath === 'index.html')) {
+            link.classList.add('active');
+        }
+        
+        // Handle dropdown active state
+        if ((linkPath === 'japanese-schools.html' && currentPage === 'japanese-schools.html') ||
+            (linkPath === 'school-detail.html' && currentPage === 'school-detail.html')) {
+            // Find parent dropdown link and add active
+            const dropdownLink = document.querySelector('.nav-dropdown .nav-link');
+            if (dropdownLink) {
+                dropdownLink.classList.add('active');
+            }
+        }
+    });
+}
+
 // Header Scroll Effect
 let lastScrollTop = 0;
 let ticking = false;
@@ -396,6 +428,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Create back to top button
     createBackToTopButton();
+    
+    // Set active navigation
+    setActiveNavigation();
     
     // Add scroll event listeners
     window.addEventListener('scroll', () => {

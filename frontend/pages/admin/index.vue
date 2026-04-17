@@ -201,14 +201,14 @@
                                 <span>Liên hệ mới</span>
                                 <span class="badge">7</span>
                             </a>
-                            <a href="schools.html" class="quick-action-btn">
+                            <NuxtLink to="/schools" class="quick-action-btn">
                                 <i class="fas fa-university"></i>
                                 <span>Quản lý trường</span>
-                            </a>
-                            <a href="news.html" class="quick-action-btn">
+                            </NuxtLink>
+                            <NuxtLink to="/news" class="quick-action-btn">
                                 <i class="fas fa-newspaper"></i>
                                 <span>Đăng tin tức</span>
-                            </a>
+                            </NuxtLink>
                             <a href="settings-seo.html" class="quick-action-btn">
                                 <i class="fas fa-search"></i>
                                 <span>Cài đặt SEO</span>
@@ -229,7 +229,7 @@
                 <div class="dashboard-card">
                     <div class="card-header">
                         <h3 class="card-title">5 Trường đối tác</h3>
-                        <a href="schools.html" class="view-all-btn">Quản lý</a>
+                        <NuxtLink to="/schools" class="view-all-btn">Quản lý</NuxtLink>
                     </div>
                     <div class="card-content">
                         <div class="school-list">

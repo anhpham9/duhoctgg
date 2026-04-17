@@ -1,8 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
   ssr: false, // Tắt SSR hoàn toàn để test middleware
+  
+  // Router config for active classes
+  router: {
+    linkActiveClass: 'active',
+    linkExactActiveClass: 'active'
+  },
   
   // Nuxt 4: Sử dụng app.head cho external CSS
   app: {
@@ -15,7 +21,7 @@ export default defineNuxtConfig({
       ]
     }
   },
-  
+
   css: ["~/assets/css/main.css"],
   
   vite: {
