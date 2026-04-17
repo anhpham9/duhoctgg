@@ -225,7 +225,12 @@ export const useApi = (url, options = {}) => {
 📁 middleware/auth.ts
 
 ```
-export default defineNuxtRouteMiddleware(() => {
+export default defineNuxtRouteMiddleware((to) => {
+    if (import.meta.server) return;
+
+    // 👇 CHẶN LOGIN PAGE
+    if (to.path === "/login") return;
+
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -321,17 +326,26 @@ import { jwtDecode } from "jwt-decode";
 import type { IUser } from "~/types/user";
 
 export default defineNuxtRouteMiddleware((to) => {
-  if (import.meta.server) return;
+    if (import.meta.server) return;
 
-  const token = localStorage.getItem("token");
+    // 👇 CHẶN LOGIN PAGE
+    if (to.path === "/login") return;
 
-  if (!token) return navigateTo("/login");
+    const token = localStorage.getItem("token");
 
-  const user = jwtDecode(token) as IUser;
+    if (!token) return navigateTo("/login");
 
-  if (to.path.startsWith("/admin/users") && user.role_id !== 1) {
-    return navigateTo("/admin");
-  }
+    let user: IUser;
+
+    try {
+        user = jwtDecode(token) as IUser;
+    } catch {
+        return navigateTo("/login");
+    }
+
+    if (to.path.startsWith("/admin/users") && user.role_id !== 1) {
+        return navigateTo("/admin");
+    }
 });
 ```
 
@@ -358,4 +372,222 @@ Backend → authenticate
 Frontend:
 ✔ ẩn menu
 ✔ chặn route
+```
+
+# Ngày 3
+
+## 🎯 1. Tư duy tổng thể (rất quan trọng)
+
+Có 3 loại UI:
+
+```
+1. Public site (index, about, schools, news...)
+2. Login (riêng biệt)
+3. Admin (dashboard, users...)
+```
+
+👉 tương ứng với 3 layout
+
+## 🧱 2. Cấu trúc thư mục chuẩn
+
+```
+frontend/
+├── layouts/
+│   ├── default.vue      ← giao diện public
+│   ├── admin.vue        ← giao diện admin
+│   └── empty.vue        ← login
+│
+├── pages/
+│   ├── index.vue
+│   ├── about.vue
+│   ├── login.vue
+│   └── admin/
+│       ├── index.vue
+│       ├── users.vue
+│       └── schools.vue
+│
+├── assets/
+│   ├── css/
+│   │   └── main.css
+│   └── js/
+│       └── main.js
+```
+
+## 🎨 3. Thêm CSS global
+
+### 🧱 Bước 1 — tạo file
+
+📁 assets/css/main.css
+
+```
+body {
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+```
+
+### 🧱 Bước 2 — import vào config
+
+📁 nuxt.config.ts
+
+```
+export default defineNuxtConfig({
+  css: ["~/assets/css/main.css"],
+});
+```
+
+### 🧱 Bước 3 — CSS cho từng layout
+
+🟢 Layout PUBLIC
+
+📁 layouts/default.vue
+
+```
+<script setup>
+import "~/assets/css/public.css";
+</script>
+
+<template>
+  <div class="public-layout">
+    <header>Header</header>
+    <slot />
+  </div>
+</template>
+```
+
+## ⚡ 4. Thêm JS global
+
+### 🧱 Cách 1 (khuyên dùng trong Nuxt)
+
+👉 KHÔNG dùng <script> như HTML
+
+👉 dùng plugin
+
+📁 plugins/main.js
+
+```
+export default defineNuxtPlugin(() => {
+  console.log("Global JS loaded");
+});
+
+```
+
+### 🧱 Cách 2 (nếu là script ngoài)
+
+
+```
+export default defineNuxtConfig({
+  app: {
+    head: {
+      script: [
+        {
+          src: "/js/custom.js",
+          defer: true,
+        },
+      ],
+    },
+  },
+});
+```
+
+## 🧱 5. Layout PUBLIC (default)
+
+📁 layouts/default.vue
+
+```
+<template>
+  <div>
+    <header>Header Public</header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>Footer</footer>
+  </div>
+</template>
+```
+
+👉 các page:
+
+```
+index.vue
+about.vue
+schools.vue
+news.vue
+```
+
+👉 tự động dùng layout này
+
+## 🧱 6. Layout LOGIN (riêng)
+
+📁 layouts/empty.vue
+
+```
+<template>
+  <div>
+    <slot />
+  </div>
+</template>
+```
+
+📁 pages/login.vue
+
+```
+<script setup>
+definePageMeta({
+  layout: "empty",
+});
+</script>
+
+<template>
+  <h2>Login</h2>
+</template>
+```
+
+## 🧱 7. Layout ADMIN
+
+📁 layouts/admin.vue
+
+```
+<template>
+  <div class="admin-layout">
+    <aside>Sidebar</aside>
+
+    <div class="content">
+      <header>Admin Header</header>
+
+      <main>
+        <slot />
+      </main>
+    </div>
+  </div>
+</template>
+```
+
+📁 pages/admin/index.vue
+
+```
+<script setup>
+definePageMeta({
+  layout: "admin",
+  middleware: "auth",
+});
+</script>
+
+<template>
+  <h1>Dashboard</h1>
+</template>
+```
+
+👉 các page admin khác cũng tương tự:
+
+```
+admin/users.vue
+admin/schools.vue
 ```
