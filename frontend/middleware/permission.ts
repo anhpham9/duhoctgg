@@ -22,45 +22,80 @@ export default defineNuxtRouteMiddleware((to) => {
 
     console.log('🔄 Running permission middleware on client');
 
-    // TẠMTẮT check permission để test
-    console.log('🧪 TEMPORARILY SKIPPING PERMISSION CHECK');
-    return;
+    // Đợi cho Vue hydration hoàn thành
+    return new Promise((resolve) => {
+        nextTick(() => {
+            try {
+                const token = localStorage.getItem("token");
 
-    // // Đợi cho Vue hydration hoàn thành
-    // return new Promise((resolve) => {
-    //     nextTick(() => {
-    //         try {
-    //             const token = localStorage.getItem("token");
+                if (!token) {
+                    console.log('❌ No token in permission middleware, redirecting to login');
+                    resolve(navigateTo("/login"));
+                    return;
+                }
 
-    //             if (!token) {
-    //                 console.log('❌ No token in permission middleware, redirecting to login');
-    //                 resolve(navigateTo("/login"));
-    //                 return;
-    //             }
+                let user: IUser;
 
-    //             let user: IUser;
+                try {
+                    user = jwtDecode(token) as IUser;
+                    console.log('👤 Decoded user:', user);
+                } catch (error) {
+                    console.error('❌ JWT decode error:', error);
+                    localStorage.removeItem("token");
+                    resolve(navigateTo("/login"));
+                    return;
+                }
 
-    //             try {
-    //                 user = jwtDecode(token) as IUser;
-    //                 console.log('👤 Decoded user:', user);
-    //             } catch (error) {
-    //                 console.error('❌ JWT decode error:', error);
-    //                 localStorage.removeItem("token");
-    //                 resolve(navigateTo("/login"));
-    //                 return;
-    //             }
+                // Superadmin có tất cả quyền
+                if (user.role_id === 1) {
+                    console.log('✅ Superadmin access granted');
+                    resolve();
+                    return;
+                }
 
-    //             if (to.path.startsWith("/admin/users") && user.role_id !== 1) {
-    //                 console.log('🚫 User role not allowed for /admin/users, redirecting');
-    //                 resolve(navigateTo("/admin"));
-    //                 return;
-    //             }
-    //             console.log('✅ Permission check passed');
-    //             resolve();
-    //         } catch (error) {
-    //             console.error('❌ Permission middleware error:', error);
-    //             resolve(navigateTo("/login"));
-    //         }
-    //     });
-    // });
+                // Kiểm tra quyền cho từng trang admin
+                if (to.path.startsWith("/admin/users") && ![1, 2].includes(user.role_id)) {
+                    console.log('🚫 User role not allowed for /admin/users, redirecting');
+                    resolve(navigateTo("/admin"));
+                    return;
+                }
+
+                if (to.path.startsWith("/admin/contacts") && ![1, 2, 4].includes(user.role_id)) {
+                    console.log('🚫 User role not allowed for /admin/contacts, redirecting');
+                    resolve(navigateTo("/admin"));
+                    return;
+                }
+
+                if (to.path.startsWith("/admin/schools") && ![1, 2, 3].includes(user.role_id)) {
+                    console.log('🚫 User role not allowed for /admin/schools, redirecting');
+                    resolve(navigateTo("/admin"));
+                    return;
+                }
+
+                if (to.path.startsWith("/admin/news") && ![1, 2, 3].includes(user.role_id)) {
+                    console.log('🚫 User role not allowed for /admin/news, redirecting');
+                    resolve(navigateTo("/admin"));
+                    return;
+                }
+
+                if (to.path.startsWith("/admin/content") && ![1, 2, 3].includes(user.role_id)) {
+                    console.log('🚫 User role not allowed for /admin/content, redirecting');
+                    resolve(navigateTo("/admin"));
+                    return;
+                }
+
+                if (to.path.startsWith("/admin/settings") && ![1, 2].includes(user.role_id)) {
+                    console.log('🚫 User role not allowed for /admin/settings, redirecting');
+                    resolve(navigateTo("/admin"));
+                    return;
+                }
+
+                console.log('✅ Permission check passed');
+                resolve();
+            } catch (error) {
+                console.error('❌ Permission middleware error:', error);
+                resolve(navigateTo("/login"));
+            }
+        });
+    });
 });

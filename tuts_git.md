@@ -41,6 +41,7 @@ feature/frontend-init
 feature/frontend-auth
 feature/frontend-rbac
 feature/frontend-layouts
+fix/frontend-rbac
 
 ```
 ## Các tình huống đặc biệt

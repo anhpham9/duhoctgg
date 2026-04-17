@@ -14,14 +14,18 @@ const run = async () => {
             VALUES
                 ('Super Admin', 'superadmin', 'superadmin@example.com', $1, $2),
                 ('Admin User', 'admin', 'admin@example.com', $1, $3),
-                ('Consultant User', 'consultant', 'consultant@example.com', $1, $4)
+                ('Manager User', 'manager', 'manager@example.com', $1, $4),
+                ('Consultant User', 'consultant', 'consultant@example.com', $1, $5),
+                ('Editor User', 'editor', 'editor@example.com', $1, $6)
             ON CONFLICT (username) DO NOTHING
             `,
             [
                 hash,
                 roleMap.superadmin,
                 roleMap.admin,
-                roleMap.consultant
+                roleMap.manager,
+                roleMap.consultant,
+                roleMap.editor
             ]
         );
 

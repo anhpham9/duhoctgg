@@ -18,25 +18,25 @@
                         <span>Dashboard</span>
                     </NuxtLink>
                 </li>
-                <li class="nav-item" :class="{ active: isActivePage('/admin/users') }">
+                <li v-if="canAccessUsers" class="nav-item" :class="{ active: isActivePage('/admin/users') }">
                     <NuxtLink to="/admin/users" class="nav-link" @click="handleNavLinkClick">
                         <i class="fas fa-users"></i>
                         <span>Người dùng</span>
                     </NuxtLink>
                 </li>
-                <li class="nav-item" :class="{ active: isActivePage('/admin/contacts') }">
+                <li v-if="canAccessContacts" class="nav-item" :class="{ active: isActivePage('/admin/contacts') }">
                     <NuxtLink to="/admin/contacts" class="nav-link" @click="handleNavLinkClick">
                         <i class="fas fa-address-book"></i>
                         <span>Liên hệ</span>
                     </NuxtLink>
                 </li>
-                <li class="nav-item" :class="{ active: isActivePage('/admin/schools') }">
+                <li v-if="canAccessSchools" class="nav-item" :class="{ active: isActivePage('/admin/schools') }">
                     <NuxtLink to="/admin/schools" class="nav-link" @click="handleNavLinkClick">
                         <i class="fas fa-university"></i>
                         <span>Trường học</span>
                     </NuxtLink>
                 </li>
-                <li class="nav-item has-submenu" :class="{ active: openSubmenus.includes('news') }">
+                <li v-if="canAccessNews" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('news') }">
                     <a href="#" class="nav-link" @click="toggleSubmenu('news')">
                         <i class="fas fa-newspaper"></i>
                         <span>Tin tức</span>
@@ -47,7 +47,7 @@
                         <li><NuxtLink to="/admin/news/categories" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/news/categories') }">Danh mục</NuxtLink></li>
                     </ul>
                 </li>
-                <li class="nav-item has-submenu" :class="{ active: openSubmenus.includes('content') }">
+                <li v-if="canAccessContent" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('content') }">
                     <a href="#" class="nav-link" @click="toggleSubmenu('content')">
                         <i class="fas fa-file-alt"></i>
                         <span>Nội dung</span>
@@ -63,7 +63,7 @@
                         <li><NuxtLink to="/admin/content/faq" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/faq') }">FAQ</NuxtLink></li>
                     </ul>
                 </li>
-                <li class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
+                <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
                     <a href="#" class="nav-link" @click="toggleSubmenu('settings')">
                         <i class="fas fa-cog"></i>
                         <span>Cài đặt</span>
@@ -92,6 +92,8 @@
 // SIDEBAR NAVIGATION COMPONENT
 // ========================================
 
+import { jwtDecode } from "jwt-decode"
+
 const route = useRoute()
 const router = useRouter()
 
@@ -103,6 +105,62 @@ const openSubmenus = ref([])
 const isCollapsed = ref(false)
 const isMobileOpen = ref(false)
 const isMobile = ref(false)
+
+// ========================================
+// USER PERMISSIONS
+// ========================================
+
+// Get current user from JWT token
+const currentUser = computed(() => {
+    if (!process.client) return null
+    
+    const token = localStorage.getItem('token')
+    if (!token) return null
+    
+    try {
+        return jwtDecode(token)
+    } catch (error) {
+        console.error('Error decoding token:', error)
+        return null
+    }
+})
+
+// Permission checks based on role_id
+const canAccessUsers = computed(() => {
+    if (!currentUser.value) return false
+    // Only Superadmin (1) and Admin/Manager (2, 3) can access users
+    return [1, 2, 3].includes(currentUser.value.role_id)
+})
+
+const canAccessContacts = computed(() => {
+    if (!currentUser.value) return false
+    // Superadmin (1), Admin/Manager (2/3), and Consultant (5) can access contacts
+    return [1, 2, 3, 5].includes(currentUser.value.role_id)
+})
+
+const canAccessSchools = computed(() => {
+    if (!currentUser.value) return false
+    // Superadmin (1), Admin/Manager (2, 3) can access schools
+    return [1, 2, 3].includes(currentUser.value.role_id)
+})
+
+const canAccessNews = computed(() => {
+    if (!currentUser.value) return false
+    // Superadmin (1), Admin/Manager (2, 3), and Editor (4) can access news
+    return [1, 2, 3, 4].includes(currentUser.value.role_id)
+})
+
+const canAccessContent = computed(() => {
+    if (!currentUser.value) return false
+    // Superadmin (1), Admin/Manager (2, 3) can access content
+    return [1, 2, 3].includes(currentUser.value.role_id)
+})
+
+const canAccessSettings = computed(() => {
+    if (!currentUser.value) return false
+    // Only Superadmin (1) and Admin/Manager (2) can access settings
+    return [1, 2].includes(currentUser.value.role_id)
+})
 
 // ========================================
 // NAVIGATION HELPERS
