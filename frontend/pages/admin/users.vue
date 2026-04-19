@@ -1,7 +1,7 @@
 <template>
-    <PermissionGuard :allowed-roles="ADMIN_PERMISSIONS.ADMIN_MANAGER" :show-user-info="false"
+    <PermissionGuard :allowed-roles="ADMIN_PERMISSIONS.MANAGEMENT_LEVEL" :show-user-info="false"
         denied-title="Không thể truy cập Quản lý Người dùng"
-        denied-message="Chỉ Superadmin và Admin/Manager mới có thể quản lý người dùng.">
+        denied-message="Chỉ Superadmin, Admin và Manager mới có thể quản lý người dùng.">
         <template #default="{ user }">
             <div class="users-page">
                 <div class="page-header">
@@ -24,7 +24,14 @@
                         <div class="stat-card">
                             <i class="fas fa-user-tie"></i>
                             <div>
-                                <h3>Admin/Manager</h3>
+                                <h3>Admin</h3>
+                                <span>3 người dùng</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-user-tie"></i>
+                            <div>
+                                <h3>Manager</h3>
                                 <span>3 người dùng</span>
                             </div>
                         </div>

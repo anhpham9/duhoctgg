@@ -128,37 +128,37 @@ const currentUser = computed(() => {
 // Permission checks based on role_id
 const canAccessUsers = computed(() => {
     if (!currentUser.value) return false
-    // Only Superadmin (1) and Admin/Manager (2, 3) can access users
+    // Only Superadmin (1), Admin (2) and Manager (3) can access users
     return [1, 2, 3].includes(currentUser.value.role_id)
 })
 
 const canAccessContacts = computed(() => {
     if (!currentUser.value) return false
-    // Superadmin (1), Admin/Manager (2/3), and Consultant (5) can access contacts
+    // Superadmin (1), Admin (2), Manager (3), and Consultant (5) can access contacts
     return [1, 2, 3, 5].includes(currentUser.value.role_id)
 })
 
 const canAccessSchools = computed(() => {
     if (!currentUser.value) return false
-    // Superadmin (1), Admin/Manager (2, 3) can access schools
+    // Superadmin (1), Admin (2), Manager (3) can access schools
     return [1, 2, 3].includes(currentUser.value.role_id)
 })
 
 const canAccessNews = computed(() => {
     if (!currentUser.value) return false
-    // Superadmin (1), Admin/Manager (2, 3), and Editor (4) can access news
+    // Superadmin (1), Admin (2), Manager (3), and Editor (4) can access news
     return [1, 2, 3, 4].includes(currentUser.value.role_id)
 })
 
 const canAccessContent = computed(() => {
     if (!currentUser.value) return false
-    // Superadmin (1), Admin/Manager (2, 3) can access content
+    // Superadmin (1), Admin (2), Manager (3) can access content
     return [1, 2, 3].includes(currentUser.value.role_id)
 })
 
 const canAccessSettings = computed(() => {
     if (!currentUser.value) return false
-    // Only Superadmin (1) and Admin/Manager (2) can access settings
+    // Only Superadmin (1) and Admin (2) can access settings
     return [1, 2].includes(currentUser.value.role_id)
 })
 

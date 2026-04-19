@@ -166,6 +166,22 @@ checkPermission("news.create")
 
 ---
 
+## 📋 Permission Matrix
+
+|Feature	|Superadmin	|Admin	|Manager	|Editor	|Consultant|
+|--|--|--|--|--|--|
+|Users Management	|✅	|✅(*)	|✅(*)	|❌	|❌|
+|Contacts	|✅	|✅	|✅	|❌	|✅|
+|Schools	|✅	|✅	|✅	|❌	|❌|
+|News	|✅	|✅	|✅	|✅	|❌|
+|Content	|✅	|✅	|✅	|❌	|❌|
+|Settings	|✅	|✅	|❌	|❌	|❌|
+
+(*) Users Management:
+- **Admin** : can add users with role: Consultant, Editor and Manager.
+- **Manager** : can add users with role: Consultant and Editor.
+---
+
 ## 🗄️ Database
 
 Sử dụng PostgreSQL với các bảng chính:

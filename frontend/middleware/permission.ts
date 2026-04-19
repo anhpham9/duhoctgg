@@ -54,13 +54,13 @@ export default defineNuxtRouteMiddleware((to) => {
                 }
 
                 // Kiểm tra quyền cho từng trang admin
-                if (to.path.startsWith("/admin/users") && ![1, 2].includes(user.role_id)) {
+                if (to.path.startsWith("/admin/users") && ![1, 2, 3].includes(user.role_id)) {
                     console.log('🚫 User role not allowed for /admin/users, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
-                if (to.path.startsWith("/admin/contacts") && ![1, 2, 4].includes(user.role_id)) {
+                if (to.path.startsWith("/admin/contacts") && ![1, 2, 3, 5].includes(user.role_id)) {
                     console.log('🚫 User role not allowed for /admin/contacts, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
@@ -72,7 +72,7 @@ export default defineNuxtRouteMiddleware((to) => {
                     return;
                 }
 
-                if (to.path.startsWith("/admin/news") && ![1, 2, 3].includes(user.role_id)) {
+                if (to.path.startsWith("/admin/news") && ![1, 2, 3, 4].includes(user.role_id)) {
                     console.log('🚫 User role not allowed for /admin/news, redirecting');
                     resolve(navigateTo("/admin"));
                     return;

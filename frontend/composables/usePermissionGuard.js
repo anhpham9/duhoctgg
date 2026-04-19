@@ -21,11 +21,11 @@ export const usePermissionGuard = (allowedRoles = [], options = {}) => {
 
     // Role mapping for display
     const roleMap = {
-        1: 'Superadmin',
-        2: 'Admin/Manager', 
-        3: 'Editor',
-        4: 'Consultant',
-        5: 'User'
+        1: 'Superadmin',     // Toàn quyền
+        2: 'Admin',          // Admin (toàn quyền trừ tạo tài khoản admin + super admin)
+        3: 'Manager',        // Quản lý
+        4: 'Editor',         // Biên tập nội dung
+        5: 'Consultant'      // Tư vấn
     }
 
     const checkPermissions = async () => {
@@ -130,9 +130,10 @@ export const usePermissionGuard = (allowedRoles = [], options = {}) => {
 
 // Predefined permission sets for common admin pages
 export const ADMIN_PERMISSIONS = {
-    SUPERADMIN_ONLY: [1],
-    ADMIN_MANAGER: [1, 2],
-    CONTENT_EDITORS: [1, 2, 3],
-    CONTACT_HANDLERS: [1, 2, 4],
-    ALL_ROLES: [1, 2, 3, 4, 5]
+    SUPERADMIN_ONLY: [1],              // Chỉ Superadmin
+    ADMIN_LEVEL: [1, 2],               // Superadmin + Admin
+    MANAGEMENT_LEVEL: [1, 2, 3],       // Superadmin + Admin + Manager
+    CONTENT_EDITORS: [1, 2, 3, 4],     // Superadmin + Admin + Manager + Editor
+    CONTACT_HANDLERS: [1, 2, 3, 5],    // Superadmin + Admin + Manager + Consultant
+    ALL_ROLES: [1, 2, 3, 4, 5]         // Tất cả roles
 }
