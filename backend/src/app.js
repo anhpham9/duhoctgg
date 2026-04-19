@@ -5,6 +5,7 @@ import express from "express";
 import cors from "cors";
 
 import authRoutes from "./routes/auth.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 
 const app = express();
 
@@ -18,6 +19,9 @@ app.get("/", (req, res) => {
 
 // auth routes
 app.use("/api/auth", authRoutes);
+
+// users CRUD routes (RBAC protected)
+app.use("/api/users", usersRoutes);
 
 // test protected route
 app.get("/api/me", authenticate, (req, res) => {

@@ -249,13 +249,13 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 🔐 Phase 2 — Authentication & RBAC (DONE)
+### 🔐 Phase 2 — Authentication & RBAC (IN PROGRESS)
 
 * [x] Login bằng username
 * [x] Hash password (bcrypt)
 * [x] JWT Authentication
 * [x] Middleware authenticate
-* [ ] RBAC (role + permission)
+* [x] RBAC (role + permission)
 * [ ] Protect API theo permission
 
 ---
@@ -272,7 +272,16 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 📰 Phase 4 — News Module
+### 📰 Phase 4 — Users Module
+
+* [x] CRUD Users
+* [x] Phân quyền tạo user theo role
+* [x] Không cho tạo vượt quyền
+* [x] Backend enforce (quan trọng nhất)
+
+---
+
+### 📰 Phase 5 — News Module
 
 * [ ] CRUD News
 * [ ] SEO (slug unique theo category)
@@ -282,7 +291,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 🏫 Phase 5 — Schools Module
+### 🏫 Phase 6 — Schools Module
 
 * [ ] CRUD Schools
 * [ ] Upload logo + ảnh
@@ -292,7 +301,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 📞 Phase 6 — Contacts (Leads)
+### 📞 Phase 7 — Contacts (Leads)
 
 * [ ] Nhận form từ frontend
 * [ ] Funnel trạng thái (new → pending → contacted → closed)
@@ -302,7 +311,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 📄 Phase 7 — Static Content
+### 📄 Phase 8 — Static Content
 
 * [ ] Quản lý trang (about, contact...)
 * [ ] Page hero (title + description)
@@ -311,7 +320,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 🎨 Phase 8 — Frontend UI hoàn chỉnh
+### 🎨 Phase 9 — Frontend UI hoàn chỉnh
 
 * [ ] Layout public
 * [ ] Layout admin dashboard
@@ -320,7 +329,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 📊 Phase 9 — Dashboard & Analytics
+### 📊 Phase 10 — Dashboard & Analytics
 
 * [ ] Thống kê leads
 * [ ] Thống kê bài viết
@@ -328,7 +337,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### ⚡ Phase 10 — Advanced RBAC (PRO)
+### ⚡ Phase 11 — Advanced RBAC (PRO)
 
 * [ ] Dynamic permission
 * [ ] UI theo permission
@@ -336,7 +345,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 🚀 Phase 11 — Production Ready
+### 🚀 Phase 12 — Production Ready
 
 * [ ] Logging
 * [ ] Error handling
@@ -346,7 +355,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### ☁️ Phase 12 — Deployment
+### ☁️ Phase 13 — Deployment
 
 * [ ] Deploy backend
 * [ ] Deploy frontend
@@ -355,7 +364,7 @@ curl http://localhost:5000/api/me \
 
 ---
 
-### 🔥 Phase 13 — Nâng cao
+### 🔥 Phase 14 — Nâng cao
 
 * [ ] Realtime
 * [ ] Email automation

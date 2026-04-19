@@ -35,6 +35,8 @@ feature/auth
 feature/backend-seeds
 feature/auth-middleware-backend
 feature/rbac-backend
+feature/users-crud-rbac
+
 
 # frontend
 feature/frontend-init
@@ -42,6 +44,7 @@ feature/frontend-auth
 feature/frontend-rbac
 feature/frontend-layouts
 fix/frontend-rbac
+feature/frontend-users
 
 ```
 ## Các tình huống đặc biệt
