@@ -11,6 +11,7 @@ import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/auth.routes.js";
 import usersRoutes from "./routes/users.routes.js";
+import contactsRoutes from "./routes/contacts.routes.js";
 
 const app = express();
 
@@ -69,10 +70,10 @@ const generalLimiter = rateLimit({
 });
 app.use('/api/', generalLimiter);
 
-// Auth endpoints rate limiting
+// Auth endpoints rate limiting (temporary higher limit for testing)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // limit each IP to 5 requests per windowMs
+    max: 50, // temporarily increased from 5 to 50 for testing
     message: 'Too many authentication attempts, please try again later.',
     skipSuccessfulRequests: true
 });
@@ -86,6 +87,14 @@ const userLimiter = rateLimit({
 });
 app.use('/api/users/', userLimiter);
 
+// Contact management rate limiting (temporary higher limit for testing)
+const contactLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 100, // temporarily increased from 15 to 100 for testing
+    message: 'Too many contact requests, please slow down.'
+});
+app.use('/api/contacts/', contactLimiter);
+
 // test route
 app.get("/", (req, res) => {
     res.send("API is running...");
@@ -96,6 +105,9 @@ app.use("/api/auth", authRoutes);
 
 // users CRUD routes (RBAC protected)
 app.use("/api/users", usersRoutes);
+
+// contacts CRUD routes (RBAC protected)
+app.use("/api/contacts", contactsRoutes);
 
 // test protected route
 app.get("/api/me", authenticate, (req, res) => {

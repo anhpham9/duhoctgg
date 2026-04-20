@@ -286,6 +286,79 @@ export class InputSanitizer {
         return sanitized;
     }
 
+    // Comprehensive contact data sanitization
+    static sanitizeContactData(contactData) {
+        const sanitized = {};
+
+        // Sanitize each field
+        if (contactData.name) {
+            sanitized.name = this.sanitizeName(contactData.name);
+        }
+
+        if (contactData.email) {
+            sanitized.email = this.sanitizeEmail(contactData.email);
+        }
+
+        if (contactData.phone) {
+            sanitized.phone = this.sanitizePhone(contactData.phone);
+        }
+
+        if (contactData.message) {
+            sanitized.message = this.sanitizeText(contactData.message, {
+                maxLength: 5000, // Allow longer messages
+                escapeHtml: false // Keep basic HTML for messages
+            });
+        }
+
+        if (contactData.status) {
+            sanitized.status = this.sanitizeText(contactData.status, {
+                maxLength: 30
+            });
+        }
+
+        if (contactData.contact_method) {
+            sanitized.contact_method = this.sanitizeText(contactData.contact_method, {
+                maxLength: 20
+            });
+        }
+
+        if (contactData.social_contact) {
+            sanitized.social_contact = this.sanitizeText(contactData.social_contact, {
+                maxLength: 255
+            });
+        }
+
+        if (contactData.assigned_to) {
+            sanitized.assigned_to = this.sanitizeNumber(contactData.assigned_to, {
+                min: 1,
+                max: 999999,
+                default: null
+            });
+        }
+
+        if (contactData.first_contacted_at) {
+            sanitized.first_contacted_at = contactData.first_contacted_at; // Let DB handle timestamp validation
+        }
+
+        if (contactData.closed_at) {
+            sanitized.closed_at = contactData.closed_at; // Let DB handle timestamp validation
+        }
+
+        if (contactData.note) {
+            sanitized.note = this.sanitizeText(contactData.note, {
+                maxLength: 2000, // Allow longer notes
+                escapeHtml: false // Keep basic HTML for notes
+            });
+        }
+
+        logger.debug('Contact data sanitized', {
+            originalFields: Object.keys(contactData),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
     // SQL injection prevention helper
     static preventSQLInjection(input) {
         if (typeof input !== 'string') return input;

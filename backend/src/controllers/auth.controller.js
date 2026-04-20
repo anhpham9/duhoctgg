@@ -23,11 +23,13 @@ export const login = async (req, res) => {
         }
 
         // Sanitize inputs
-        const sanitizer = new InputSanitizer();
-        const sanitizedUsername = sanitizer.sanitizeText(username);
+        const sanitizedUsername = InputSanitizer.sanitizeText(username, { 
+            maxLength: 50 
+        });
         
-        // Validate username format (prevent SQL injection attempts)
-        if (!sanitizer.validateUsername(sanitizedUsername)) {
+        // Basic username validation (alphanumeric, underscore, dot)
+        const usernameRegex = /^[a-zA-Z0-9._]{3,50}$/;
+        if (!usernameRegex.test(sanitizedUsername)) {
             logError('Login failed - Invalid username format', new Error('Username contains invalid characters'), {
                 originalUsername: username,
                 sanitizedUsername: sanitizedUsername,
@@ -136,8 +138,9 @@ export const login = async (req, res) => {
         res.json({ 
             success: true,
             message: "Login successful",
-            user: safeUser
-            // Don't send token in body for security
+            user: safeUser,
+            // Temporary: send token in body for testing
+            token: token
         });
     } catch (error) {
         logError('Login failed - System error', error, {
