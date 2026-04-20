@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd frontend ; npx vue-tsc --noEmit pages/admin/users\\.vue$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

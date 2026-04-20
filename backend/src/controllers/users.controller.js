@@ -720,9 +720,9 @@ export const resetPassword = async (req, res) => {
                     name: targetUser.name,
                     username: targetUser.username
                 },
-                // Không trả về password trong response để bảo mật
-                // Password sẽ được gửi qua email hoặc SMS trong tương lai
-                passwordResetCompleted: true
+                // Trả về password mới để admin có thể thông báo cho user
+                // Lưu ý: Chỉ hiển thị 1 lần và admin cần copy ngay
+                newPassword: newPassword
             }
         });
 

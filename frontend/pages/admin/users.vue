@@ -1,87 +1,102 @@
 <template>
-    <PermissionGuard :allowed-roles="ADMIN_PERMISSIONS.MANAGEMENT_LEVEL" :show-user-info="false"
-        denied-title="Không thể truy cập Quản lý Người dùng"
-        denied-message="Chỉ Superadmin, Admin và Manager mới có thể quản lý người dùng.">
-        <template #default="{ user: currentUser }">
-            <div class="users-page">
-                <!-- Page Header -->
-                <div class="page-header">
-                    <div class="header-content">
-                        <h1>
-                            <i class="fas fa-users"></i>
-                            Quản lý Người dùng
-                        </h1>
-                        <p>Quản lý tài khoản và phân quyền người dùng trong hệ thống</p>
-                    </div>
-                    <div class="header-actions">
-                        <button @click="handleOpenCreateForm" class="btn btn-primary">
-                            <i class="fas fa-plus"></i>
-                            Thêm người dùng
-                        </button>
-                    </div>
-                </div>
+    <div class="users-page">
+        <!-- Permission Check & Loading -->
+        <div v-if="loadingUser || !hasPermission" class="permission-check">
+            <div v-if="loadingUser" class="loading-permission">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Đang kiểm tra quyền truy cập...</p>
+            </div>
+            <div v-else class="permission-denied">
+                <i class="fas fa-shield-alt"></i>
+                <h3>Không thể truy cập Quản lý Người dùng</h3>
+                <p>Chỉ Superadmin, Admin và Manager mới có thể quản lý người dùng.</p>
+                <NuxtLink to="/admin" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại Dashboard
+                </NuxtLink>
+            </div>
+        </div>
 
-                <!-- Stats Cards -->
-                <div class="stats-section">
-                    <div class="stats-grid">
-                        <div class="stat-card total">
-                            <i class="fas fa-users"></i>
-                            <div class="stat-info">
-                                <h3>Tổng số</h3>
-                                <span>{{ stats.total || 0 }} người dùng</span>
-                            </div>
+        <!-- Main Content -->
+        <div v-else>
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i class="fas fa-users"></i>
+                        Quản lý Người dùng
+                    </h1>
+                    <p>Quản lý tài khoản và phân quyền người dùng trong hệ thống</p>
+                </div>
+                <div class="header-actions">
+                    <button @click="handleOpenCreateForm" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Thêm người dùng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <h3>Tổng số</h3>
+                            <span>{{ stats.total || 0 }} người dùng</span>
                         </div>
-                        <div v-if="currentUser.role_id === 1" class="stat-card superadmin">
-                            <i class="fas fa-user-shield"></i>
-                            <div class="stat-info">
-                                <h3>Superadmin</h3>
-                                <span>{{ stats.Superadmin || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div v-if="isSuperadmin" class="stat-card superadmin">
+                        <i class="fas fa-user-shield"></i>
+                        <div class="stat-info">
+                            <h3>Superadmin</h3>
+                            <span>{{ stats.superadmin || 0 }} người dùng</span>
                         </div>
-                        <div v-if="currentUser.role_id <= 2" class="stat-card admin">
-                            <i class="fas fa-user-tie"></i>
-                            <div class="stat-info">
-                                <h3>Admin</h3>
-                                <span>{{ stats.Admin || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2])" class="stat-card admin">
+                        <i class="fas fa-user-tie"></i>
+                        <div class="stat-info">
+                            <h3>Admin</h3>
+                            <span>{{ stats.admin || 0 }} người dùng</span>
                         </div>
-                        <div v-if="currentUser.role_id <= 3" class="stat-card manager">
-                            <i class="fas fa-user-cog"></i>
-                            <div class="stat-info">
-                                <h3>Manager</h3>
-                                <span>{{ stats.Manager || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2, 3])" class="stat-card manager">
+                        <i class="fas fa-user-cog"></i>
+                        <div class="stat-info">
+                            <h3>Manager</h3>
+                            <span>{{ stats.manager || 0 }} người dùng</span>
                         </div>
-                        <div v-if="currentUser.role_id <= 4" class="stat-card editor">
-                            <i class="fas fa-user-edit"></i>
-                            <div class="stat-info">
-                                <h3>Editor</h3>
-                                <span>{{ stats.Editor || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2, 3])" class="stat-card editor">
+                        <i class="fas fa-user-edit"></i>
+                        <div class="stat-info">
+                            <h3>Editor</h3>
+                            <span>{{ stats.editor || 0 }} người dùng</span>
                         </div>
-                        <div v-if="currentUser.role_id <= 5" class="stat-card consultant">
-                            <i class="fas fa-user-headset"></i>
-                            <div class="stat-info">
-                                <h3>Consultant</h3>
-                                <span>{{ stats.Consultant || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2, 3])" class="stat-card consultant">
+                        <i class="fas fa-user-headset"></i>
+                        <div class="stat-info">
+                            <h3>Consultant</h3>
+                            <span>{{ stats.consultant || 0 }} người dùng</span>
                         </div>
-                        <div class="stat-card active">
-                            <i class="fas fa-check-circle"></i>
-                            <div class="stat-info">
-                                <h3>Đang hoạt động</h3>
-                                <span>{{ stats.active || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div class="stat-card active">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-info">
+                            <h3>Đang hoạt động</h3>
+                            <span>{{ stats.active || 0 }} người dùng</span>
                         </div>
-                        <div class="stat-card inactive">
-                            <i class="fas fa-times-circle"></i>
-                            <div class="stat-info">
-                                <h3>Tạm khóa</h3>
-                                <span>{{ stats.inactive || 0 }} người dùng</span>
-                            </div>
+                    </div>
+                    <div class="stat-card inactive">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="stat-info">
+                            <h3>Tạm khóa</h3>
+                            <span>{{ stats.inactive || 0 }} người dùng</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- Users Table -->
                 <div class="table-section">
@@ -662,17 +677,50 @@
                     </button>
                 </div>
             </div>
-        </template>
-    </PermissionGuard>
+        </div>
 </template>
 
 <script setup>
-// Import permission constants and PermissionGuard component
-import { ADMIN_PERMISSIONS } from '~/composables/usePermissionGuard'
-import PermissionGuard from '~/components/admin/PermissionGuard.vue'
+// Import composables and components
+import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useUsersAPI } from '~/composables/useUsersAPI'
-import { ref, reactive, computed, nextTick } from 'vue'
+import { useNotifications } from '~/composables/useNotifications'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
+
+// ===========================================
+// AUTHENTICATION & PERMISSIONS
+// ===========================================
+
+// Get current user with permissions
+const { 
+    currentUser, 
+    loadingUser, 
+    hasRole, 
+    hasAnyRole, 
+    isSuperadmin, 
+    isAdmin, 
+    isManager,
+    fetchCurrentUser 
+} = useCurrentUser()
+
+// Check if user has permission for users management
+const hasPermission = computed(() => {
+    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
+})
+
+// Initialize user data on component mount
+onMounted(async () => {
+    await fetchCurrentUser()
+    if (hasPermission.value) {
+        await fetchUsers()
+        await fetchAvailableRoles()
+    }
+})
+
+// ===========================================
+// USERS API & DATA MANAGEMENT
+// ===========================================
 
 // Use the users API composable
 const {
@@ -736,34 +784,25 @@ const {
     canResetPassword
 } = useUsersAPI()
 
-// Export state
+// ===========================================
+// NOTIFICATION SYSTEM
+// ===========================================
+
+// Use notification composable
+const {
+    notification,
+    showSuccess,
+    showError,
+    showWarning,
+    hideNotification
+} = useNotifications()
+
+// ===========================================
+// FORM VALIDATION & STATES
+// ===========================================
+
+// Export to Excel state
 const exportingExcel = ref(false)
-
-// Notification system
-const notification = reactive({
-    show: false,
-    type: 'success', // success, error, warning
-    message: '',
-    icon: 'fas fa-check-circle'
-})
-
-const showNotification = (type, message) => {
-    notification.type = type
-    notification.message = message
-    notification.icon = type === 'success' ? 'fas fa-check-circle' :
-        type === 'error' ? 'fas fa-exclamation-circle' :
-            'fas fa-exclamation-triangle'
-    notification.show = true
-
-    // Auto hide after 5 seconds
-    setTimeout(() => {
-        notification.show = false
-    }, 5000)
-}
-
-const hideNotification = () => {
-    notification.show = false
-}
 
 // Password strength checking
 const passwordStrength = reactive({
@@ -1068,7 +1107,7 @@ const setBackendValidationErrors = (errors, isEditForm = false) => {
     Object.keys(errors).forEach(field => {
         if (field === '_general') {
             // Show general error as notification
-            showNotification('error', errors[field])
+            showError(errors[field])
         } else if (errorObj.hasOwnProperty(field)) {
             errorObj[field] = translateErrorMessage(errors[field])
         }
@@ -1336,19 +1375,22 @@ const getPasswordStrengthText = () => {
     return 'Mạnh'
 }
 
-// Event handlers
+// ===========================================
+// EVENT HANDLERS
+// ===========================================
+
 const handleCreateUser = async () => {
     // Validate form first
     const isValid = await validateCreateForm()
     if (!isValid) {
-        showNotification('error', 'Vui lòng sửa các lỗi trong form')
+        showError('Vui lòng sửa các lỗi trong form')
         return
     }
     
     const result = await createUser()
 
     if (result.success) {
-        showNotification('success', result.message || 'Tạo người dùng thành công!')
+        showSuccess(result.message || 'Tạo người dùng thành công!')
         // Clear any previous backend errors
         Object.keys(validationErrors).forEach(key => {
             validationErrors[key] = ''
@@ -1363,14 +1405,14 @@ const handleCreateUser = async () => {
             
             if (hasFieldErrors) {
                 setBackendValidationErrors(backendErrors, false)
-                showNotification('error', 'Vui lòng kiểm tra các lỗi trong form')
+                showError('Vui lòng kiểm tra các lỗi trong form')
             } else {
                 // Show general error
-                showNotification('error', backendErrors._general || result.message || 'Có lỗi xảy ra khi tạo người dùng')
+                showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi tạo người dùng')
             }
         } catch (error) {
             console.error('Error parsing backend validation:', error)
-            showNotification('error', result.message || 'Có lỗi xảy ra khi tạo người dùng')
+            showError(result.message || 'Có lỗi xảy ra khi tạo người dùng')
         }
     }
 }
@@ -1379,14 +1421,14 @@ const handleUpdateUser = async () => {
     // Validate form first
     const isValid = await validateEditForm()
     if (!isValid) {
-        showNotification('error', 'Vui lòng sửa các lỗi trong form')
+        showError('Vui lòng sửa các lỗi trong form')
         return
     }
     
     const result = await updateUser()
 
     if (result.success) {
-        showNotification('success', result.message || 'Cập nhật người dùng thành công!')
+        showSuccess(result.message || 'Cập nhật người dùng thành công!')
         // Clear any previous backend errors
         Object.keys(editValidationErrors).forEach(key => {
             editValidationErrors[key] = ''
@@ -1401,14 +1443,14 @@ const handleUpdateUser = async () => {
             
             if (hasFieldErrors) {
                 setBackendValidationErrors(backendErrors, true)
-                showNotification('error', 'Vui lòng kiểm tra các lỗi trong form')
+                showError('Vui lòng kiểm tra các lỗi trong form')
             } else {
                 // Show general error
-                showNotification('error', backendErrors._general || result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
+                showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
             }
         } catch (error) {
             console.error('Error parsing backend validation:', error)
-            showNotification('error', result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
+            showError(result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
         }
     }
 }
@@ -1419,9 +1461,9 @@ const handleDeleteUser = async () => {
     const result = await deleteUser(userToDelete.value.id)
 
     if (result.success) {
-        showNotification('success', result.message || 'Xóa người dùng thành công!')
+        showSuccess(result.message || 'Xóa người dùng thành công!')
     } else {
-        showNotification('error', result.message || 'Có lỗi xảy ra khi xóa người dùng')
+        showError(result.message || 'Có lỗi xảy ra khi xóa người dùng')
     }
 }
 
@@ -1431,20 +1473,20 @@ const handleResetPassword = async () => {
     const result = await resetPassword(userToResetPassword.value.id)
 
     if (result.success) {
-        showNotification('success', 'Reset mật khẩu thành công!')
+        showSuccess('Reset mật khẩu thành công!')
         // Result is automatically stored in resetPasswordResult by the API function
     } else {
-        showNotification('error', result.message || 'Có lỗi xảy ra khi reset mật khẩu')
+        showError(result.message || 'Có lỗi xảy ra khi reset mật khẩu')
     }
 }
 
 const copyToClipboard = async (text) => {
     try {
         await navigator.clipboard.writeText(text)
-        showNotification('success', 'Đã copy vào clipboard!')
+        showSuccess('Đã copy vào clipboard!')
     } catch (error) {
         console.error('Copy failed:', error)
-        showNotification('error', 'Không thể copy vào clipboard')
+        showError('Không thể copy vào clipboard')
     }
 }
 
@@ -1454,9 +1496,9 @@ const handleToggleStatus = async (user) => {
 
     if (result.success) {
         const statusText = user.is_active ? 'kích hoạt' : 'tạm khóa'
-        showNotification('success', `Đã ${statusText} người dùng ${user.name}`)
+        showSuccess(`Đã ${statusText} người dùng ${user.name}`)
     } else {
-        showNotification('error', result.message || 'Có lỗi xảy ra khi thay đổi trạng thái')
+        showError(result.message || 'Có lỗi xảy ra khi thay đổi trạng thái')
     }
 }
 
@@ -1565,10 +1607,13 @@ const getVisiblePages = () => {
     return pages
 }
 
-// Excel Export function
+// ===========================================
+// EXCEL EXPORT FUNCTIONALITY
+// ===========================================
+
 const exportToExcel = async () => {
     if (filteredUsers.value.length === 0) {
-        showNotification('warning', 'Không có dữ liệu để xuất')
+        showWarning('Không có dữ liệu để xuất')
         return
     }
 
@@ -1620,10 +1665,10 @@ const exportToExcel = async () => {
         // Export file
         XLSX.writeFile(wb, filename)
         
-        showNotification('success', `Đã xuất ${filteredUsers.value.length} người dùng ra file Excel thành công!`)
+        showSuccess(`Đã xuất ${filteredUsers.value.length} người dùng ra file Excel thành công!`)
     } catch (error) {
         console.error('Export error:', error)
-        showNotification('error', 'Có lỗi xảy ra khi xuất file Excel')
+        showError('Có lỗi xảy ra khi xuất file Excel')
     } finally {
         exportingExcel.value = false
     }
@@ -1645,14 +1690,67 @@ const formatDate = (dateString) => {
     }
 }
 
+// ===========================================
+// PAGE CONFIGURATION
+// ===========================================
+
 definePageMeta({
     layout: "admin",
     middleware: ["auth", "permission"],
     ssr: false
-});
+})
 </script>
 
 <style scoped>
+/* =========================
+   PERMISSION CHECK STYLES
+   ========================= */
+.permission-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.loading-permission,
+.permission-denied {
+    text-align: center;
+    max-width: 500px;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.loading-permission i {
+    font-size: 3rem;
+    color: #2196F3;
+    margin-bottom: 1rem;
+}
+
+.permission-denied i {
+    font-size: 3rem;
+    color: #f44336;
+    margin-bottom: 1rem;
+}
+
+.permission-denied h3 {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.permission-denied p {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.permission-denied .btn {
+    margin-top: 1rem;
+}
+
 /* =========================
    MAIN LAYOUT
    ========================= */
@@ -1873,7 +1971,7 @@ definePageMeta({
     font-size: 0.9rem;
 }
 
-.user-info {
+.user-row .user-info {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -2595,7 +2693,7 @@ span.required {
         font-size: 0.9rem;
     }
 
-    .user-info {
+    .user-row .user-info {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
