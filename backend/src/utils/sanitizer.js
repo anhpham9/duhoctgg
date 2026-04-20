@@ -521,6 +521,272 @@ export class InputSanitizer {
         return sanitized;
     }
 
+    // Comprehensive schools data sanitization
+    static sanitizeSchoolData(schoolData) {
+        const sanitized = {};
+
+        // Sanitize each field
+        if (schoolData.name) {
+            sanitized.name = this.sanitizeText(schoolData.name, {
+                maxLength: 200,
+                escapeHtml: false
+            });
+        }
+
+        if (schoolData.slug) {
+            sanitized.slug = this.sanitizeSlug(schoolData.slug);
+        }
+
+        if (schoolData.location) {
+            sanitized.location = this.sanitizeText(schoolData.location, {
+                maxLength: 500,
+                escapeHtml: false
+            });
+        }
+
+        if (schoolData.tuition_per_year) {
+            sanitized.tuition_per_year = this.sanitizeNumber(schoolData.tuition_per_year, {
+                min: 0,
+                max: 10000000,
+                default: null
+            });
+        }
+
+        if (schoolData.class_size) {
+            sanitized.class_size = this.sanitizeNumber(schoolData.class_size, {
+                min: 1,
+                max: 200,
+                default: null
+            });
+        }
+
+        if (schoolData.visa_success_rate) {
+            sanitized.visa_success_rate = this.sanitizeNumber(schoolData.visa_success_rate, {
+                min: 0,
+                max: 100,
+                default: null
+            });
+        }
+
+        if (schoolData.features) {
+            // Handle JSONB features field
+            if (typeof schoolData.features === 'object') {
+                sanitized.features = this.sanitizeJSONData(schoolData.features);
+            }
+        }
+
+        if (schoolData.region_id) {
+            sanitized.region_id = this.sanitizeNumber(schoolData.region_id, {
+                min: 1,
+                max: 999999,
+                default: null
+            });
+        }
+
+        if (schoolData.type_id) {
+            sanitized.type_id = this.sanitizeNumber(schoolData.type_id, {
+                min: 1,
+                max: 999999,
+                default: null
+            });
+        }
+
+        if (schoolData.status) {
+            const validStatuses = ['active', 'inactive'];
+            const status = this.sanitizeText(schoolData.status, { maxLength: 20 });
+            sanitized.status = validStatuses.includes(status) ? status : 'active';
+        }
+
+        if (schoolData.logo_url) {
+            sanitized.logo_url = this.sanitizeUrl(schoolData.logo_url);
+        }
+
+        if (schoolData.thumbnail_url) {
+            sanitized.thumbnail_url = this.sanitizeUrl(schoolData.thumbnail_url);
+        }
+
+        logger.debug('School data sanitized', {
+            originalFields: Object.keys(schoolData),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
+    // Comprehensive regions data sanitization
+    static sanitizeRegionData(regionData) {
+        const sanitized = {};
+
+        // Sanitize each field
+        if (regionData.name) {
+            sanitized.name = this.sanitizeText(regionData.name, {
+                maxLength: 100,
+                escapeHtml: false
+            });
+        }
+
+        if (regionData.slug) {
+            sanitized.slug = this.sanitizeSlug(regionData.slug);
+        }
+
+        logger.debug('Region data sanitized', {
+            originalFields: Object.keys(regionData),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
+    // Comprehensive school types data sanitization
+    static sanitizeSchoolTypeData(schoolTypeData) {
+        const sanitized = {};
+
+        // Sanitize each field
+        if (schoolTypeData.name) {
+            sanitized.name = this.sanitizeText(schoolTypeData.name, {
+                maxLength: 100,
+                escapeHtml: false
+            });
+        }
+
+        if (schoolTypeData.slug) {
+            sanitized.slug = this.sanitizeSlug(schoolTypeData.slug);
+        }
+
+        logger.debug('School type data sanitized', {
+            originalFields: Object.keys(schoolTypeData),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
+    // Comprehensive FAQs data sanitization
+    static sanitizeFaqData(faqData) {
+        const sanitized = {};
+
+        // Sanitize each field
+        if (faqData.question) {
+            sanitized.question = this.sanitizeText(faqData.question, {
+                maxLength: 1000,
+                escapeHtml: false
+            });
+        }
+
+        if (faqData.answer) {
+            sanitized.answer = this.sanitizeText(faqData.answer, {
+                maxLength: 5000,
+                escapeHtml: false
+            });
+        }
+
+        if (faqData.type) {
+            const validTypes = ['school', 'general'];
+            const type = this.sanitizeText(faqData.type, { maxLength: 20 });
+            sanitized.type = validTypes.includes(type) ? type : 'general';
+        }
+
+        if (faqData.school_id) {
+            sanitized.school_id = this.sanitizeNumber(faqData.school_id, {
+                min: 1,
+                max: 999999,
+                default: null
+            });
+        }
+
+        logger.debug('FAQ data sanitized', {
+            originalFields: Object.keys(faqData),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
+    // Comprehensive school reviews data sanitization
+    static sanitizeSchoolReviewData(reviewData) {
+        const sanitized = {};
+
+        // Sanitize each field
+        if (reviewData.school_id) {
+            sanitized.school_id = this.sanitizeNumber(reviewData.school_id, {
+                min: 1,
+                max: 999999,
+                default: null
+            });
+        }
+
+        if (reviewData.student_name) {
+            sanitized.student_name = this.sanitizeName(reviewData.student_name);
+        }
+
+        if (reviewData.avatar_url) {
+            sanitized.avatar_url = this.sanitizeUrl(reviewData.avatar_url);
+        }
+
+        if (reviewData.nationality) {
+            sanitized.nationality = this.sanitizeText(reviewData.nationality, {
+                maxLength: 100,
+                escapeHtml: false
+            });
+        }
+
+        if (reviewData.course_period) {
+            sanitized.course_period = this.sanitizeText(reviewData.course_period, {
+                maxLength: 100,
+                escapeHtml: false
+            });
+        }
+
+        if (reviewData.rating) {
+            sanitized.rating = this.sanitizeNumber(reviewData.rating, {
+                min: 1,
+                max: 5,
+                default: 5
+            });
+        }
+
+        if (reviewData.content) {
+            sanitized.content = this.sanitizeText(reviewData.content, {
+                maxLength: 2000,
+                escapeHtml: false
+            });
+        }
+
+        logger.debug('School review data sanitized', {
+            originalFields: Object.keys(reviewData),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
+    // Sanitize JSON data
+    static sanitizeJSONData(jsonData) {
+        if (typeof jsonData !== 'object' || jsonData === null) {
+            return {};
+        }
+
+        const sanitized = {};
+
+        for (const [key, value] of Object.entries(jsonData)) {
+            const sanitizedKey = this.sanitizeText(key, { maxLength: 50 });
+            
+            if (typeof value === 'string') {
+                sanitized[sanitizedKey] = this.sanitizeText(value, { maxLength: 500 });
+            } else if (typeof value === 'number') {
+                sanitized[sanitizedKey] = this.sanitizeNumber(value);
+            } else if (typeof value === 'boolean') {
+                sanitized[sanitizedKey] = this.sanitizeBoolean(value);
+            } else if (Array.isArray(value)) {
+                sanitized[sanitizedKey] = value.map(item => 
+                    typeof item === 'string' ? this.sanitizeText(item, { maxLength: 200 }) : item
+                ).slice(0, 50); // Limit array size
+            }
+        }
+
+        return sanitized;
+    }
+
     // SQL injection prevention helper
     static preventSQLInjection(input) {
         if (typeof input !== 'string') return input;

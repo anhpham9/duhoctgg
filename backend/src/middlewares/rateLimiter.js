@@ -196,12 +196,122 @@ const uploadLimiter = rateLimit({
     }
 });
 
+// Rate limiter for schools endpoints
+const schoolsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 150, // Higher limit for schools as they're frequently accessed
+    message: {
+        success: false,
+        message: "Too many requests to schools API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for schools endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
+// Rate limiter for regions endpoints
+const regionsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // Lower limit for regions as they're less frequently modified
+    message: {
+        success: false,
+        message: "Too many requests to regions API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for regions endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
+// Rate limiter for school types endpoints
+const schoolTypesLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // Lower limit for school types as they're less frequently modified
+    message: {
+        success: false,
+        message: "Too many requests to school types API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for school types endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
+// Rate limiter for FAQs endpoints
+const faqsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Standard limit for FAQs
+    message: {
+        success: false,
+        message: "Too many requests to FAQs API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for FAQs endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
+// Rate limiter for school reviews endpoints
+const schoolReviewsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Standard limit for school reviews
+    message: {
+        success: false,
+        message: "Too many requests to school reviews API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for school reviews endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
 export const rateLimiter = {
     auth: authLimiter,
     users: usersLimiter,
     contacts: contactsLimiter,
     news: newsLimiter,
     categories: categoriesLimiter,
+    schools: schoolsLimiter,
+    regions: regionsLimiter,
+    schoolTypes: schoolTypesLimiter,
+    faqs: faqsLimiter,
+    schoolReviews: schoolReviewsLimiter,
     global: globalLimiter,
     strict: strictLimiter,
     upload: uploadLimiter,
@@ -213,6 +323,11 @@ export const rateLimiter = {
     contactsLimiter,
     newsLimiter,
     categoriesLimiter,
+    schoolsLimiter,
+    regionsLimiter,
+    schoolTypesLimiter,
+    faqsLimiter,
+    schoolReviewsLimiter,
     globalLimiter,
     strictLimiter,
     uploadLimiter,

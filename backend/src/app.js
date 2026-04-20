@@ -14,6 +14,11 @@ import usersRoutes from "./routes/users.routes.js";
 import contactsRoutes from "./routes/contacts.routes.js";
 import newsRoutes from "./routes/news.routes.js";
 import categoriesRoutes from "./routes/categories.routes.js";
+import schoolsRoutes from "./routes/schools.routes.js";
+import regionsRoutes from "./routes/regions.routes.js";
+import schoolTypesRoutes from "./routes/schoolTypes.routes.js";
+import faqsRoutes from "./routes/faqs.routes.js";
+import schoolReviewsRoutes from "./routes/schoolReviews.routes.js";
 
 const app = express();
 
@@ -86,6 +91,21 @@ app.use("/api/news", newsRoutes);
 
 // categories CRUD routes (RBAC protected)
 app.use("/api/categories", categoriesRoutes);
+
+// schools CRUD routes (RBAC protected)
+app.use("/api/schools", schoolsRoutes);
+
+// regions CRUD routes (RBAC protected)
+app.use("/api/regions", regionsRoutes);
+
+// school types CRUD routes (RBAC protected)
+app.use("/api/school-types", schoolTypesRoutes);
+
+// FAQs CRUD routes (RBAC protected)
+app.use("/api/faqs", faqsRoutes);
+
+// school reviews CRUD routes (RBAC protected)
+app.use("/api/school-reviews", schoolReviewsRoutes);
 
 // test protected route
 app.get("/api/me", authenticate, (req, res) => {
