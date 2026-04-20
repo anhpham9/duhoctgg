@@ -1,8 +1,10 @@
 // Auth utilities for cookie-based authentication
 
+const config = useRuntimeConfig();
+
 export const getUser = async () => {
     try {
-        const response = await fetch('http://localhost:5000/api/auth/me', {
+        const response = await fetch(`${config.public.apiBase}/auth/me`, {
             method: 'GET',
             credentials: 'include', // Include httpOnly cookies
             headers: {
@@ -23,7 +25,7 @@ export const getUser = async () => {
 
 export const login = async (credentials) => {
     try {
-        const response = await fetch('http://localhost:5000/api/auth/login', {
+        const response = await fetch(`${config.public.apiBase}/auth/login`, {
             method: 'POST',
             credentials: 'include', // Include cookies
             headers: {
@@ -47,7 +49,7 @@ export const login = async (credentials) => {
 
 export const logout = async () => {
     try {
-        await fetch('http://localhost:5000/api/auth/logout', {
+        await fetch(`${config.public.apiBase}/auth/logout`, {
             method: 'POST',
             credentials: 'include' // Include cookies
         });

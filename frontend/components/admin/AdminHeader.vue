@@ -350,18 +350,54 @@ const handleNotificationClick = (action) => {
 // USER ACTIONS
 // ========================================
 
-const handleLogout = () => {
+const handleLogout = async () => {
     if (process.client) {
-        localStorage.removeItem('token')
+        const config = useRuntimeConfig();
         
-        // Show toast if available
-        if (window.showToast) {
-            window.showToast('Đang đăng xuất...', 'info')
+        try {
+            // Show loading toast
+            if (window.showToast) {
+                window.showToast('Đang đăng xuất...', 'info')
+            }
+            
+            // Call logout API to clear httpOnly cookie
+            await fetch(`${config.public.apiBase}/auth/logout`, {
+                method: 'POST',
+                credentials: 'include' // Include cookies
+            });
+            
+            // Clean up any localStorage data
+            localStorage.removeItem('token');
+            localStorage.removeItem('rememberedUsername');
+            localStorage.removeItem('rememberLogin');
+            
+            // Show success message
+            if (window.showToast) {
+                window.showToast('Đã đăng xuất thành công!', 'success')
+            }
+            
+            // Redirect to login
+            setTimeout(() => {
+                navigateTo('/login')
+            }, 500)
+            
+        } catch (error) {
+            console.error('Logout error:', error);
+            
+            // Even if API fails, still redirect to login
+            if (window.showToast) {
+                window.showToast('Đã đăng xuất', 'info')
+            }
+            
+            // Clean up localStorage anyway
+            localStorage.removeItem('token');
+            localStorage.removeItem('rememberedUsername');  
+            localStorage.removeItem('rememberLogin');
+            
+            setTimeout(() => {
+                navigateTo('/login')
+            }, 500)
         }
-        
-        setTimeout(() => {
-            navigateTo('/login')
-        }, 500)
     }
 }
 

@@ -156,7 +156,8 @@ export const useUsersAPI = () => {
     })
 
     // API Base URL
-    const API_BASE = 'http://localhost:5000/api'
+    const config = useRuntimeConfig()
+    const API_BASE = config.public.apiBase
 
     // Helper to get auth headers (cookies sent automatically)
     const getAuthHeaders = () => {

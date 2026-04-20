@@ -55,6 +55,7 @@ feature/frontend-news-admin
 feature/frontend-schools-admin
 feature/frontend-news-public
 feature/frontend-news-admin
+feature/frontend-auth-rbac
 
 ```
 ## Các tình huống đặc biệt

@@ -17,11 +17,13 @@ export default defineNuxtRouteMiddleware((to) => {
     return new Promise((resolve) => {
         nextTick(async () => {
             try {
+                const config = useRuntimeConfig();
+                
                 // Check authentication status via API call with timeout
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
                 
-                const response = await fetch('http://localhost:5000/api/auth/me', {
+                const response = await fetch(`${config.public.apiBase}/auth/me`, {
                     method: 'GET',
                     credentials: 'include', // Include httpOnly cookies
                     headers: {
