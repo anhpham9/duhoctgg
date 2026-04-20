@@ -116,7 +116,8 @@
                 <div class="profile-dropdown">
                     <button class="profile-btn" @click="toggleProfileMenu">
                         <img src="/assets/images/admin/av.png" alt="Admin" class="profile-avatar">
-                        <span class="profile-name">Admin</span>
+                        <span class="profile-name" v-if="!loadingUser">{{ currentUser?.name || currentUser?.username || 'Admin' }}</span>
+                        <span class="profile-name loading" v-else><i class="fas fa-spinner fa-spin"></i></span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="profile-menu" :class="{ 'show': isProfileMenuOpen }">
@@ -141,6 +142,41 @@ import "~/assets/css/admin/notifications.css";
 const route = useRoute()
 const searchQuery = ref('')
 const isProfileMenuOpen = ref(false)
+
+// ========================================
+// USER PROFILE DATA  
+// ========================================
+
+const currentUser = ref(null)
+const loadingUser = ref(true)
+
+// Fetch current user info
+const fetchCurrentUser = async () => {
+    if (!process.client) return
+    
+    try {
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/auth/me`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        
+        if (response.ok) {
+            const data = await response.json()
+            currentUser.value = data.user
+        } else {
+            currentUser.value = null
+        }
+    } catch (error) {
+        console.error('Error fetching current user:', error)
+        currentUser.value = null
+    } finally {
+        loadingUser.value = false
+    }
+}
 
 // ========================================
 // NOTIFICATIONS SYSTEM  
@@ -473,10 +509,14 @@ const getIconByType = (type) => {
 // LIFECYCLE & EVENT HANDLERS
 // ========================================
 
-onMounted(() => {
-    loadNotifications()
+onMounted(async () => {
+    // Small delay to ensure everything is ready
+    await nextTick()
     
-    // Close dropdowns when clicking outside
+    // Fetch user profile data
+    fetchCurrentUser()
+    
+    loadNotifications()
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.header-notifications')) {
             closeDropdown()
@@ -511,11 +551,32 @@ onMounted(() => {
 defineExpose({
     addNotification,
     markAllAsRead,
-    unreadCount: readonly(unreadCount)
+    fetchCurrentUser, // Allow refreshing user data
+    unreadCount: readonly(unreadCount),
+    currentUser: readonly(currentUser),
+    loadingUser: readonly(loadingUser)
 })
 </script>
 
 <style scoped>
+.profile-name.loading {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+.profile-name.loading i {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 .profile-menu.show {
     display: block;
 }

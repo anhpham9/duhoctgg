@@ -191,14 +191,59 @@ export const logout = (req, res) => {
     }
 };
 
-export const getAuthStatus = (req, res) => {
-    // This endpoint is protected by authenticate middleware
-    // If we reach here, user is authenticated
-    const { password, ...safeUser } = req.user;
-    
-    res.json({
-        success: true,
-        authenticated: true,
-        user: safeUser
-    });
+export const getAuthStatus = async (req, res) => {
+    try {
+        // This endpoint is protected by authenticate middleware
+        // If we reach here, user is authenticated
+        
+        // Fetch complete user info from database
+        const result = await db.query(
+            `SELECT u.id, u.username, u.name, u.email, u.phone, u.role_id, 
+                    u.is_active, u.created_at, u.updated_at, r.name as role_name
+             FROM users u
+             LEFT JOIN roles r ON u.role_id = r.id
+             WHERE u.id = $1`,
+            [req.user.id]
+        );
+        
+        if (result.rows.length === 0) {
+            logError('Auth status check failed - User not found', new Error('User not found in database'), {
+                userId: req.user.id,
+                ip: req.ip
+            });
+            return res.status(404).json({
+                success: false,
+                authenticated: false,
+                message: 'User not found'
+            });
+        }
+        
+        const user = result.rows[0];
+        
+        // Remove sensitive data
+        const { password, ...safeUser } = user;
+        
+        logInfo('Auth status checked successfully', {
+            userId: user.id,
+            username: user.username,
+            ip: req.ip
+        });
+        
+        res.json({
+            success: true,
+            authenticated: true,
+            user: safeUser
+        });
+    } catch (error) {
+        logError('Auth status check failed', error, {
+            userId: req.user?.id,
+            ip: req.ip
+        });
+        
+        res.status(500).json({
+            success: false,
+            authenticated: false,
+            message: 'Internal server error'
+        });
+    }
 };
