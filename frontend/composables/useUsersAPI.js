@@ -158,12 +158,11 @@ export const useUsersAPI = () => {
     // API Base URL
     const API_BASE = 'http://localhost:5000/api'
 
-    // Helper to get auth headers
+    // Helper to get auth headers (cookies sent automatically)
     const getAuthHeaders = () => {
-        const token = localStorage.getItem('token')
         return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
+            // Cookie will be sent automatically by browser
         }
     }
 
@@ -174,7 +173,8 @@ export const useUsersAPI = () => {
         
         try {
             const response = await fetch(`${API_BASE}/users`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include' // Include cookies
             })
             
             if (!response.ok) {
@@ -194,7 +194,8 @@ export const useUsersAPI = () => {
     const fetchAvailableRoles = async () => {
         try {
             const response = await fetch(`${API_BASE}/users/roles`, {
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include' // Include cookies
             })
             
             if (!response.ok) {
@@ -216,6 +217,7 @@ export const useUsersAPI = () => {
             const response = await fetch(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
+                credentials: 'include', // Include cookies
                 body: JSON.stringify(createForm)
             })
 
@@ -258,6 +260,7 @@ export const useUsersAPI = () => {
             const response = await fetch(`${API_BASE}/users/${id}`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
+                credentials: 'include', // Include cookies
                 body: JSON.stringify(updateData)
             })
 
@@ -299,7 +302,8 @@ export const useUsersAPI = () => {
         try {
             const response = await fetch(`${API_BASE}/users/${userId}`, {
                 method: 'DELETE',
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include' // Include cookies
             })
 
             const data = await response.json()
@@ -329,7 +333,8 @@ export const useUsersAPI = () => {
         try {
             const response = await fetch(`${API_BASE}/users/${userId}/reset-password`, {
                 method: 'POST',
-                headers: getAuthHeaders()
+                headers: getAuthHeaders(),
+                credentials: 'include' // Include cookies
             })
 
             const data = await response.json()

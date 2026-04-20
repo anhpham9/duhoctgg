@@ -24,5 +24,41 @@ export const login = async (req, res) => {
 
     const token = generateToken(user);
 
-    res.json({ token });
+    // Set httpOnly cookie for security
+    res.cookie('authToken', token, {
+        httpOnly: true,        // Prevent XSS access
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+        sameSite: 'strict',    // CSRF protection
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    // Return user info without password
+    const { password: userPassword, ...safeUser } = user;
+    
+    res.json({ 
+        success: true,
+        message: "Login successful",
+        user: safeUser
+        // Don't send token in body for security
+    });
+};
+
+export const logout = (req, res) => {
+    res.clearCookie('authToken');
+    res.json({ 
+        success: true, 
+        message: 'Logged out successfully' 
+    });
+};
+
+export const getAuthStatus = (req, res) => {
+    // This endpoint is protected by authenticate middleware
+    // If we reach here, user is authenticated
+    const { password, ...safeUser } = req.user;
+    
+    res.json({
+        success: true,
+        authenticated: true,
+        user: safeUser
+    });
 };

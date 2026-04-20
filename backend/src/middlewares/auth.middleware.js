@@ -2,17 +2,18 @@ import { verifyToken } from "../utils/jwt.js";
 
 export const authenticate = (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        // Check cookie first, then Authorization header (for API testing)
+        const token = req.cookies.authToken || 
+                      (req.headers.authorization && req.headers.authorization.startsWith("Bearer ") 
+                        ? req.headers.authorization.split(" ")[1] 
+                        : null);
 
-        if (!authHeader) {
-            return res.status(401).json({ message: "Token required" });
+        if (!token) {
+            return res.status(401).json({ 
+                success: false,
+                message: "Access token is required" 
+            });
         }
-
-        if (!authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({ message: "Invalid token format" });
-        }
-
-        const token = authHeader.split(" ")[1];
 
         const user = verifyToken(token);
 
@@ -21,6 +22,9 @@ export const authenticate = (req, res, next) => {
         next();
     } catch (err) {
         console.error("Auth error:", err.message);
-        return res.status(401).json({ message: "Invalid or expired token" });
+        return res.status(401).json({ 
+            success: false,
+            message: "Invalid or expired token" 
+        });
     }
 };

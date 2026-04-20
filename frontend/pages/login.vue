@@ -92,28 +92,38 @@ const handleLogin = async (event) => {
             hasPassword: !!password.value
         });
 
-        const res = await $fetch(`${config.public.apiBase}/auth/login`, {
+        // Use fetch with credentials for cookie-based auth
+        const response = await fetch(`${config.public.apiBase}/auth/login`, {
             method: "POST",
-            body: {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include', // Important: include cookies
+            body: JSON.stringify({
                 username: username.value,
                 password: password.value
-            }
+            })
         });
 
-        console.log("✅ Login API success, token:", res.token);
+        const res = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || 'Login failed');
+        }
+
+        console.log("✅ Login API success, user:", res.user);
         
-        // Handle remember me functionality
+        // Handle remember me functionality (only username, no token)
         if (rememberMe.value) {
             localStorage.setItem('rememberedUsername', username.value);
             localStorage.setItem('rememberLogin', 'true');
-            // Set token with longer expiry for remember me
-            localStorage.setItem("token", res.token);
         } else {
             localStorage.removeItem('rememberedUsername');
             localStorage.removeItem('rememberLogin');
-            // For non-remember login, still save token but could use shorter expiry logic
-            localStorage.setItem("token", res.token);
         }
+
+        // Clean up any old tokens from localStorage
+        localStorage.removeItem('token');
 
         console.log("🚀 Attempting to navigate to /admin...");
 
@@ -130,15 +140,7 @@ const handleLogin = async (event) => {
             window.location.href = "/admin";
         }
     } catch (err) {
-        // console.error("❌ Login error details:", {
-        //     message: err.message,
-        //     status: err.status,
-        //     statusCode: err.statusCode,
-        //     data: err.data,
-        //     url: `${config.public.apiBase}/auth/login`,
-        //     fullError: err
-        // });
-        // showError(`Đăng nhập thất bại: ${err.message || err.status || 'Lỗi không xác định'}`);
+        console.error("❌ Login error details:", err);
         showError(`Đăng nhập thất bại! Vui lòng kiểm tra lại thông tin và thử lại.`);
     }
 };

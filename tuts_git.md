@@ -37,6 +37,7 @@ feature/auth-middleware-backend
 feature/rbac-backend
 feature/users-crud-rbac
 feature/news-backend
+feature/users-security
 
 
 # frontend
