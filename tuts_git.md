@@ -50,6 +50,7 @@ feature/frontend-rbac
 feature/frontend-layouts
 fix/frontend-rbac
 feature/frontend-users-admin
+fix/frontend-users-admin
 feature/frontend-contacts-admin
 feature/frontend-news-admin
 feature/frontend-schools-admin

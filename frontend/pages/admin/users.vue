@@ -35,35 +35,35 @@
                             <i class="fas fa-user-shield"></i>
                             <div class="stat-info">
                                 <h3>Superadmin</h3>
-                                <span>{{ stats.superadmin || 0 }} người dùng</span>
+                                <span>{{ stats.Superadmin || 0 }} người dùng</span>
                             </div>
                         </div>
                         <div v-if="currentUser.role_id <= 2" class="stat-card admin">
                             <i class="fas fa-user-tie"></i>
                             <div class="stat-info">
                                 <h3>Admin</h3>
-                                <span>{{ stats.admin || 0 }} người dùng</span>
+                                <span>{{ stats.Admin || 0 }} người dùng</span>
                             </div>
                         </div>
-                        <div v-if="currentUser.role_id <= 2" class="stat-card manager">
+                        <div v-if="currentUser.role_id <= 3" class="stat-card manager">
                             <i class="fas fa-user-cog"></i>
                             <div class="stat-info">
                                 <h3>Manager</h3>
-                                <span>{{ stats.manager || 0 }} người dùng</span>
+                                <span>{{ stats.Manager || 0 }} người dùng</span>
                             </div>
                         </div>
-                        <div v-if="currentUser.role_id === 3" class="stat-card editor">
+                        <div v-if="currentUser.role_id <= 4" class="stat-card editor">
                             <i class="fas fa-user-edit"></i>
                             <div class="stat-info">
                                 <h3>Editor</h3>
-                                <span>{{ stats.editor || 0 }} người dùng</span>
+                                <span>{{ stats.Editor || 0 }} người dùng</span>
                             </div>
                         </div>
-                        <div v-if="currentUser.role_id === 4" class="stat-card consultant">
+                        <div v-if="currentUser.role_id <= 5" class="stat-card consultant">
                             <i class="fas fa-user-headset"></i>
                             <div class="stat-info">
                                 <h3>Consultant</h3>
-                                <span>{{ stats.consultant || 0 }} người dùng</span>
+                                <span>{{ stats.Consultant || 0 }} người dùng</span>
                             </div>
                         </div>
                         <div class="stat-card active">
@@ -118,11 +118,11 @@
                                 <select :value="selectedRoleFilter" @change="setRoleFilter($event.target.value)"
                                     class="filter-select">
                                     <option value="">Tất cả quyền</option>
-                                    <option value="superadmin">Superadmin</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="editor">Editor</option>
-                                    <option value="consultant">Consultant</option>
+                                    <option value="Superadmin">Superadmin</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Editor">Editor</option>
+                                    <option value="Consultant">Consultant</option>
                                 </select>
                             </div>
 

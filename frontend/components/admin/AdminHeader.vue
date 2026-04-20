@@ -116,7 +116,7 @@
                 <div class="profile-dropdown">
                     <button class="profile-btn" @click="toggleProfileMenu">
                         <img src="/assets/images/admin/av.png" alt="Admin" class="profile-avatar">
-                        <span class="profile-name" v-if="!loadingUser">{{ currentUser?.name || currentUser?.username || 'Admin' }}</span>
+                        <span class="profile-name" v-if="!loadingUser">{{ userName }}</span>
                         <span class="profile-name loading" v-else><i class="fas fa-spinner fa-spin"></i></span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
@@ -147,36 +147,13 @@ const isProfileMenuOpen = ref(false)
 // USER PROFILE DATA  
 // ========================================
 
-const currentUser = ref(null)
-const loadingUser = ref(true)
-
-// Fetch current user info
-const fetchCurrentUser = async () => {
-    if (!process.client) return
-    
-    try {
-        const config = useRuntimeConfig()
-        const response = await fetch(`${config.public.apiBase}/auth/me`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        
-        if (response.ok) {
-            const data = await response.json()
-            currentUser.value = data.user
-        } else {
-            currentUser.value = null
-        }
-    } catch (error) {
-        console.error('Error fetching current user:', error)
-        currentUser.value = null
-    } finally {
-        loadingUser.value = false
-    }
-}
+const { 
+    currentUser, 
+    loadingUser, 
+    fetchCurrentUser, 
+    clearUser, 
+    userName 
+} = useCurrentUser()
 
 // ========================================
 // NOTIFICATIONS SYSTEM  
@@ -402,6 +379,9 @@ const handleLogout = async () => {
                 credentials: 'include' // Include cookies
             });
             
+            // Clear shared user data
+            clearUser()
+            
             // Clean up any localStorage data
             localStorage.removeItem('token');
             localStorage.removeItem('rememberedUsername');
@@ -420,7 +400,9 @@ const handleLogout = async () => {
         } catch (error) {
             console.error('Logout error:', error);
             
-            // Even if API fails, still redirect to login
+            // Even if API fails, still clear user and redirect
+            clearUser()
+            
             if (window.showToast) {
                 window.showToast('Đã đăng xuất', 'info')
             }

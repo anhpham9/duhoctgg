@@ -120,73 +120,42 @@ const isMobile = ref(false)
 // USER PERMISSIONS
 // ========================================
 
-// Get current user from API (httpOnly cookie based)
-const currentUser = ref(null)
-const loadingUser = ref(true)
-
-// Fetch user info on component mount
-const fetchCurrentUser = async () => {
-    if (!process.client) return
-    
-    try {
-        const config = useRuntimeConfig()
-        const response = await fetch(`${config.public.apiBase}/auth/me`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        
-        if (response.ok) {
-            const data = await response.json()
-            currentUser.value = data.user
-        } else {
-            currentUser.value = null
-        }
-    } catch (error) {
-        console.error('Error fetching current user:', error)
-        currentUser.value = null
-    } finally {
-        loadingUser.value = false
-    }
-}
+// Get current user from shared composable (tránh duplicate API calls)
+const { 
+    currentUser, 
+    loadingUser, 
+    fetchCurrentUser, 
+    hasRole, 
+    hasAnyRole,
+    isSuperadmin, 
+    isAdmin, 
+    isManager 
+} = useCurrentUser()
 
 // Permission checks based on role_id
+// Permission computed properties using composable
 const canAccessUsers = computed(() => {
-    if (!currentUser.value || loadingUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3) can access users
-    return [1, 2, 3].includes(currentUser.value.role_id)
+    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
 })
 
 const canAccessContacts = computed(() => {
-    if (!currentUser.value || loadingUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3), Consultant (5) can access contacts
-    return [1, 2, 3, 5].includes(currentUser.value.role_id)
+    return !loadingUser.value && hasAnyRole([1, 2, 3, 5]) // Superadmin, Admin, Manager, Consultant
 })
 
 const canAccessSchools = computed(() => {
-    if (!currentUser.value || loadingUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3) can access schools
-    return [1, 2, 3].includes(currentUser.value.role_id)
+    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
 })
 
 const canAccessNews = computed(() => {
-    if (!currentUser.value || loadingUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3), Editor (4) can access news
-    return [1, 2, 3, 4].includes(currentUser.value.role_id)
+    return !loadingUser.value && hasAnyRole([1, 2, 3, 4]) // Superadmin, Admin, Manager, Editor
 })
 
 const canAccessContent = computed(() => {
-    if (!currentUser.value || loadingUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3) can access content
-    return [1, 2, 3].includes(currentUser.value.role_id)
+    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
 })
 
 const canAccessSettings = computed(() => {
-    if (!currentUser.value || loadingUser.value) return false
-    // Only Superadmin (1) and Admin (2) can access settings
-    return [1, 2].includes(currentUser.value.role_id)
+    return !loadingUser.value && hasAnyRole([1, 2]) // Superadmin, Admin only
 })
 
 // ========================================

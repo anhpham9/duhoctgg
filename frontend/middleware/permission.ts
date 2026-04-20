@@ -1,12 +1,17 @@
-import { jwtDecode } from "jwt-decode";
 import type { IUser } from "~/types/user";
 
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
     console.log('👥 Permission middleware called for:', to.path);
     
     // 👇 CHẶN LOGIN PAGE
     if (to.path === "/login") {
         console.log('✅ Skipping permission for login page');
+        return;
+    }
+
+    // Skip permission check for non-admin routes
+    if (!to.path.startsWith('/admin')) {
+        console.log('✅ Skipping permission for non-admin route');
         return;
     }
 
@@ -24,27 +29,37 @@ export default defineNuxtRouteMiddleware((to) => {
 
     // Đợi cho Vue hydration hoàn thành
     return new Promise((resolve) => {
-        nextTick(() => {
+        nextTick(async () => {
             try {
-                const token = localStorage.getItem("token");
+                // Fetch user data từ API (auth middleware đã check authentication rồi)
+                const config = useRuntimeConfig();
+                const API_BASE = config.public.apiBase;
+                
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    method: 'GET',
+                    credentials: 'include', // Include httpOnly cookies
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-                if (!token) {
-                    console.log('❌ No token in permission middleware, redirecting to login');
-                    resolve(navigateTo("/login"));
+                if (!response.ok) {
+                    console.log('❌ Failed to get user data in permission middleware');
+                    // Don't redirect here as auth middleware should handle this
+                    resolve();
                     return;
                 }
 
-                let user: IUser;
-
-                try {
-                    user = jwtDecode(token) as IUser;
-                    console.log('👤 Decoded user:', user);
-                } catch (error) {
-                    console.error('❌ JWT decode error:', error);
-                    localStorage.removeItem("token");
-                    resolve(navigateTo("/login"));
+                const data = await response.json();
+                const user: IUser = data.user;
+                
+                if (!user || !user.role_id) {
+                    console.log('❌ No valid user data in permission middleware');
+                    resolve();
                     return;
                 }
+
+                console.log('👤 User data from API:', user);
 
                 // Superadmin có tất cả quyền
                 if (user.role_id === 1) {
@@ -94,7 +109,8 @@ export default defineNuxtRouteMiddleware((to) => {
                 resolve();
             } catch (error) {
                 console.error('❌ Permission middleware error:', error);
-                resolve(navigateTo("/login"));
+                // Don't redirect on error, let auth middleware handle it
+                resolve();
             }
         });
     });

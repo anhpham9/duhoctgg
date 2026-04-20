@@ -1,5 +1,4 @@
 import { ref, onMounted, computed, readonly, nextTick } from "vue"
-import { jwtDecode } from "jwt-decode"
 
 /**
  * Composable for handling permission checks in admin pages
@@ -35,16 +34,36 @@ export const usePermissionGuard = (allowedRoles = [], options = {}) => {
         }
         
         try {
-            const token = localStorage.getItem('token')
+            const config = useRuntimeConfig()
             
-            if (!token) {
-                console.warn('🚫 No token found, redirecting to login')
-                await navigateTo('/login')
+            // Check authentication via API call (httpOnly cookie based)
+            const response = await fetch(`${config.public.apiBase}/auth/me`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            
+            if (!response.ok) {
+                console.warn('🚫 Authentication failed, redirecting to login')
+                
+                permissionError.value = {
+                    code: 'NOT_AUTHENTICATED',
+                    message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+                    status: response.status
+                }
+                
+                if (autoRedirect) {
+                    setTimeout(async () => {
+                        await navigateTo('/login')
+                    }, redirectDelay)
+                }
                 return
             }
 
-            // Decode JWT token
-            const user = jwtDecode(token)
+            const data = await response.json()
+            const user = data.user
             currentUser.value = user
             
             // Check permissions
@@ -70,16 +89,25 @@ export const usePermissionGuard = (allowedRoles = [], options = {}) => {
             
         } catch (error) {
             console.error('❌ Permission check error:', error)
-            permissionError.value = {
-                code: 'TOKEN_ERROR',
-                message: 'Lỗi xác thực. Vui lòng đăng nhập lại.',
-                error: error.message
-            }
             
-            if (autoRedirect) {
-                setTimeout(async () => {
-                    await navigateTo('/login')
-                }, redirectDelay)
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                permissionError.value = {
+                    code: 'NETWORK_ERROR',
+                    message: 'Không thể kết nối tới máy chủ. Vui lòng thử lại.',
+                    error: error.message
+                }
+            } else {
+                permissionError.value = {
+                    code: 'AUTH_ERROR', 
+                    message: 'Lỗi xác thực. Vui lòng đăng nhập lại.',
+                    error: error.message
+                }
+                
+                if (autoRedirect) {
+                    setTimeout(async () => {
+                        await navigateTo('/login')
+                    }, redirectDelay)
+                }
             }
         } finally {
             isCheckingPermission.value = false
@@ -96,8 +124,11 @@ export const usePermissionGuard = (allowedRoles = [], options = {}) => {
         return {
             id: currentUser.value.id,
             username: currentUser.value.username,
+            name: currentUser.value.name,
+            email: currentUser.value.email,
             role_id: currentUser.value.role_id,
-            role_name: getUserRoleName()
+            role_name: getUserRoleName(),
+            is_active: currentUser.value.is_active
         }
     }
 
