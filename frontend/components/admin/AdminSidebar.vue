@@ -18,63 +18,75 @@
                         <span>Dashboard</span>
                     </NuxtLink>
                 </li>
-                <li v-if="canAccessUsers" class="nav-item" :class="{ active: isActivePage('/admin/users') }">
-                    <NuxtLink to="/admin/users" class="nav-link" @click="handleNavLinkClick">
-                        <i class="fas fa-users"></i>
-                        <span>Người dùng</span>
-                    </NuxtLink>
-                </li>
-                <li v-if="canAccessContacts" class="nav-item" :class="{ active: isActivePage('/admin/contacts') }">
-                    <NuxtLink to="/admin/contacts" class="nav-link" @click="handleNavLinkClick">
-                        <i class="fas fa-address-book"></i>
-                        <span>Liên hệ</span>
-                    </NuxtLink>
-                </li>
-                <li v-if="canAccessSchools" class="nav-item" :class="{ active: isActivePage('/admin/schools') }">
-                    <NuxtLink to="/admin/schools" class="nav-link" @click="handleNavLinkClick">
-                        <i class="fas fa-university"></i>
-                        <span>Trường học</span>
-                    </NuxtLink>
-                </li>
-                <li v-if="canAccessNews" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('news') }">
-                    <a href="#" class="nav-link" @click="toggleSubmenu('news')">
-                        <i class="fas fa-newspaper"></i>
-                        <span>Tin tức</span>
-                        <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('news') }"></i>
-                    </a>
-                    <ul class="submenu" :class="{ 'open': openSubmenus.includes('news') }">
-                        <li><NuxtLink to="/admin/news" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/news') }">Danh sách tin</NuxtLink></li>
-                        <li><NuxtLink to="/admin/news/categories" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/news/categories') }">Danh mục</NuxtLink></li>
-                    </ul>
-                </li>
-                <li v-if="canAccessContent" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('content') }">
-                    <a href="#" class="nav-link" @click="toggleSubmenu('content')">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Nội dung</span>
-                        <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('content') }"></i>
-                    </a>
-                    <ul class="submenu" :class="{ 'open': openSubmenus.includes('content') }">
-                        <li><NuxtLink to="/admin/content/homepage" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/homepage') }">Trang chủ</NuxtLink></li>
-                        <li><NuxtLink to="/admin/content/about" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/about') }">Giới thiệu</NuxtLink></li>
-                        <li><NuxtLink to="/admin/content/schools" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/schools') }">Trường học</NuxtLink></li>
-                        <li><NuxtLink to="/admin/content/conditions" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/conditions') }">Điều kiện</NuxtLink></li>
-                        <li><NuxtLink to="/admin/content/news" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/news') }">Tin tức</NuxtLink></li>
-                        <li><NuxtLink to="/admin/content/contact" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/contact') }">Liên hệ</NuxtLink></li>
-                        <li><NuxtLink to="/admin/content/faq" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/faq') }">FAQ</NuxtLink></li>
-                    </ul>
-                </li>
-                <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
-                    <a href="#" class="nav-link" @click="toggleSubmenu('settings')">
-                        <i class="fas fa-cog"></i>
-                        <span>Cài đặt</span>
-                        <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('settings') }"></i>
-                    </a>
-                    <ul class="submenu" :class="{ 'open': openSubmenus.includes('settings') }">
-                        <li><NuxtLink to="/admin/settings/general" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/general') }">Chung</NuxtLink></li>
-                        <li><NuxtLink to="/admin/settings/seo" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/seo') }">SEO</NuxtLink></li>
-                        <li><NuxtLink to="/admin/settings/backup" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/backup') }">Sao lưu & Khôi phục</NuxtLink></li>
-                    </ul>
-                </li>
+                <!-- Loading state for menu items -->
+                <template v-if="loadingUser">
+                    <li class="nav-item loading">
+                        <div class="nav-link">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Đang tải...</span>
+                        </div>
+                    </li>
+                </template>
+                <!-- Menu items when user data loaded -->
+                <template v-else>
+                    <li v-if="canAccessUsers" class="nav-item" :class="{ active: isActivePage('/admin/users') }">
+                        <NuxtLink to="/admin/users" class="nav-link" @click="handleNavLinkClick">
+                            <i class="fas fa-users"></i>
+                            <span>Người dùng</span>
+                        </NuxtLink>
+                    </li>
+                    <li v-if="canAccessContacts" class="nav-item" :class="{ active: isActivePage('/admin/contacts') }">
+                        <NuxtLink to="/admin/contacts" class="nav-link" @click="handleNavLinkClick">
+                            <i class="fas fa-address-book"></i>
+                            <span>Liên hệ</span>
+                        </NuxtLink>
+                    </li>
+                    <li v-if="canAccessSchools" class="nav-item" :class="{ active: isActivePage('/admin/schools') }">
+                        <NuxtLink to="/admin/schools" class="nav-link" @click="handleNavLinkClick">
+                            <i class="fas fa-university"></i>
+                            <span>Trường học</span>
+                        </NuxtLink>
+                    </li>
+                    <li v-if="canAccessNews" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('news') }">
+                        <a href="#" class="nav-link" @click="toggleSubmenu('news')">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Tin tức</span>
+                            <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('news') }"></i>
+                        </a>
+                        <ul class="submenu" :class="{ 'open': openSubmenus.includes('news') }">
+                            <li><NuxtLink to="/admin/news" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/news') }">Danh sách tin</NuxtLink></li>
+                            <li><NuxtLink to="/admin/news/categories" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/news/categories') }">Danh mục</NuxtLink></li>
+                        </ul>
+                    </li>
+                    <li v-if="canAccessContent" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('content') }">
+                        <a href="#" class="nav-link" @click="toggleSubmenu('content')">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Nội dung</span>
+                            <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('content') }"></i>
+                        </a>
+                        <ul class="submenu" :class="{ 'open': openSubmenus.includes('content') }">
+                            <li><NuxtLink to="/admin/content/homepage" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/homepage') }">Trang chủ</NuxtLink></li>
+                            <li><NuxtLink to="/admin/content/about" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/about') }">Giới thiệu</NuxtLink></li>
+                            <li><NuxtLink to="/admin/content/schools" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/schools') }">Trường học</NuxtLink></li>
+                            <li><NuxtLink to="/admin/content/conditions" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/conditions') }">Điều kiện</NuxtLink></li>
+                            <li><NuxtLink to="/admin/content/news" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/news') }">Tin tức</NuxtLink></li>
+                            <li><NuxtLink to="/admin/content/contact" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/contact') }">Liên hệ</NuxtLink></li>
+                            <li><NuxtLink to="/admin/content/faq" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/faq') }">FAQ</NuxtLink></li>
+                        </ul>
+                    </li>
+                    <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
+                        <a href="#" class="nav-link" @click="toggleSubmenu('settings')">
+                            <i class="fas fa-cog"></i>
+                            <span>Cài đặt</span>
+                            <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('settings') }"></i>
+                        </a>
+                        <ul class="submenu" :class="{ 'open': openSubmenus.includes('settings') }">
+                            <li><NuxtLink to="/admin/settings/general" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/general') }">Chung</NuxtLink></li>
+                            <li><NuxtLink to="/admin/settings/seo" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/seo') }">SEO</NuxtLink></li>
+                            <li><NuxtLink to="/admin/settings/backup" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/backup') }">Sao lưu & Khôi phục</NuxtLink></li>
+                        </ul>
+                    </li>
+                </template>
             </ul>
         </nav>
 
@@ -92,8 +104,6 @@
 // SIDEBAR NAVIGATION COMPONENT
 // ========================================
 
-import { jwtDecode } from "jwt-decode"
-
 const route = useRoute()
 const router = useRouter()
 
@@ -110,54 +120,71 @@ const isMobile = ref(false)
 // USER PERMISSIONS
 // ========================================
 
-// Get current user from JWT token
-const currentUser = computed(() => {
-    if (!process.client) return null
-    
-    const token = localStorage.getItem('token')
-    if (!token) return null
+// Get current user from API (httpOnly cookie based)
+const currentUser = ref(null)
+const loadingUser = ref(true)
+
+// Fetch user info on component mount
+const fetchCurrentUser = async () => {
+    if (!process.client) return
     
     try {
-        return jwtDecode(token)
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/auth/me`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        
+        if (response.ok) {
+            const data = await response.json()
+            currentUser.value = data.user
+        } else {
+            currentUser.value = null
+        }
     } catch (error) {
-        console.error('Error decoding token:', error)
-        return null
+        console.error('Error fetching current user:', error)
+        currentUser.value = null
+    } finally {
+        loadingUser.value = false
     }
-})
+}
 
 // Permission checks based on role_id
 const canAccessUsers = computed(() => {
-    if (!currentUser.value) return false
-    // Only Superadmin (1), Admin (2) and Manager (3) can access users
+    if (!currentUser.value || loadingUser.value) return false
+    // Superadmin (1), Admin (2), Manager (3) can access users
     return [1, 2, 3].includes(currentUser.value.role_id)
 })
 
 const canAccessContacts = computed(() => {
-    if (!currentUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3), and Consultant (5) can access contacts
+    if (!currentUser.value || loadingUser.value) return false
+    // Superadmin (1), Admin (2), Manager (3), Consultant (5) can access contacts
     return [1, 2, 3, 5].includes(currentUser.value.role_id)
 })
 
 const canAccessSchools = computed(() => {
-    if (!currentUser.value) return false
+    if (!currentUser.value || loadingUser.value) return false
     // Superadmin (1), Admin (2), Manager (3) can access schools
     return [1, 2, 3].includes(currentUser.value.role_id)
 })
 
 const canAccessNews = computed(() => {
-    if (!currentUser.value) return false
-    // Superadmin (1), Admin (2), Manager (3), and Editor (4) can access news
+    if (!currentUser.value || loadingUser.value) return false
+    // Superadmin (1), Admin (2), Manager (3), Editor (4) can access news
     return [1, 2, 3, 4].includes(currentUser.value.role_id)
 })
 
 const canAccessContent = computed(() => {
-    if (!currentUser.value) return false
+    if (!currentUser.value || loadingUser.value) return false
     // Superadmin (1), Admin (2), Manager (3) can access content
     return [1, 2, 3].includes(currentUser.value.role_id)
 })
 
 const canAccessSettings = computed(() => {
-    if (!currentUser.value) return false
+    if (!currentUser.value || loadingUser.value) return false
     // Only Superadmin (1) and Admin (2) can access settings
     return [1, 2].includes(currentUser.value.role_id)
 })
@@ -327,6 +354,9 @@ const handleResponsive = () => {
 // ========================================
 
 onMounted(() => {
+    // Fetch current user info
+    fetchCurrentUser()
+    
     // Initial responsive check
     handleResponsive()
     
@@ -394,12 +424,36 @@ defineExpose({
     openMobileSidebar,
     closeMobileSidebar,
     toggleCollapsed: () => isCollapsed.value = !isCollapsed.value,
+    fetchCurrentUser, // Allow refreshing user data from parent
     isCollapsed: readonly(isCollapsed),
-    isMobileOpen: readonly(isMobileOpen)
+    isMobileOpen: readonly(isMobileOpen),
+    currentUser: readonly(currentUser),
+    loadingUser: readonly(loadingUser)
 })
 </script>
 
 <style scoped>
+/* ========================================
+   LOADING STATE
+   ======================================== */
+.nav-item.loading .nav-link {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.nav-item.loading .fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 /* ========================================
    SUBMENU ANIMATIONS
    ======================================== */
