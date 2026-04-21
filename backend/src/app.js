@@ -3,6 +3,7 @@ import { authenticate } from "./middlewares/auth.middleware.js";
 import { requestLogger, logInfo } from "./utils/logger.js";
 import { errorHandler, notFoundHandler } from "./utils/errorHandler.js";
 import { rateLimiter } from "./middlewares/rateLimiter.js";
+import { sanitizeInputs } from "./utils/sanitizer.js";
 
 import express from "express";
 import cors from "cors";
@@ -71,6 +72,17 @@ app.use(requestLogger);
 
 // Apply global rate limiting
 app.use('/api/', rateLimiter.global);
+
+// Public endpoints (no auth required)
+// Import public contact function
+import { submitPublicContact } from './controllers/contacts.controller.js';
+
+// Public contact submission endpoint
+app.post('/api/public/contact', 
+    rateLimiter.publicContact, 
+    sanitizeInputs, 
+    submitPublicContact
+);
 
 // test route
 app.get("/", (req, res) => {

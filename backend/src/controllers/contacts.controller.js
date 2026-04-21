@@ -2,9 +2,181 @@ import db from "../config/db.js";
 import { logError, logInfo, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
+import validator from 'validator';
 
 // Roles that can access contacts: superadmin, admin, manager, consultant
 const ALLOWED_CONTACT_ROLES = [1, 2, 3, 5];
+
+// Public contact submission (no authentication required)
+export const submitPublicContact = async (req, res) => {
+    try {
+        const { name, email, phone, message } = req.body;
+
+        // Comprehensive validation
+        const errors = [];
+
+        // Validate name
+        if (!name || typeof name !== 'string' || name.trim().length < 2) {
+            errors.push('Tên phải có ít nhất 2 ký tự');
+        }
+        if (name && name.length > 100) {
+            errors.push('Tên không được quá 100 ký tự');
+        }
+
+        // Validate email
+        if (!email || typeof email !== 'string' || !validator.isEmail(email.trim())) {
+            errors.push('Email không hợp lệ');
+        }
+        if (email && email.length > 150) {
+            errors.push('Email không được quá 150 ký tự');
+        }
+
+        // Validate phone
+        if (!phone || typeof phone !== 'string' || phone.trim().length < 10) {
+            errors.push('Số điện thoại phải có ít nhất 10 số');
+        }
+        if (phone && !/^[0-9+\-\s()]{10,20}$/.test(phone.trim())) {
+            errors.push('Số điện thoại không hợp lệ');
+        }
+
+        // Validate message (optional but if provided must be reasonable)
+        if (message && typeof message === 'string' && message.length > 1000) {
+            errors.push('Tin nhắn không được quá 1000 ký tự');
+        }
+
+        if (errors.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu không hợp lệ',
+                errors
+            });
+        }
+
+        // Additional security checks
+        const sanitizedName = InputSanitizer.sanitizeText(name.trim(), { maxLength: 100 });
+        const sanitizedEmail = InputSanitizer.sanitizeEmail(email.trim());
+        const sanitizedPhone = InputSanitizer.sanitizePhone(phone.trim());
+        const sanitizedMessage = message ? InputSanitizer.sanitizeText(message.trim(), { maxLength: 1000 }) : '';
+
+        // Check for suspicious patterns (basic spam detection)
+        const suspiciousPatterns = [
+            /<script/i,
+            /javascript:/i,
+            /vbscript:/i,
+            /onload=/i,
+            /onerror=/i,
+            /onclick=/i,
+            /<iframe/i,
+            /<object/i,
+            /<embed/i,
+            /eval\(/i,
+            /expression\(/i,
+            /\bselect\b.*\bfrom\b/i,
+            /\bunion\b.*\bselect\b/i,
+            /\bdrop\b.*\btable\b/i,
+            /\bdelete\b.*\bfrom\b/i
+        ];
+
+        const allText = `${sanitizedName} ${sanitizedEmail} ${sanitizedMessage}`;
+        for (const pattern of suspiciousPatterns) {
+            if (pattern.test(allText)) {
+                SecurityLogger.logSecurityViolation(
+                    null,
+                    req.ip,
+                    '/api/public/contact',
+                    'POST',
+                    'Suspicious content detected in contact form',
+                    { name: sanitizedName, email: sanitizedEmail, userAgent: req.get('User-Agent') }
+                );
+                
+                return res.status(400).json({
+                    success: false,
+                    message: 'Nội dung không được chấp nhận'
+                });
+            }
+        }
+
+        // Check for duplicate submissions (same IP + email in last hour)
+        const duplicateCheck = await db.query(
+            `SELECT COUNT(*) as count 
+             FROM contacts 
+             WHERE email = $1 
+             AND created_at > NOW() - INTERVAL '1 hour'`,
+            [sanitizedEmail]
+        );
+
+        if (duplicateCheck.rows[0].count > 0) {
+            logInfo('Duplicate contact submission blocked', {
+                email: sanitizedEmail,
+                ip: req.ip,
+                userAgent: req.get('User-Agent')
+            });
+            
+            return res.status(429).json({
+                success: false,
+                message: 'Bạn đã gửi tin nhắn gần đây. Vui lòng chờ ít nhất 1 tiếng trước khi gửi lại.'
+            });
+        }
+
+        // Insert contact with default values
+        const result = await db.query(
+            `INSERT INTO contacts 
+             (name, email, phone, message, status, contact_method, created_at)
+             VALUES ($1, $2, $3, $4, 'new', 'email', NOW())
+             RETURNING id, created_at`,
+            [sanitizedName, sanitizedEmail, sanitizedPhone, sanitizedMessage]
+        );
+
+        const contactId = result.rows[0].id;
+
+        // Log successful submission for audit
+        logInfo('Public contact form submitted successfully', {
+            contactId,
+            name: sanitizedName,
+            email: sanitizedEmail,
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            timestamp: result.rows[0].created_at
+        });
+
+        // Audit log for compliance
+        auditLog({
+            action: 'public_contact_submission',
+            resource: 'contacts',
+            resourceId: contactId,
+            userId: null, // Public submission
+            changes: {
+                name: sanitizedName,
+                email: sanitizedEmail,
+                phone: sanitizedPhone,
+                status: 'new'
+            },
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Cảm ơn bạn! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.',
+            data: {
+                id: contactId,
+                submitted_at: result.rows[0].created_at
+            }
+        });
+
+    } catch (error) {
+        logError('Public contact submission failed', error, {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            formData: req.body
+        });
+        
+        res.status(500).json({
+            success: false,
+            message: 'Có lỗi xảy ra. Vui lòng thử lại sau.'
+        });
+    }
+};
 
 // Get all contacts with user assignment info
 export const getContacts = async (req, res) => {

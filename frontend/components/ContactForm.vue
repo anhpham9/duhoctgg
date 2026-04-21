@@ -24,7 +24,10 @@
                             <div class="form-group">
                                 <input type="text" placeholder="Lời nhắn..." v-model="formData.message">
                             </div>
-                            <button type="submit" class="btn btn-primary">Gửi tin nhắn</button>
+                            <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                                <span v-if="isSubmitting">Đang gửi...</span>
+                                <span v-else>Gửi tin nhắn</span>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -60,7 +63,12 @@ const isValidEmail = (email) => {
 }
 
 // Form submission
-const handleSubmit = () => {
+const isSubmitting = ref(false)
+
+const handleSubmit = async () => {
+    // Prevent double submission
+    if (isSubmitting.value) return
+    
     // Basic validation
     if (!formData.name.trim()) {
         showError('Vui lòng nhập họ tên')
@@ -80,16 +88,46 @@ const handleSubmit = () => {
         return
     }
 
-    // Show success message
-    showSuccess('Cảm ơn bạn! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.')
+    try {
+        isSubmitting.value = true
+        
+        // Submit to backend API
+        const response = await $fetch('/api/public/contact', {
+            method: 'POST',
+            body: {
+                name: formData.name.trim(),
+                email: formData.email.trim(),
+                phone: formData.phone.trim(),
+                message: formData.message.trim()
+            }
+        })
 
-    // Reset form
-    Object.keys(formData).forEach(key => {
-        formData[key] = ''
-    })
-
-    // Log form data (replace with actual form submission)
-    console.log('Form submitted:', { ...formData })
+        if (response.success) {
+            showSuccess(response.message || 'Cảm ơn bạn! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.')
+            
+            // Reset form
+            Object.keys(formData).forEach(key => {
+                formData[key] = ''
+            })
+        } else {
+            showError(response.message || 'Có lỗi xảy ra, vui lòng thử lại')
+        }
+        
+    } catch (error) {
+        console.error('Contact form submission error:', error)
+        
+        // Handle specific error cases
+        if (error.statusCode === 429) {
+            showError('Bạn đã gửi quá nhiều tin nhắn. Vui lòng thử lại sau.')
+        } else if (error.statusCode === 400 && error.data?.errors) {
+            // Show validation errors from backend
+            showError(error.data.errors.join(', '))
+        } else {
+            showError('Có lỗi xảy ra, vui lòng thử lại sau')
+        }
+    } finally {
+        isSubmitting.value = false
+    }
 }
 </script>
 

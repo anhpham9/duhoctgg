@@ -133,6 +133,31 @@ const publicViewLimiter = rateLimit({
     }
 });
 
+// Rate limiter for public contact submissions (anti-spam)
+const publicContactLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // Only 5 contact submissions per hour per IP
+    message: {
+        success: false,
+        message: "Bạn đã gửi quá nhiều tin nhắn. Vui lòng thử lại sau 1 tiếng."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for public contact submission', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            formData: {
+                name: req.body?.name,
+                email: req.body?.email,
+                phone: req.body?.phone
+            }
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
 // Global rate limiter for all API endpoints
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -316,6 +341,7 @@ export const rateLimiter = {
     strict: strictLimiter,
     upload: uploadLimiter,
     publicView: publicViewLimiter,
+    publicContact: publicContactLimiter,
     
     // Convenience methods
     authLimiter,
