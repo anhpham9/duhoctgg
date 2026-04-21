@@ -669,13 +669,7 @@
                 </div>
 
                 <!-- Toast Notification -->
-                <div v-if="notification.show" class="toast" :class="notification.type">
-                    <i :class="notification.icon"></i>
-                    <span>{{ notification.message }}</span>
-                    <button @click="hideNotification" class="toast-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+                <Toast />
             </div>
         </div>
 </template>
@@ -685,6 +679,7 @@
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useUsersAPI } from '~/composables/useUsersAPI'
 import { useNotifications } from '~/composables/useNotifications'
+import Toast from '~/components/Toast.vue'
 import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
 
@@ -2360,62 +2355,6 @@ span.required {
 }
 
 /* =========================
-   TOAST NOTIFICATIONS
-   ========================= */
-.toast {
-    position: fixed;
-    top: 2rem;
-    right: 2rem;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    padding: 1rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    z-index: 1100;
-    max-width: 400px;
-    border-left: 4px solid;
-}
-
-.toast.success {
-    border-left-color: #4CAF50;
-}
-
-.toast.error {
-    border-left-color: #f44336;
-}
-
-.toast.warning {
-    border-left-color: #ff9800;
-}
-
-.toast i {
-    font-size: 1.2rem;
-}
-
-.toast.success i {
-    color: #4CAF50;
-}
-
-.toast.error i {
-    color: #f44336;
-}
-
-.toast.warning i {
-    color: #ff9800;
-}
-
-.toast-close {
-    background: none;
-    border: none;
-    color: #666;
-    cursor: pointer;
-    padding: 0.25rem;
-    margin-left: auto;
-}
-
-/* =========================
    TABLE CONTROLS
    ========================= */
 .table-controls {
@@ -2715,13 +2654,6 @@ span.required {
         padding: 1rem;
     }
 
-    .toast {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-        max-width: none;
-    }
-
     .pagination-controls {
         flex-wrap: wrap;
         justify-content: center;
@@ -2795,13 +2727,6 @@ span.required {
     .modal-body,
     .modal-footer {
         padding: 1rem;
-    }
-
-    .toast {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-        max-width: none;
     }
 }
 

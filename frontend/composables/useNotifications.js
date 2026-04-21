@@ -1,27 +1,28 @@
 // ========================================
 // NOTIFICATION COMPOSABLE 
 // ========================================
-// Centralized notification system
+// Centralized notification system with shared state
 
-import { reactive, ref, readonly } from 'vue'
+import { reactive, readonly } from 'vue'
+
+// Global shared state (outside function để share giữa components)
+const notification = reactive({
+    show: false,
+    type: 'success', // success, error, warning, info
+    message: '',
+    icon: 'fas fa-check-circle'
+})
+
+// Auto hide timeout reference - global
+let hideTimeout = null
 
 export const useNotifications = () => {
-    // Global notification state
-    const notification = reactive({
-        show: false,
-        type: 'success', // success, error, warning, info
-        message: '',
-        icon: 'fas fa-check-circle'
-    })
-
-    // Auto hide timeout reference
-    let hideTimeout = null
-
     // Show notification with type and message
     const showNotification = (type, message, duration = 5000) => {
         // Clear existing timeout
         if (hideTimeout) {
             clearTimeout(hideTimeout)
+            hideTimeout = null
         }
 
         // Set notification data
