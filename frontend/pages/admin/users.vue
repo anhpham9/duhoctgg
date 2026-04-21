@@ -409,7 +409,7 @@
                                     <div class="strength-checks">
                                         <div class="strength-check" :class="{ 'check-valid': passwordStrength.hasMinLength }">
                                             <i :class="passwordStrength.hasMinLength ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                                            <span>Trên 8 ký tự</span>
+                                            <span>Ít nhất 8 ký tự</span>
                                         </div>
                                         <div class="strength-check" :class="{ 'check-valid': passwordStrength.hasLettersAndNumbers }">
                                             <i :class="passwordStrength.hasLettersAndNumbers ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
@@ -422,10 +422,10 @@
                                     </div>
                                     <div class="strength-indicator">
                                         <div class="strength-bar">
-                                            <div class="strength-progress" :class="getPasswordStrengthClass()"
-                                                :style="{ width: getPasswordStrengthPercentage() + '%' }"></div>
+                                            <div class="strength-progress" :class="getPasswordStrengthClass(passwordStrength)"
+                                                :style="{ width: getPasswordStrengthPercentage(passwordStrength) + '%' }"></div>
                                         </div>
-                                        <span class="strength-text">{{ getPasswordStrengthText() }}</span>
+                                        <span class="strength-text">{{ getPasswordStrengthText(passwordStrength) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -679,6 +679,7 @@
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useUsersAPI } from '~/composables/useUsersAPI'
 import { useNotifications } from '~/composables/useNotifications'
+import { useValidation } from '~/composables/useValidation'
 import Toast from '~/components/Toast.vue'
 import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
@@ -799,12 +800,24 @@ const {
 // Export to Excel state
 const exportingExcel = ref(false)
 
+// Use validation composable
+const {
+    validateEmail,
+    validatePhone,
+    validatePasswordStrength,
+    validatePasswordConfirmation,
+    validateUsername,
+    validateRequired,
+    createPasswordStrength,
+    getPasswordStrengthPercentage,
+    getPasswordStrengthText,
+    getPasswordStrengthClass,
+    normalizePhoneNumber,
+    parseBackendValidationError
+} = useValidation()
+
 // Password strength checking
-const passwordStrength = reactive({
-    hasMinLength: false,
-    hasLettersAndNumbers: false,
-    hasMixedCase: false
-})
+const passwordStrength = createPasswordStrength()
 
 // Email validation
 const isEmailValid = ref(false)
@@ -838,9 +851,8 @@ const editValidationErrors = reactive({
 
 // Email validation function
 const checkEmailValidation = () => {
-    const email = createForm.email
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    isEmailValid.value = emailRegex.test(email)
+    const emailValidation = validateEmail(createForm.email)
+    isEmailValid.value = emailValidation.isValid
     
     // Clear email error if valid
     if (isEmailValid.value) {
@@ -850,9 +862,8 @@ const checkEmailValidation = () => {
 
 // Edit email validation function
 const checkEditEmailValidation = () => {
-    const email = editForm.email
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    isEditEmailValid.value = emailRegex.test(email)
+    const emailValidation = validateEmail(editForm.email)
+    isEditEmailValid.value = emailValidation.isValid
     
     // Clear email error if valid
     if (isEditEmailValid.value) {
@@ -862,231 +873,46 @@ const checkEditEmailValidation = () => {
 
 // Phone validation function
 const checkPhoneValidation = async () => {
-    const phone = createForm.phone?.trim()
+    phoneCheckingDuplicate.value = true
     
-    // If empty, it's valid (optional field)
-    if (!phone) {
-        isPhoneValid.value = true
-        validationErrors.phone = ''
-        return
-    }
-    
-    // Check Vietnam phone number format
-    const phoneRegex = /^(\+84|84|0)[3|5|7|8|9][0-9]{8}$/
-    isPhoneValid.value = phoneRegex.test(phone)
-    
-    if (isPhoneValid.value) {
-        // Check for duplicate phone number
-        phoneCheckingDuplicate.value = true
-        try {
-            const normalizedPhone = normalizePhoneNumber(phone)
-            const isDuplicate = users.value.some(user => 
-                normalizePhoneNumber(user.phone) === normalizedPhone
-            )
-            
-            if (isDuplicate) {
-                validationErrors.phone = 'Số điện thoại này đã được đăng ký'
-                isPhoneValid.value = false
-            } else {
-                validationErrors.phone = ''
-            }
-        } catch (error) {
-            console.error('Error checking phone duplicate:', error)
-        } finally {
-            phoneCheckingDuplicate.value = false
+    try {
+        const phoneValidation = await validatePhone(createForm.phone, users.value)
+        isPhoneValid.value = phoneValidation.isValid
+        
+        if (!phoneValidation.isValid) {
+            validationErrors.phone = phoneValidation.message
+        } else {
+            validationErrors.phone = ''
         }
-    } else if (phone) {
-        validationErrors.phone = 'Số điện thoại không đúng định dạng Việt Nam'
+    } catch (error) {
+        console.error('Error during phone validation:', error)
+        isPhoneValid.value = false
+        validationErrors.phone = 'Lỗi khi kiểm tra số điện thoại'
+    } finally {
+        phoneCheckingDuplicate.value = false
     }
 }
 
 // Edit phone validation function
 const checkEditPhoneValidation = async () => {
-    const phone = editForm.phone?.trim()
+    editPhoneCheckingDuplicate.value = true
     
-    // If empty, it's valid (optional field)
-    if (!phone) {
-        isEditPhoneValid.value = true
-        editValidationErrors.phone = ''
-        return
-    }
-    
-    // Check Vietnam phone number format
-    const phoneRegex = /^(\+84|84|0)[3|5|7|8|9][0-9]{8}$/
-    isEditPhoneValid.value = phoneRegex.test(phone)
-    
-    if (isEditPhoneValid.value) {
-        // Check for duplicate phone number (excluding current user)
-        editPhoneCheckingDuplicate.value = true
-        try {
-            const normalizedPhone = normalizePhoneNumber(phone)
-            const isDuplicate = users.value.some(user => 
-                user.id !== editingUser.value?.id &&
-                normalizePhoneNumber(user.phone) === normalizedPhone
-            )
-            
-            if (isDuplicate) {
-                editValidationErrors.phone = 'Số điện thoại này đã được đăng ký'
-                isEditPhoneValid.value = false
-            } else {
-                editValidationErrors.phone = ''
-            }
-        } catch (error) {
-            console.error('Error checking phone duplicate:', error)
-        } finally {
-            editPhoneCheckingDuplicate.value = false
-        }
-    } else if (phone) {
-        editValidationErrors.phone = 'Số điện thoại không đúng định dạng Việt Nam'
-    }
-}
-
-// Normalize phone number for comparison
-const normalizePhoneNumber = (phone) => {
-    if (!phone) return ''
-    
-    // Remove all spaces and special characters
-    let normalized = phone.replace(/[\s\-\(\)]/g, '')
-    
-    // Convert to standard format (0xxxxxxxxx)
-    if (normalized.startsWith('+84')) {
-        normalized = '0' + normalized.substring(3)
-    } else if (normalized.startsWith('84') && normalized.length === 11) {
-        normalized = '0' + normalized.substring(2)
-    }
-    
-    return normalized
-}
-
-// Parse backend validation errors
-const parseBackendValidationError = (errorResponse) => {
-    // Try to parse JSON if it's a string
-    let parsedError = errorResponse
-    if (typeof errorResponse === 'string') {
-        try {
-            parsedError = JSON.parse(errorResponse)
-        } catch (e) {
-            // If not JSON, treat as plain error message
-            parsedError = { message: errorResponse }
-        }
-    }
-    
-    // Handle different error response formats from backend
-    if (parsedError.errors) {
-        // Format: { errors: { field: "message" } } - nếu backend có structured errors
-        return parsedError.errors
-    } else if (parsedError.details && Array.isArray(parsedError.details)) {
-        // Format: { details: [{ field, message }] } - nếu backend có detailed errors
-        const fieldErrors = {}
-        parsedError.details.forEach(detail => {
-            if (detail.field && detail.message) {
-                fieldErrors[detail.field] = detail.message
-            }
-        })
-        return fieldErrors
-    } else if (parsedError.message) {
-        // Dựa trên backend thực tế, các messages chính:
-        const message = parsedError.message
+    try {
+        const phoneValidation = await validatePhone(editForm.phone, users.value, editingUser.value?.id)
+        isEditPhoneValid.value = phoneValidation.isValid
         
-        // Backend trả về chính xác messages này:
-        if (message === 'Username already exists') {
-            return { username: 'Tên đăng nhập đã tồn tại' }
+        if (!phoneValidation.isValid) {
+            editValidationErrors.phone = phoneValidation.message
+        } else {
+            editValidationErrors.phone = ''
         }
-        if (message === 'Email already exists') {
-            return { email: 'Địa chỉ email đã được đăng ký' }
-        }
-        if (message === 'Phone already exists') {
-            return { phone: 'Số điện thoại đã được đăng ký' }
-        }
-        if (message === 'Invalid role_id') {
-            return { role_id: 'Quyền không hợp lệ' }
-        }
-        if (message === 'User not found') {
-            return { _general: 'Không tìm thấy người dùng' }
-        }
-        
-        // Handle compound validation message
-        if (message === 'All fields are required (name, username, email, password, role_id)') {
-            // Không thể determine trường nào thiếu, show general error
-            return { _general: 'Tất cả các trường là bắt buộc (họ tên, tên đăng nhập, email, mật khẩu, quyền)' }
-        }
-        
-        // Handle permission errors
-        if (message.includes('Access denied') || message.includes('cannot create') || message.includes('cannot update') || message.includes('cannot modify')) {
-            return { _general: translateErrorMessage(message) }
-        }
-        
-        // Generic message với translation
-        return { _general: translateErrorMessage(message) }
+    } catch (error) {
+        console.error('Error during edit phone validation:', error)
+        isEditPhoneValid.value = false
+        editValidationErrors.phone = 'Lỗi khi kiểm tra số điện thoại'
+    } finally {
+        editPhoneCheckingDuplicate.value = false
     }
-    
-    return { _general: 'Có lỗi xảy ra, vui lòng thử lại' }
-}
-
-// Translate backend error messages to Vietnamese
-const translateErrorMessage = (message) => {
-    // Backend thực tế trả về các messages sau (dựa trên users.controller.js):
-    const translations = {
-        // Duplicate/exists errors (409 status)
-        'Username already exists': 'Tên đăng nhập đã tồn tại',
-        'Email already exists': 'Địa chỉ email đã được đăng ký',
-        'Phone already exists': 'Số điện thoại đã được đăng ký',
-        
-        // Validation errors (400 status)
-        'All fields are required (name, username, email, password, role_id)': 'Tất cả các trường là bắt buộc (họ tên, tên đăng nhập, email, mật khẩu, quyền)',
-        'is_active must be true or false': 'Trạng thái phải là đúng hoặc sai',
-        'Invalid role_id': 'Quyền không hợp lệ',
-        'No fields to update': 'Không có trường nào để cập nhật',
-        
-        // Not found errors (404 status)
-        'User not found': 'Không tìm thấy người dùng',
-        
-        // Permission errors (403 status)
-        'Access denied. You cannot create users.': 'Truy cập bị từ chối. Bạn không thể tạo người dùng.',
-        'Access denied. You cannot update users.': 'Truy cập bị từ chối. Bạn không thể cập nhật người dùng.',
-        'Access denied. You cannot modify this user.': 'Truy cập bị từ chối. Bạn không thể chỉnh sửa người dùng này.',
-        'Access denied. Insufficient permissions.': 'Truy cập bị từ chối. Không đủ quyền hạn.',
-        
-        // Server errors (500 status)
-        'Internal server error': 'Lỗi hệ thống, vui lòng thử lại sau',
-        
-        // Generic fallback translations
-        'access denied': 'Truy cập bị từ chối',
-        'forbidden': 'Truy cập bị từ chối',
-        'unauthorized': 'Không có quyền thực hiện thao tác này',
-        'bad request': 'Yêu cầu không hợp lệ',
-        'network error': 'Lỗi kết nối mạng',
-        'timeout': 'Hết thời gian chờ',
-        'connection failed': 'Kết nối thất bại'
-    }
-    
-    if (!message) return 'Có lỗi xảy ra'
-    
-    // Try exact match first (case-sensitive để match chính xác backend messages)
-    if (translations[message]) {
-        return translations[message]
-    }
-    
-    // Try case-insensitive partial match cho các trường hợp đặc biệt
-    const lowerMessage = message.toLowerCase()
-    
-    // Handle dynamic messages từ backend
-    if (lowerMessage.includes('you cannot create users with role id')) {
-        return 'Truy cập bị từ chối. Bạn không thể tạo người dùng với quyền này.'
-    }
-    
-    if (lowerMessage.includes('you cannot assign role id')) {
-        return 'Truy cập bị từ chối. Bạn không thể gán quyền này.'
-    }
-    
-    // Fallback cho generic terms
-    for (const [key, value] of Object.entries(translations)) {
-        if (lowerMessage.includes(key.toLowerCase())) {
-            return value
-        }
-    }
-    
-    return message // Return original if no translation found
 }
 
 // Set backend validation errors to form fields
@@ -1098,13 +924,33 @@ const setBackendValidationErrors = (errors, isEditForm = false) => {
         errorObj[key] = ''
     })
     
-    // Set new errors
+    // Set new errors (already translated by parseBackendValidationError)
     Object.keys(errors).forEach(field => {
         if (field === '_general') {
             // Show general error as notification
             showError(errors[field])
         } else if (errorObj.hasOwnProperty(field)) {
-            errorObj[field] = translateErrorMessage(errors[field])
+            errorObj[field] = errors[field] // No translation needed, already done by composable
+            
+            // Reset validation states when backend returns field errors
+            if (!isEditForm) {
+                if (field === 'email') {
+                    isEmailValid.value = false
+                }
+                if (field === 'username') {
+                    // Force username field to show error
+                }
+                if (field === 'phone') {
+                    isPhoneValid.value = false
+                }
+            } else {
+                if (field === 'email') {
+                    isEditEmailValid.value = false
+                }
+                if (field === 'phone') {
+                    isEditPhoneValid.value = false
+                }
+            }
         }
     })
 }
@@ -1116,25 +962,38 @@ const validateField = async (fieldName) => {
     // Clear previous error (including backend errors)
     validationErrors[fieldName] = ''
     
-    // Required field check (phone is optional)
-    if (fieldName !== 'phone' && (!value || (typeof value === 'string' && !value.trim()))) {
-        const fieldLabels = {
-            name: 'Họ và tên',
-            username: 'Tên đăng nhập', 
-            email: 'Email',
-            password: 'Mật khẩu',
-            confirmPassword: 'Xác nhận mật khẩu',
-            role_id: 'Quyền'
-        }
-        validationErrors[fieldName] = `${fieldLabels[fieldName]} là bắt buộc`
-        return false
+    // Field labels for required validation
+    const fieldLabels = {
+        name: 'Họ và tên',
+        username: 'Tên đăng nhập', 
+        email: 'Email',
+        password: 'Mật khẩu',
+        confirmPassword: 'Xác nhận mật khẩu',
+        role_id: 'Quyền'
     }
     
-    // Specific validations
+    // Specific validations using composable
     switch (fieldName) {
+        case 'name':
+            const nameValidation = validateRequired(value, fieldLabels[fieldName])
+            if (!nameValidation.isValid) {
+                validationErrors[fieldName] = nameValidation.message
+                return false
+            }
+            break
+            
+        case 'username':
+            const usernameValidation = validateUsername(value)
+            if (!usernameValidation.isValid) {
+                validationErrors[fieldName] = usernameValidation.message
+                return false
+            }
+            break
+            
         case 'email':
-            if (!isEmailValid.value) {
-                validationErrors.email = 'Địa chỉ email không hợp lệ'
+            const emailValidation = validateEmail(value)
+            if (!emailValidation.isValid) {
+                validationErrors[fieldName] = emailValidation.message
                 return false
             }
             break
@@ -1147,30 +1006,25 @@ const validateField = async (fieldName) => {
             break
             
         case 'password':
-            if (!passwordStrength.hasMinLength) {
-                validationErrors.password = 'Mật khẩu phải trên 8 ký tự'
-                return false
-            }
-            if (!passwordStrength.hasLettersAndNumbers) {
-                validationErrors.password = 'Mật khẩu phải có chữ và số'
-                return false
-            }
-            if (!passwordStrength.hasMixedCase) {
-                validationErrors.password = 'Mật khẩu phải có chữ hoa và thường'
+            const passwordValidation = validatePasswordStrength(value, passwordStrength)
+            if (!passwordValidation.isValid) {
+                validationErrors[fieldName] = passwordValidation.message
                 return false
             }
             break
             
         case 'confirmPassword':
-            if (!passwordsMatch.value) {
-                validationErrors.confirmPassword = 'Mật khẩu xác nhận không trùng khớp'
+            const confirmValidation = validatePasswordConfirmation(createForm.password, value)
+            if (!confirmValidation.isValid) {
+                validationErrors[fieldName] = confirmValidation.message
                 return false
             }
             break
             
-        case 'username':
-            if (value.length < 3) {
-                validationErrors.username = 'Tên đăng nhập phải ít nhất 3 ký tự'
+        case 'role_id':
+            const roleValidation = validateRequired(value, fieldLabels[fieldName])
+            if (!roleValidation.isValid) {
+                validationErrors[fieldName] = roleValidation.message
                 return false
             }
             break
@@ -1308,21 +1162,11 @@ const isEditFormValid = computed(() => {
 const checkPasswordStrength = () => {
     const password = createForm.password
     
-    // Check minimum length (over 8 characters)
-    passwordStrength.hasMinLength = password.length > 8
-    
-    // Check letters and numbers
-    const hasLetter = /[a-zA-Z]/.test(password)
-    const hasNumber = /[0-9]/.test(password)
-    passwordStrength.hasLettersAndNumbers = hasLetter && hasNumber
-    
-    // Check mixed case (uppercase and lowercase)
-    const hasUppercase = /[A-Z]/.test(password)
-    const hasLowercase = /[a-z]/.test(password)
-    passwordStrength.hasMixedCase = hasUppercase && hasLowercase
+    // Use validation composable to check password strength
+    const passwordValidation = validatePasswordStrength(password, passwordStrength)
     
     // Clear password error if strength requirements are met
-    if (password && passwordStrength.hasMinLength && passwordStrength.hasLettersAndNumbers && passwordStrength.hasMixedCase) {
+    if (passwordValidation.isValid) {
         validationErrors.password = ''
     }
     
@@ -1330,44 +1174,6 @@ const checkPasswordStrength = () => {
     if (createForm.confirmPassword) {
         validateField('confirmPassword')
     }
-}
-
-// Get password strength class for styling
-const getPasswordStrengthClass = () => {
-    const validChecks = [
-        passwordStrength.hasMinLength,
-        passwordStrength.hasLettersAndNumbers,
-        passwordStrength.hasMixedCase
-    ].filter(Boolean).length
-    
-    if (validChecks === 0) return 'strength-weak'
-    if (validChecks === 1) return 'strength-weak'
-    if (validChecks === 2) return 'strength-medium'
-    return 'strength-strong'
-}
-
-// Get password strength percentage
-const getPasswordStrengthPercentage = () => {
-    const validChecks = [
-        passwordStrength.hasMinLength,
-        passwordStrength.hasLettersAndNumbers,
-        passwordStrength.hasMixedCase
-    ].filter(Boolean).length
-    
-    return (validChecks / 3) * 100
-}
-
-// Get password strength text
-const getPasswordStrengthText = () => {
-    const validChecks = [
-        passwordStrength.hasMinLength,
-        passwordStrength.hasLettersAndNumbers,
-        passwordStrength.hasMixedCase
-    ].filter(Boolean).length
-    
-    if (validChecks === 0 || validChecks === 1) return 'Yếu'
-    if (validChecks === 2) return 'Trung bình'
-    return 'Mạnh'
 }
 
 // ===========================================
@@ -1400,7 +1206,7 @@ const handleCreateUser = async () => {
             
             if (hasFieldErrors) {
                 setBackendValidationErrors(backendErrors, false)
-                showError('Vui lòng kiểm tra các lỗi trong form')
+                showError('Tạo tài khoản thất bại, xin hãy kiểm tra lại thông tin')
             } else {
                 // Show general error
                 showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi tạo người dùng')
@@ -1438,7 +1244,7 @@ const handleUpdateUser = async () => {
             
             if (hasFieldErrors) {
                 setBackendValidationErrors(backendErrors, true)
-                showError('Vui lòng kiểm tra các lỗi trong form')
+                showError('Cập nhật tài khoản thất bại, xin hãy kiểm tra lại thông tin')
             } else {
                 // Show general error
                 showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
