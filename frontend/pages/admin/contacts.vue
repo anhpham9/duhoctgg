@@ -68,20 +68,7 @@
                             <span>{{ stats.closed || 0 }} liên hệ</span>
                         </div>
                     </div>
-                    <div class="stat-card assigned">
-                        <i class="fas fa-user-check"></i>
-                        <div class="stat-info">
-                            <h3>Đã phân công</h3>
-                            <span>{{ stats.assigned || 0 }} liên hệ</span>
-                        </div>
-                    </div>
-                    <div class="stat-card unassigned">
-                        <i class="fas fa-user-times"></i>
-                        <div class="stat-info">
-                            <h3>Chưa phân công</h3>
-                            <span>{{ stats.unassigned || 0 }} liên hệ</span>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 
@@ -90,7 +77,7 @@
                 <div class="table-header">
                     <h2>Danh sách liên hệ ({{ filteredContacts.length }})</h2>
                     <div class="table-actions">
-                        <button @click="exportToExcel" class="btn btn-success"
+                        <button @click="handleExportToExcel" class="btn btn-success"
                             :disabled="loading || filteredContacts.length === 0">
                             <i class="fas fa-file-excel" :class="{ 'fa-spin': exportingExcel }"></i>
                             Xuất Excel
@@ -196,12 +183,7 @@
                                     Trạng thái
                                     <i class="fas fa-sort"></i>
                                 </th>
-                                <th class="sortable"
-                                    :class="{ 'sort-asc': sortColumn === 'assigned_to_name' && sortDirection === 'asc', 'sort-desc': sortColumn === 'assigned_to_name' && sortDirection === 'desc' }"
-                                    @click="handleSort('assigned_to_name')">
-                                    Phân công
-                                    <i class="fas fa-sort"></i>
-                                </th>
+
                                 <th class="sortable"
                                     :class="{ 'sort-asc': sortColumn === 'created_at' && sortDirection === 'asc', 'sort-desc': sortColumn === 'created_at' && sortDirection === 'desc' }"
                                     @click="handleSort('created_at')">
@@ -238,23 +220,7 @@
                                         <span>{{ getStatusDisplayName(contact.status) }}</span>
                                     </button>
                                 </td>
-                                <td class="contact-assigned">
-                                    <div v-if="contact.assigned_to_name" class="assigned-info">
-                                        <i class="fas fa-user-check"></i>
-                                        {{ contact.assigned_to_name }}
-                                        <button @click="handleUnassign(contact)" class="btn-unassign"
-                                            :disabled="loading" title="Bỏ phân công">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <select v-else @change="handleAssignment(contact, $event.target.value)"
-                                        class="assign-select" :disabled="loading">
-                                        <option value="">Chọn người xử lý...</option>
-                                        <option v-for="user in assignableUsers" :key="user.id" :value="user.id">
-                                            {{ user.name }} ({{ user.role_name }})
-                                        </option>
-                                    </select>
-                                </td>
+
                                 <td class="contact-date">{{ formatDate(contact.created_at) }}</td>
                                 <td>
                                     <div class="contact-actions">
@@ -266,10 +232,10 @@
                                             title="Chỉnh sửa">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button @click="handleOpenNotes(contact)" class="btn-action btn-notes"
+                                        <!-- <button @click="handleOpenNotes(contact)" class="btn-action btn-notes"
                                             title="Ghi chú">
                                             <i class="fas fa-comment"></i>
-                                        </button>
+                                        </button> -->
                                         <button v-if="canDeleteContact(contact)" @click="openDeleteConfirm(contact)"
                                             class="btn-action btn-delete" title="Xóa">
                                             <i class="fas fa-trash"></i>
@@ -308,7 +274,7 @@
                                 <i class="fas fa-angle-left"></i>
                             </button>
 
-                            <template v-for="page in getVisiblePages()" :key="page">
+                            <template v-for="page in visiblePages" :key="page">
                                 <button v-if="page === '...'" class="btn-page btn-page-dots" disabled>
                                     ...
                                 </button>
@@ -380,21 +346,18 @@
                                             {{ getMethodDisplayName(detailContact.contact_method) }}
                                         </span>
                                     </div>
-                                    <div class="detail-item">
-                                        <label>Được phân công cho:</label>
-                                        <span>{{ detailContact.assigned_to_name || 'Chưa phân công' }}</span>
-                                    </div>
+
                                     <div class="detail-item">
                                         <label>Ngày tạo:</label>
-                                        <span>{{ formatDate(detailContact.created_at) }}</span>
+                                        <span>{{ formatSmartDate(detailContact.created_at) }}</span>
                                     </div>
                                     <div v-if="detailContact.first_contacted_at" class="detail-item">
                                         <label>Lần liên hệ đầu:</label>
-                                        <span>{{ formatDate(detailContact.first_contacted_at) }}</span>
+                                        <span>{{ formatSmartDate(detailContact.first_contacted_at) }}</span>
                                     </div>
                                     <div v-if="detailContact.closed_at" class="detail-item">
                                         <label>Ngày đóng:</label>
-                                        <span>{{ formatDate(detailContact.closed_at) }}</span>
+                                        <span>{{ formatSmartDate(detailContact.closed_at) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -410,7 +373,7 @@
                             <div class="detail-section notes-section">
                                 <div class="notes-header">
                                     <h4><i class="fas fa-sticky-note"></i> Ghi chú ({{ contactNotes.length }})</h4>
-                                    <button @click="openAddNoteForm" class="btn btn-sm btn-primary">
+                                    <button @click="openAddNoteForm" class="btn btn-sm btn-primary" type="button">
                                         <i class="fas fa-plus"></i>
                                         Thêm ghi chú
                                     </button>
@@ -431,10 +394,10 @@
                                         <div class="note-header">
                                             <div class="note-author">
                                                 <i class="fas fa-user-circle"></i>
-                                                {{ note.user_name || 'Người dùng' }}
+                                                {{ note.author_name || 'Quản trị viên' }}
                                             </div>
                                             <div class="note-date">
-                                                {{ formatDate(note.created_at) }}
+                                                {{ formatSmartDate(note.created_at) }}
                                             </div>
                                         </div>
                                         <div class="note-content">
@@ -460,7 +423,7 @@
                 <div class="modal modal-note" @click.stop>
                     <div class="modal-header">
                         <h3>Thêm ghi chú cho liên hệ #{{ detailContact?.id }}</h3>
-                        <button @click="handleCloseAllModals" class="btn-close">
+                        <button @click="closeAddNoteForm" class="btn-close">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -472,7 +435,7 @@
                         </div>
                     </form>
                     <div class="modal-footer">
-                        <button type="button" @click="handleCloseAllModals" class="btn btn-secondary">Hủy</button>
+                        <button type="button" @click="closeAddNoteForm" class="btn btn-secondary">Hủy</button>
                         <button type="submit" @click="handleAddNote" :disabled="isAddingNote || !newNote.trim()"
                             class="btn btn-primary">
                             <i v-if="isAddingNote" class="fas fa-spinner fa-spin"></i>
@@ -553,15 +516,7 @@
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="edit-assigned-to">Phân công cho</label>
-                            <select id="edit-assigned-to" v-model="editForm.assigned_to">
-                                <option value="">Chưa phân công</option>
-                                <option v-for="user in assignableUsers" :key="user.id" :value="user.id">
-                                    {{ user.name }} ({{ user.role_name }})
-                                </option>
-                            </select>
-                        </div>
+
                     </form>
                     <div class="modal-footer">
                         <button type="button" @click="handleCloseAllModals" class="btn btn-secondary">Hủy</button>
@@ -615,8 +570,11 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useContactsAPI } from '~/composables/useContactsAPI'
 import { useNotifications } from '~/composables/useNotifications'
 import { useValidation } from '~/composables/useValidation'
+import { formatSmartDate, formatDate } from '~/utils/date'
 import Toast from '~/components/Toast.vue'
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { useVisiblePages } from '~/composables/usePaginationHelper'
+import { useExportExcel } from '~/composables/useExportExcel'
 import * as XLSX from 'xlsx'
 
 // ===========================================
@@ -652,7 +610,7 @@ onMounted(async () => {
     if (hasPermission.value) {
         await fetchContacts()
         await fetchContactStats()
-        await fetchAssignableUsers()
+
     }
 })
 
@@ -662,7 +620,7 @@ onMounted(async () => {
 // Use the contacts API composable
 const {
     contacts,
-    assignableUsers,
+
     contactNotes,
     loading,
     loadingNotes,
@@ -673,6 +631,7 @@ const {
     showDetailModal,
     showEditForm,
     showDeleteConfirm,
+    showAddNoteForm,
     contactToDelete,
     editForm,
     // Search and Filter
@@ -693,7 +652,7 @@ const {
     totalPages,
     // Methods
     fetchContacts,
-    fetchAssignableUsers,
+
     fetchContactStats,
     fetchContactNotes,
     updateContact,
@@ -702,6 +661,10 @@ const {
     resetEditForm,
     openDetailModal,
     openEditForm,
+    newNote,
+    openAddNoteForm,
+    closeAddNoteForm,
+
     openDeleteConfirm,
     closeAllModals,
     // Search and Filter Methods
@@ -714,6 +677,7 @@ const {
     // Helpers
     getStatusDisplayName,
     getStatusBadgeColor,
+    getStatusIcon,
     getMethodDisplayName,
     getMethodBadgeColor,
     getMethodIcon
@@ -736,8 +700,8 @@ const {
 // FORM VALIDATION & STATES
 // ===========================================
 
-// Export to Excel state
-const exportingExcel = ref(false)
+// Export to Excel composable
+const { exportToExcel, exportingExcel } = useExportExcel()
 
 // Use validation composable
 const {
@@ -762,7 +726,7 @@ const validationErrors = reactive({
     message: '',
     contact_method: '',
     social_contact: '',
-    assigned_to: ''
+
 })
 
 // Edit form validation errors
@@ -850,7 +814,7 @@ const validateEditField = async (fieldName) => {
             message: 'Tin nhắn',
             contact_method: 'Phương thức liên hệ',
             social_contact: 'Liên hệ xã hội',
-            assigned_to: 'Người được giao'
+
         }
         editValidationErrors[fieldName] = `${fieldLabels[fieldName]} là bắt buộc`
         return false
@@ -908,7 +872,7 @@ const isEditFormValid = computed(() => {
 // EVENT HANDLERS
 // ===========================================
 
-const handleUpdateUser = async () => {
+const handleUpdateContact = async () => {
     // Validate form first
     const isValid = await validateEditForm()
     if (!isValid) {
@@ -996,134 +960,74 @@ const handleOpenEditForm = (contact) => {
     })
 }
 
-// Pagination helper
-const getVisiblePages = () => {
-    const pages = []
-    const total = totalPages.value
-    const current = currentPage.value
-
-    if (total <= 7) {
-        // Show all pages if total is small
-        for (let i = 1; i <= total; i++) {
-            pages.push(i)
-        }
-    } else {
-        // Always show first page
-        pages.push(1)
-
-        if (current > 4) {
-            pages.push('...')
-        }
-
-        // Show pages around current
-        const start = Math.max(2, current - 1)
-        const end = Math.min(total - 1, current + 1)
-
-        for (let i = start; i <= end; i++) {
-            pages.push(i)
-        }
-
-        if (current < total - 3) {
-            pages.push('...')
-        }
-
-        // Always show last page
-        if (total > 1) {
-            pages.push(total)
-        }
-    }
-
-    return pages
-}
+// Pagination helper (reusable)
+const visiblePages = useVisiblePages(totalPages, currentPage)
 
 // ===========================================
 // EXCEL EXPORT FUNCTIONALITY
 // ===========================================
 
-const exportToExcel = async () => {
+const handleExportToExcel = async () => {
     if (filteredContacts.value.length === 0) {
         showWarning('Không có dữ liệu để xuất')
         return
     }
-
     exportingExcel.value = true
-
     try {
-        // Prepare data for export
-        const exportData = filteredContacts.value.map((contact, index) => ({
-            'STT': index + 1,
-            'ID': contact.id,
-            'Họ và tên': contact.name,
-            'Email': contact.email,
-            'Số điện thoại': contact.phone || '',
-            'Tin nhắn': contact.message || '',
-            'Trạng thái': getStatusDisplayName(contact.status),
-            'Phương thức liên hệ': getMethodDisplayName(contact.contact_method),
-            'Liên hệ khác': contact.social_contact || '',
-            'Được phân công': contact.assigned_to_name || 'Chưa phân công',
-            'Ngày tạo': formatDate(contact.created_at),
-            'Lần liên hệ đầu': formatDate(contact.first_contacted_at),
-            'Ngày đóng': formatDate(contact.closed_at)
-        }))
-
-        // Create workbook
-        const wb = XLSX.utils.book_new()
-        const ws = XLSX.utils.json_to_sheet(exportData)
-
-        // Set column widths
-        const colWidths = [
-            { wch: 5 },   // STT
-            { wch: 8 },   // ID
-            { wch: 25 },  // Họ và tên
-            { wch: 30 },  // Email
-            { wch: 15 },  // Số điện thoại
-            { wch: 100 },  // Tin nhắn
-            { wch: 12 },  // Trạng thái
-            { wch: 20 },  // Phương thức liên hệ
-            { wch: 20 },  // Liên hệ khác
-            { wch: 20 },  // Được phân công
-            { wch: 12 },  // Ngày tạo
-            { wch: 12 },  // Lần liên hệ đầu
-            { wch: 12 }   // Ngày đóng
-        ]
-        ws['!cols'] = colWidths
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Danh sách liên hệ')
-
-        // Generate filename with current date
-        const now = new Date()
-        const dateStr = now.toISOString().split('T')[0] // YYYY-MM-DD format
-        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '') // HHMMSS format
-        const filename = `danh-sach-lien-he_${dateStr}_${timeStr}.xlsx`
-
-        // Export file
-        XLSX.writeFile(wb, filename)
-
-        showSuccess(`Đã xuất ${filteredContacts.value.length} liên hệ ra file Excel thành công!`)
-    } catch (error) {
-        console.error('Export error:', error)
-        showError('Có lỗi xảy ra khi xuất file Excel')
+        // Fetch notes cho tất cả contact song song
+        const contacts = filteredContacts.value
+        const notesArr = await Promise.all(
+            contacts.map(async contact => {
+                try {
+                    const res = await fetch(`/api/contacts/${contact.id}/notes`, { credentials: 'include' })
+                    const data = await res.json()
+                    console.log(`[ExportExcel] Notes cho contact #${contact.id}:`, data.data)
+                    if (Array.isArray(data.data)) {
+                        return data.data.map(n => n.note || '').filter(Boolean)
+                    }
+                    return []
+                } catch (err) {
+                    console.error(`[ExportExcel] Lỗi lấy notes cho contact #${contact.id}:`, err)
+                    return []
+                }
+            })
+        )
+        const exportData = contacts.map((contact, idx) => {
+            const notes = notesArr[idx]
+            return {
+                ...contact,
+                _notes: notes.length ? notes.map(n => `・ ${n}`).join('\n') : ''
+            }
+        })
+        exportToExcel({
+            data: exportData,
+            columns: [
+                { label: 'STT', key: 'id', value: (_row, idx) => idx + 1, width: 5 },
+                { label: 'ID', key: 'id', width: 8 },
+                { label: 'Họ và tên', key: 'name', width: 25 },
+                { label: 'Email', key: 'email', width: 30 },
+                { label: 'Số điện thoại', key: 'phone', value: row => row.phone || '', width: 15 },
+                { label: 'Tin nhắn', key: 'message', value: row => row.message || '', width: 100 },
+                { label: 'Trạng thái', key: 'status', value: row => getStatusDisplayName(row.status), width: 12 },
+                { label: 'Phương thức liên hệ', key: 'contact_method', value: row => getMethodDisplayName(row.contact_method), width: 20 },
+                { label: 'Liên hệ khác', key: 'social_contact', value: row => row.social_contact || '', width: 20 },
+                { label: 'Ngày tạo', key: 'created_at', value: row => formatDate(row.created_at), width: 12 },
+                { label: 'Lần liên hệ đầu', key: 'first_contacted_at', value: row => formatDate(row.first_contacted_at), width: 12 },
+                { label: 'Ngày đóng', key: 'closed_at', value: row => formatDate(row.closed_at), width: 12 },
+                { label: 'Ghi chú', key: '_notes', value: row => row._notes, width: 40 }
+            ],
+            filenamePrefix: 'danh-sach-lien-he',
+            onSuccess: msg => showSuccess(msg),
+            onError: msg => showWarning(msg)
+        })
+    } catch (err) {
+        showError('Có lỗi khi xuất file Excel')
     } finally {
         exportingExcel.value = false
     }
 }
 
 // Utility functions
-const formatDate = (dateString) => {
-    if (!dateString) return '-'
-
-    try {
-        const date = new Date(dateString)
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        })
-    } catch (error) {
-        return '-'
-    }
-}
 
 // ===========================================
 // PAGE CONFIGURATION
@@ -1138,178 +1042,7 @@ definePageMeta({
 // end of page configuration
 // ===========================================
 
-// Modal states
-// const showDetailModal = ref(false)
-// const selectedContact = ref(null)
-// const showEditForm = ref(false)
-const showAddNoteForm = ref(false)
-// const showDeleteConfirm = ref(false)
-// const contactToDelete = ref(null)
 
-// Form states
-// const isUpdating = ref(false)
-// const isAddingNote = ref(false)
-// const isDeleting = ref(false)
-// const newNote = ref('')
-
-// Edit form
-// const editForm = reactive({
-//     id: null,
-//     name: '',
-//     email: '',
-//     phone: '',
-//     message: '',
-//     contact_method: '',
-//     social_contact: '',
-//     assigned_to: '',
-//     status: 'new'
-// })
-
-// Search and Filter
-
-// Sort
-
-
-// Export state
-// const exportingExcel = ref(false)
-
-// ===========================================
-// NOTIFICATION SYSTEM
-// ===========================================
-
-// Use notification composable
-// const {
-//     notification,
-//     showSuccess,
-//     showError,
-//     showWarning,
-//     hideNotification
-// } = useNotifications()
-
-// ===========================================
-// FORM VALIDATION
-// ===========================================
-
-// Use validation composable
-// const {
-//     validateEmail,
-//     validatePhone,
-//     validateRequired
-// } = useValidation()
-
-// Validation errors
-// const validationErrors = reactive({
-//     name: '',
-//     email: '',
-//     phone: '',
-//     message: '',
-//     contact_method: '',
-//     social_contact: '',
-//     assigned_to: ''
-// })
-
-
-// Import composable
-// import { useContactsAPI } from '~/composables/useContactsAPI'
-
-// Contacts API state & methods
-// const {
-//     contacts,
-//     stats,
-//     assignableUsers,
-//     contactNotes,
-//     loading,
-//     loadingNotes,
-//     error,
-//     fetchContacts,
-//     fetchContactStats,
-//     fetchAssignableUsers,
-//     fetchContactNotes,
-//     updateContact,
-//     deleteContact,
-//     addContactNote
-// } = useContactsAPI()
-
-// ===========================================
-// COMPUTED PROPERTIES
-// ===========================================
-
-// Filtered contacts
-// const filteredContacts = computed(() => {
-//     let filtered = [...contacts.value]
-
-//     // Search filter
-//     if (searchQuery.value) {
-//         const query = searchQuery.value.toLowerCase()
-//         filtered = filtered.filter(contact =>
-//             contact.name?.toLowerCase().includes(query) ||
-//             contact.email?.toLowerCase().includes(query) ||
-//             contact.phone?.toLowerCase().includes(query) ||
-//             contact.message?.toLowerCase().includes(query)
-//         )
-//     }
-
-//     // Status filter
-//     if (selectedStatusFilter.value) {
-//         filtered = filtered.filter(contact => contact.status === selectedStatusFilter.value)
-//     }
-
-//     // Contact method filter
-//     if (selectedMethodFilter.value) {
-//         filtered = filtered.filter(contact => contact.contact_method === selectedMethodFilter.value)
-//     }
-
-//     // Sort
-//     if (sortColumn.value) {
-//         filtered.sort((a, b) => {
-//             let aVal = a[sortColumn.value]
-//             let bVal = b[sortColumn.value]
-
-//             // Handle null values
-//             if (aVal === null || aVal === undefined) aVal = ''
-//             if (bVal === null || bVal === undefined) bVal = ''
-
-//             // String comparison
-//             if (typeof aVal === 'string') {
-//                 aVal = aVal.toLowerCase()
-//                 bVal = bVal.toLowerCase()
-//             }
-
-//             if (sortDirection.value === 'asc') {
-//                 return aVal > bVal ? 1 : -1
-//             } else {
-//                 return aVal < bVal ? 1 : -1
-//             }
-//         })
-//     }
-
-//     return filtered
-// })
-
-// Paginated contacts
-// const paginatedContacts = computed(() => {
-//     const start = (currentPage.value - 1) * itemsPerPage.value
-//     const end = start + itemsPerPage.value
-//     return filteredContacts.value.slice(start, end)
-// })
-
-// Total pages
-// const totalPages = computed(() => {
-//     return Math.ceil(filteredContacts.value.length / itemsPerPage.value)
-// })
-
-// ===========================================
-// EVENT HANDLERS
-// ===========================================
-
-
-
-// const handleCloseAllModals = () => {
-//     showEditForm.value = false
-//     showDetailModal.value = false
-//     showAddNoteForm.value = false
-//     closeEditForm()
-// }
 
 // Handle contact details
 const handleOpenViewDetail = async (contact) => {
@@ -1326,24 +1059,27 @@ const closeDetailModal = () => {
 }
 
 // Handle notes
-const handleOpenNotes = async (contact) => {
-    detailContact.value = contact
-    await fetchContactNotes(contact.id)
-    showDetailModal.value = true
-}
+// const handleOpenNotes = async (contact) => {
+//     detailContact.value = contact
+//     await fetchContactNotes(contact.id)
+//     showDetailModal.value = true
+// }
 
-const openAddNoteForm = () => {
-    newNote.value = ''
-    showAddNoteForm.value = true
-}
-
-const closeAddNoteForm = () => {
-    showAddNoteForm.value = false
-    newNote.value = ''
-}
-
+const isAddingNote = ref(false)
 const handleAddNote = async () => {
-    await addContactNote()
+    if (!detailContact.value?.id || !newNote.value.trim()) return
+    isAddingNote.value = true
+    const result = await addContactNote(detailContact.value.id, newNote.value.trim())
+    isAddingNote.value = false
+    if (result.success) {
+        showSuccess(result.message || 'Thêm ghi chú thành công!')
+        newNote.value = ''
+        showAddNoteForm.value = false
+        // Reload notes list
+        await fetchContactNotes(detailContact.value.id)
+    } else {
+        showError(result.message || 'Thêm ghi chú thất bại!')
+    }
 }
 
 // Handle delete
@@ -1357,62 +1093,42 @@ const closeDeleteConfirm = () => {
     contactToDelete.value = null
 }
 
-// const handleDeleteContact = async () => {
-//     await deleteContact()
+// const handleUpdateContact = async () => {
+//     try {
+//         isUpdating.value = true
+
+//         const response = await $fetch(`/api/contacts/${editForm.id}`, {
+//             method: 'PUT',
+//             headers: {
+//                 'Authorization': `Bearer ${useCookie('token').value}`
+//             },
+//             body: {
+//                 name: editForm.name,
+//                 email: editForm.email,
+//                 phone: editForm.phone,
+//                 message: editForm.message,
+//                 contact_method: editForm.contact_method,
+//                 social_contact: editForm.social_contact,
+//                 assigned_to: editForm.assigned_to,
+//                 status: editForm.status
+//             }
+//         })
+
+//         if (response.success) {
+//             showSuccess('Cập nhật liên hệ thành công')
+//             await fetchContacts()
+//             await fetchContactStats()
+//             showEditForm.value = false
+//         } else {
+//             showError(response.message || 'Cập nhật liên hệ thất bại')
+//         }
+//     } catch (err) {
+//         console.error('Update contact error:', err)
+//         showError(err.data?.message || 'Cập nhật liên hệ thất bại')
+//     } finally {
+//         isUpdating.value = false
+//     }
 // }
-
-// Handle edit contact
-// const handleOpenEditForm = (contact) => {
-//     Object.assign(editForm, {
-//         id: contact.id,
-//         name: contact.name || '',
-//         email: contact.email || '',
-//         phone: contact.phone || '',
-//         message: contact.message || '',
-//         contact_method: contact.contact_method || 'email',
-//         social_contact: contact.social_contact || '',
-//         assigned_to: contact.assigned_to || '',
-//         status: contact.status || 'new'
-//     })
-//     showEditForm.value = true
-// }
-
-const handleUpdateContact = async () => {
-    try {
-        isUpdating.value = true
-
-        const response = await $fetch(`/api/contacts/${editForm.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${useCookie('token').value}`
-            },
-            body: {
-                name: editForm.name,
-                email: editForm.email,
-                phone: editForm.phone,
-                message: editForm.message,
-                contact_method: editForm.contact_method,
-                social_contact: editForm.social_contact,
-                assigned_to: editForm.assigned_to,
-                status: editForm.status
-            }
-        })
-
-        if (response.success) {
-            showSuccess('Cập nhật liên hệ thành công')
-            await fetchContacts()
-            await fetchContactStats()
-            showEditForm.value = false
-        } else {
-            showError(response.message || 'Cập nhật liên hệ thất bại')
-        }
-    } catch (err) {
-        console.error('Update contact error:', err)
-        showError(err.data?.message || 'Cập nhật liên hệ thất bại')
-    } finally {
-        isUpdating.value = false
-    }
-}
 
 const closeEditForm = () => {
     showEditForm.value = false
@@ -1458,140 +1174,7 @@ const getNextStatus = (currentStatus) => {
 }
 
 // Handle assignment
-const handleAssignment = async (contact, userId) => {
-    if (!userId) return
 
-    try {
-        const response = await $fetch(`/api/contacts/${contact.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${useCookie('token').value}`
-            },
-            body: {
-                assigned_to: userId
-            }
-        })
-
-        if (response.success) {
-            const assignedUser = assignableUsers.value.find(u => u.id === parseInt(userId))
-            showSuccess(`Phân công liên hệ cho ${assignedUser?.name} thành công`)
-            await fetchContacts()
-            await fetchContactStats()
-        } else {
-            showError(response.message || 'Phân công liên hệ thất bại')
-        }
-    } catch (err) {
-        console.error('Assign contact error:', err)
-        showError(err.data?.message || 'Phân công liên hệ thất bại')
-    }
-}
-
-// Handle unassignment
-const handleUnassign = async (contact) => {
-    try {
-        const response = await $fetch(`/api/contacts/${contact.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${useCookie('token').value}`
-            },
-            body: {
-                assigned_to: null
-            }
-        })
-
-        if (response.success) {
-            showSuccess('Bỏ phân công liên hệ thành công')
-            await fetchContacts()
-            await fetchContactStats()
-        } else {
-            showError(response.message || 'Bỏ phân công thất bại')
-        }
-    } catch (err) {
-        console.error('Unassign contact error:', err)
-        showError(err.data?.message || 'Bỏ phân công thất bại')
-    }
-}
-
-// Search and filter handlers
-// const setSearchQuery = (query) => {
-//     searchQuery.value = query
-//     currentPage.value = 1
-// }
-
-// const setStatusFilter = (status) => {
-//     selectedStatusFilter.value = status
-//     currentPage.value = 1
-// }
-
-// const setMethodFilter = (method) => {
-//     selectedMethodFilter.value = method
-//     currentPage.value = 1
-// }
-
-// Sort handler
-// const handleSort = (column) => {
-//     if (sortColumn.value === column) {
-//         sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-//     } else {
-//         sortColumn.value = column
-//         sortDirection.value = 'asc'
-//     }
-// }
-
-// Pagination handlers
-// const setItemsPerPage = (items) => {
-//     itemsPerPage.value = items
-//     currentPage.value = 1
-// }
-
-// const goToPage = (page) => {
-//     currentPage.value = page
-// }
-
-// const getVisiblePages = () => {
-//     const total = totalPages.value
-//     const current = currentPage.value
-//     const delta = 2
-//     const range = []
-//     const rangeWithDots = []
-
-//     for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
-//         range.push(i)
-//     }
-
-//     if (current - delta > 2) {
-//         rangeWithDots.push(1, '...')
-//     } else {
-//         rangeWithDots.push(1)
-//     }
-
-//     rangeWithDots.push(...range)
-
-//     if (current + delta < total - 1) {
-//         rangeWithDots.push('...', total)
-//     } else {
-//         if (total > 1) rangeWithDots.push(total)
-//     }
-
-//     return rangeWithDots
-// }
-
-// ===========================================
-// UTILITY FUNCTIONS
-// ===========================================
-
-// Format date
-// const formatDate = (dateString) => {
-//     if (!dateString) return '-'
-//     const date = new Date(dateString)
-//     return date.toLocaleDateString('vi-VN', {
-//         year: 'numeric',
-//         month: '2-digit',
-//         day: '2-digit',
-//         hour: '2-digit',
-//         minute: '2-digit'
-//     })
-// }
 
 // Truncate message
 const truncateMessage = (message, maxLength = 100) => {
@@ -1599,65 +1182,6 @@ const truncateMessage = (message, maxLength = 100) => {
     if (message.length <= maxLength) return message
     return message.substring(0, maxLength) + '...'
 }
-
-// Status helpers
-// const getStatusDisplayName = (status) => {
-//     const statusMap = {
-//         'new': 'Mới',
-//         'pending': 'Chờ phản hồi',
-//         'responded': 'Đã phản hồi',
-//         'closed': 'Đã đóng'
-//     }
-//     return statusMap[status] || status
-// }
-
-const getStatusIcon = (status) => {
-    const iconMap = {
-        'new': 'fas fa-envelope',
-        'pending': 'fas fa-clock',
-        'responded': 'fas fa-check-circle',
-        'closed': 'fas fa-times-circle'
-    }
-    return iconMap[status] || 'fas fa-question-circle'
-}
-
-// const getStatusBadgeColor = (status) => {
-//     const colorMap = {
-//         'new': 'status-new',
-//         'pending': 'status-pending',
-//         'responded': 'status-responded',
-//         'closed': 'status-closed'
-//     }
-//     return colorMap[status] || 'status-default'
-// }
-
-// Method helpers
-// const getMethodDisplayName = (method) => {
-//     const methodMap = {
-//         'email': 'Email',
-//         'phone': 'Điện thoại',
-//         'social': 'Mạng xã hội'
-//     }
-//     return methodMap[method] || method
-// }
-
-// const getMethodIcon = (method) => {
-//     const iconMap = {
-//         'email': 'fas fa-envelope',
-//         'phone': 'fas fa-phone',
-//         'social': 'fas fa-share-alt'
-//     }
-//     return iconMap[method] || 'fas fa-question-circle'
-// }
-
-// const getMethodBadgeColor = (method) => {
-//     const colorMap = {
-//         'email': 'method-email',
-//         'phone': 'method-phone',
-//         'social': 'method-social'
-//     }
-//     return colorMap[method] || 'method-default'
-// }
 
 // Permission checks
 const canDeleteContact = (contact) => {
@@ -1682,75 +1206,6 @@ const validateField = (fieldName) => {
     }
 }
 
-// const validateEditForm = () => {
-//     // Validate edit form using the same validation logic
-    
-//     return !Object.values(validationErrors).some(error => error !== '')
-// }
-
-// Export to Excel
-// const exportToExcel = async () => {
-//     try {
-//         exportingExcel.value = true
-
-//         // Prepare data for export
-//         const exportData = filteredContacts.value.map(contact => ({
-//             'ID': contact.id,
-//             'Họ và tên': contact.name,
-//             'Email': contact.email,
-//             'Số điện thoại': contact.phone || '',
-//             'Tin nhắn': contact.message || '',
-//             'Trạng thái': getStatusDisplayName(contact.status),
-//             'Phương thức liên hệ': getMethodDisplayName(contact.contact_method),
-//             'Liên hệ khác': contact.social_contact || '',
-//             'Được phân công': contact.assigned_to_name || 'Chưa phân công',
-//             'Ngày tạo': formatDate(contact.created_at),
-//             'Lần liên hệ đầu': formatDate(contact.first_contacted_at),
-//             'Ngày đóng': formatDate(contact.closed_at)
-//         }))
-
-//         // Create workbook and worksheet
-//         const wb = XLSX.utils.book_new()
-//         const ws = XLSX.utils.json_to_sheet(exportData)
-
-//         // Auto-size columns
-//         const colWidths = []
-//         Object.keys(exportData[0] || {}).forEach((key, i) => {
-//             const maxWidth = Math.max(
-//                 key.length,
-//                 ...exportData.map(row => String(row[key] || '').length)
-//             )
-//             colWidths[i] = { wch: Math.min(maxWidth + 2, 50) }
-//         })
-//         ws['!cols'] = colWidths
-
-//         // Add worksheet to workbook
-//         XLSX.utils.book_append_sheet(wb, ws, 'Liên hệ')
-
-//         // Generate filename with current date
-//         const now = new Date()
-//         const dateStr = now.toISOString().split('T')[0]
-//         const filename = `lien-he-${dateStr}.xlsx`
-
-//         // Save file
-//         XLSX.writeFile(wb, filename)
-
-//         showSuccess(`Đã xuất ${filteredContacts.value.length} liên hệ ra file Excel`)
-
-//     } catch (error) {
-//         console.error('Export error:', error)
-//         showError('Lỗi khi xuất file Excel')
-//     } finally {
-//         exportingExcel.value = false
-//     }
-// }
-
-// Meta tags
-// definePageMeta({
-//     layout: "admin",
-//     // middleware: ["auth", "permission"], // Tạm thời bỏ để test redirect
-//     ssr: false
-// })
 </script>
 
 <style scoped>
@@ -2146,38 +1601,38 @@ const validateField = (fieldName) => {
 }
 
 .status-new {
-    background: #e3f2fd;
-    color: #1565c0;
+    background: #e3f2fd !important;
+    color: #1565c0 !important;
 }
 
 .status-pending {
-    background: #fff3e0;
-    color: #e65100;
+    background: #fff3e0 !important;
+    color: #e65100 !important;
 }
 
 .status-responded {
-    background: #e8f5e8;
-    color: #2e7d32;
+    background: #e8f5e8 !important;
+    color: #2e7d32 !important;
 }
 
 .status-closed {
-    background: #fce4ec;
-    color: #ad1457;
+    background: #fce4ec !important;
+    color: #ad1457 !important;
 }
 
 .method-email {
-    background: #e8eaf6;
-    color: #3f51b5;
+    background: #e8eaf6 !important;
+    color: #3f51b5 !important;
 }
 
 .method-phone {
-    background: #e0f2f1;
-    color: #00695c;
+    background: #e0f2f1 !important;
+    color: #00695c !important;
 }
 
 .method-social {
-    background: #f3e5f5;
-    color: #7b1fa2;
+    background: #f3e5f5 !important;
+    color: #7b1fa2 !important;
 }
 
 /* Assignment */
@@ -2322,18 +1777,21 @@ const validateField = (fieldName) => {
     color: var(--text-dark);
 }
 
-/* Pagination */
+/* =========================
+   PAGINATION
+   ========================= */
 .pagination {
-    padding: 1rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
 }
 
 .pagination-info {
-    color: var(--text-muted);
-    font-size: 0.875rem;
+    color: #666;
+    font-size: 0.9rem;
 }
 
 .pagination-controls {
@@ -2342,24 +1800,23 @@ const validateField = (fieldName) => {
 }
 
 .btn-page {
-    width: 36px;
+    min-width: 36px;
     height: 36px;
-    border: 1px solid var(--border-color);
+    border: 1px solid #ddd;
     background: white;
-    color: var(--text-muted);
-    border-radius: 6px;
+    color: #666;
     cursor: pointer;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
 }
 
 .btn-page:hover:not(:disabled) {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: #f0f0f0;
+    border-color: #ccc;
 }
 
 .btn-page:disabled {
@@ -2368,14 +1825,27 @@ const validateField = (fieldName) => {
 }
 
 .btn-page-active {
-    background: var(--primary-color);
+    background: #1976d2;
     color: white;
-    border-color: var(--primary-color);
+    border-color: #1976d2;
+}
+
+.btn-page-active:hover {
+    background: #1565c0;
+    border-color: #1565c0;
 }
 
 .btn-page-dots {
-    border: none !important;
-    cursor: default !important;
+    cursor: default;
+    border: none;
+    background: transparent;
+}
+
+.btn-page-first,
+.btn-page-last,
+.btn-page-prev,
+.btn-page-next {
+    font-size: 0.8rem;
 }
 
 /* Modal Styles */
@@ -2602,9 +2072,16 @@ const validateField = (fieldName) => {
 }
 
 .note-item {
-    background: #f8f9fa;
     border-radius: 8px;
     padding: 1rem;
+}
+
+.note-item:nth-child(odd) {
+    background: #e0f2fe;
+}
+
+.note-item:nth-child(even) {
+    background: #dcfce7;
 }
 
 .note-header {
@@ -2619,7 +2096,7 @@ const validateField = (fieldName) => {
     align-items: center;
     gap: 0.5rem;
     font-weight: 500;
-    color: var(--text-dark);
+    color: #666;
 }
 
 .note-date {
@@ -2628,7 +2105,7 @@ const validateField = (fieldName) => {
 }
 
 .note-content {
-    color: var(--text-dark);
+    color: #666;
     line-height: 1.5;
 }
 
@@ -2659,19 +2136,21 @@ const validateField = (fieldName) => {
     font-weight: 500;
 }
 
-/* Buttons */
+/* =========================
+   BUTTONS
+   ========================= */
 .btn {
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 8px;
-    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-weight: 500;
+    text-decoration: none;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 0.5rem;
-    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
 }
 
 .btn-sm {
@@ -2680,39 +2159,39 @@ const validateField = (fieldName) => {
 }
 
 .btn-primary {
-    background: var(--primary-color);
+    background: #1976d2;
     color: white;
 }
 
-.btn-primary:hover {
-    background: var(--primary-dark);
+.btn-primary:hover:not(:disabled) {
+    background: #1565c0;
 }
 
 .btn-secondary {
-    background: #6c757d;
-    color: white;
+    background: #f5f5f5;
+    color: #666;
 }
 
-.btn-secondary:hover {
-    background: #545b62;
+.btn-secondary:hover:not(:disabled) {
+    background: #eee;
 }
 
 .btn-success {
-    background: var(--success-color);
+    background: #2e7d32;
     color: white;
 }
 
-.btn-success:hover {
-    background: #218838;
+.btn-success:hover:not(:disabled) {
+    background: #1b5e20;
 }
 
 .btn-danger {
-    background: var(--danger-color);
+    background: #d32f2f;
     color: white;
 }
 
-.btn-danger:hover {
-    background: #c82333;
+.btn-danger:hover:not(:disabled) {
+    background: #c62828;
 }
 
 .btn:disabled {

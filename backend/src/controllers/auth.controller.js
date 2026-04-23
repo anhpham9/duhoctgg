@@ -118,11 +118,11 @@ export const login = async (req, res) => {
             loginMethod: 'password'
         }, req);
 
-        logInfo('User logged in successfully', {
-            userId: user.id,
-            username: user.username,
-            ip: req.ip
-        });
+        // logInfo('User logged in successfully', {
+        //     userId: user.id,
+        //     username: user.username,
+        //     ip: req.ip
+        // });
 
         // Set httpOnly cookie for security
         res.cookie('authToken', token, {
@@ -223,11 +223,11 @@ export const getAuthStatus = async (req, res) => {
         // Remove sensitive data
         const { password, ...safeUser } = user;
         
-        logInfo('Auth status checked successfully', {
-            userId: user.id,
-            username: user.username,
-            ip: req.ip
-        });
+        // logInfo('Auth status checked successfully', {
+        //     userId: user.id,
+        //     username: user.username,
+        //     ip: req.ip
+        // });
         
         res.json({
             success: true,

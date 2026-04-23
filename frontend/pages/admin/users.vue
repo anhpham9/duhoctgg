@@ -103,7 +103,7 @@
                 <div class="table-header">
                     <h2>Danh sách người dùng ({{ filteredUsers.length }})</h2>
                     <div class="table-actions">
-                        <button @click="exportToExcel" class="btn btn-success"
+                        <button @click="handleExportToExcel" class="btn btn-success"
                             :disabled="loading || filteredUsers.length === 0">
                             <i class="fas fa-file-excel" :class="{ 'fa-spin': exportingExcel }"></i>
                             Xuất Excel
@@ -312,7 +312,7 @@
                                 <i class="fas fa-angle-left"></i>
                             </button>
 
-                            <template v-for="page in getVisiblePages()" :key="page">
+                            <template v-for="page in visiblePages" :key="page">
                                 <button v-if="page === '...'" class="btn-page btn-page-dots" disabled>
                                     ...
                                 </button>
@@ -724,7 +724,10 @@ import { useUsersAPI } from '~/composables/useUsersAPI'
 import { useNotifications } from '~/composables/useNotifications'
 import { useValidation } from '~/composables/useValidation'
 import Toast from '~/components/Toast.vue'
+import { formatSmartDate, formatDate } from '~/utils/date'
 import { ref, reactive, computed, nextTick, onMounted } from 'vue'
+import { useVisiblePages } from '~/composables/usePaginationHelper'
+import { useExportExcel } from '~/composables/useExportExcel'
 import * as XLSX from 'xlsx'
 
 // ===========================================
@@ -843,8 +846,8 @@ const {
 // FORM VALIDATION & STATES
 // ===========================================
 
-// Export to Excel state
-const exportingExcel = ref(false)
+// Export to Excel composable
+const { exportToExcel, exportingExcel } = useExportExcel()
 
 // Use validation composable
 const {
@@ -1426,127 +1429,32 @@ const handleOpenEditForm = (user) => {
     })
 }
 
-// Pagination helper
-const getVisiblePages = () => {
-    const pages = []
-    const total = totalPages.value
-    const current = currentPage.value
-
-    if (total <= 7) {
-        // Show all pages if total is small
-        for (let i = 1; i <= total; i++) {
-            pages.push(i)
-        }
-    } else {
-        // Always show first page
-        pages.push(1)
-
-        if (current > 4) {
-            pages.push('...')
-        }
-
-        // Show pages around current
-        const start = Math.max(2, current - 1)
-        const end = Math.min(total - 1, current + 1)
-
-        for (let i = start; i <= end; i++) {
-            pages.push(i)
-        }
-
-        if (current < total - 3) {
-            pages.push('...')
-        }
-
-        // Always show last page
-        if (total > 1) {
-            pages.push(total)
-        }
-    }
-
-    return pages
-}
+// Pagination helper (reusable)
+const visiblePages = useVisiblePages(totalPages, currentPage)
 
 // ===========================================
 // EXCEL EXPORT FUNCTIONALITY
 // ===========================================
 
-const exportToExcel = async () => {
-    if (filteredUsers.value.length === 0) {
-        showWarning('Không có dữ liệu để xuất')
-        return
-    }
-
-    exportingExcel.value = true
-
-    try {
-        // Prepare data for export
-        const exportData = filteredUsers.value.map((user, index) => ({
-            'STT': index + 1,
-            'ID': user.id,
-            'Họ và tên': user.name,
-            'Tên đăng nhập': user.username,
-            'Email': user.email,
-            'Số điện thoại': user.phone || '',
-            'Quyền': getRoleDisplayName(user.role_name),
-            'Trạng thái': user.is_active ? 'Hoạt động' : 'Tạm khóa',
-            'Ngày tạo': formatDate(user.created_at),
-            'Ngày cập nhật': formatDate(user.updated_at)
-        }))
-
-        // Create workbook
-        const wb = XLSX.utils.book_new()
-        const ws = XLSX.utils.json_to_sheet(exportData)
-
-        // Set column widths
-        const colWidths = [
-            { wch: 5 },   // STT
-            { wch: 8 },   // ID
-            { wch: 25 },  // Họ và tên
-            { wch: 20 },  // Tên đăng nhập
-            { wch: 30 },  // Email
-            { wch: 15 },  // Số điện thoại
-            { wch: 15 },  // Quyền
-            { wch: 12 },  // Trạng thái
-            { wch: 12 },  // Ngày tạo
-            { wch: 12 }   // Ngày cập nhật
-        ]
-        ws['!cols'] = colWidths
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Danh sách người dùng')
-
-        // Generate filename with current date
-        const now = new Date()
-        const dateStr = now.toISOString().split('T')[0] // YYYY-MM-DD format
-        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '') // HHMMSS format
-        const filename = `danh-sach-nguoi-dung_${dateStr}_${timeStr}.xlsx`
-
-        // Export file
-        XLSX.writeFile(wb, filename)
-
-        showSuccess(`Đã xuất ${filteredUsers.value.length} người dùng ra file Excel thành công!`)
-    } catch (error) {
-        console.error('Export error:', error)
-        showError('Có lỗi xảy ra khi xuất file Excel')
-    } finally {
-        exportingExcel.value = false
-    }
-}
-
-// Utility functions
-const formatDate = (dateString) => {
-    if (!dateString) return '-'
-
-    try {
-        const date = new Date(dateString)
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        })
-    } catch (error) {
-        return '-'
-    }
+const handleExportToExcel = () => {
+  exportToExcel({
+    data: filteredUsers.value,
+    columns: [
+      { label: 'STT', key: 'id', value: (_row, idx) => idx + 1, width: 5 },
+      { label: 'ID', key: 'id', width: 8 },
+      { label: 'Họ và tên', key: 'name', width: 25 },
+      { label: 'Tên đăng nhập', key: 'username', width: 20 },
+      { label: 'Email', key: 'email', width: 30 },
+      { label: 'Số điện thoại', key: 'phone', value: row => row.phone || '', width: 15 },
+      { label: 'Quyền', key: 'role_name', value: row => getRoleDisplayName(row.role_name), width: 15 },
+      { label: 'Trạng thái', key: 'is_active', value: row => row.is_active ? 'Hoạt động' : 'Tạm khóa', width: 12 },
+      { label: 'Ngày tạo', key: 'created_at', value: row => formatDate(row.created_at), width: 12 },
+      { label: 'Ngày cập nhật', key: 'updated_at', value: row => formatDate(row.updated_at), width: 12 }
+    ],
+    filenamePrefix: 'danh-sach-nguoi-dung',
+    onSuccess: msg => showSuccess(msg),
+    onError: msg => showWarning(msg)
+  })
 }
 
 // ===========================================

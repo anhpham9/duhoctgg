@@ -337,166 +337,24 @@ export const getContact = async (req, res) => {
 
 // Create new contact
 export const createContact = async (req, res) => {
-    try {
-        // Sanitize input data
-        const sanitizedData = InputSanitizer.sanitizeContactData(req.body);
-        const { 
-            name, 
-            email, 
-            phone, 
-            message, 
-            status = 'new',
-            contact_method, 
-            social_contact, 
-            assigned_to 
-        } = sanitizedData;
-        
-        const currentUserRole = req.user.role_id;
-        const currentUserId = req.user.id;
-
-        logInfo('Contact creation attempt', {
-            createdBy: currentUserId,
-            creatorRole: currentUserRole,
-            data: { name, email, phone, contact_method, assigned_to }
-        });
-
-        // Check if user has permission to create contacts
-        if (!ALLOWED_CONTACT_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                '/api/contacts',
-                'POST',
-                'contact.create'
-            );
-            
-            return res.status(403).json({ 
-                success: false,
-                message: "Access denied. You cannot create contacts." 
-            });
-        }
-
-        // Validate required fields
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                message: "Name is required"
-            });
-        }
-
-        // Validate status if provided
-        const validStatuses = ['new', 'pending', 'responded', 'closed'];
-        if (status && !validStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid status. Must be one of: " + validStatuses.join(', ')
-            });
-        }
-
-        // Validate contact_method if provided
-        const validMethods = ['phone', 'email', 'social'];
-        if (contact_method && !validMethods.includes(contact_method)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid contact_method. Must be one of: " + validMethods.join(', ')
-            });
-        }
-
-        // Validate assigned_to if provided
-        if (assigned_to) {
-            const userCheck = await db.query(
-                'SELECT id, role_id FROM users WHERE id = $1', 
-                [assigned_to]
-            );
-
-            if (userCheck.rows.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid assigned_to user ID"
-                });
-            }
-
-            // Check if assigned user has permission to handle contacts
-            const assignedUserRole = userCheck.rows[0].role_id;
-            if (!ALLOWED_CONTACT_ROLES.includes(assignedUserRole)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Cannot assign contact to user without contact permissions"
-                });
-            }
-        }
-
-        // Create contact
-        const result = await db.query(`
-            INSERT INTO contacts (
-                name, email, phone, message, status, 
-                contact_method, social_contact, assigned_to
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING *
-        `, [
-            name, 
-            email || null, 
-            phone || null, 
-            message || null, 
-            status,
-            contact_method || null, 
-            social_contact || null, 
-            assigned_to || null
-        ]);
-
-        const newContact = result.rows[0];
-
-        // Audit log successful contact creation
-        auditLog('CREATE_CONTACT', currentUserId, {
-            contactId: newContact.id,
-            contactName: newContact.name,
-            contactEmail: newContact.email,
-            assignedTo: newContact.assigned_to,
-            status: newContact.status
-        }, req);
-
-        logInfo('Contact created successfully', {
-            createdBy: currentUserId,
-            contactId: newContact.id,
-            contactName: newContact.name,
-            assignedTo: newContact.assigned_to
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "Contact created successfully",
-            data: newContact
-        });
-
-    } catch (error) {
-        logError('Create contact failed', error, {
-            createdBy: req.user?.id,
-            targetData: req.body ? { ...req.body } : {}
-        });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+    // Chỉ cho phép tạo contact từ public (không có req.user)
+    if (req.user) {
+        return res.status(403).json({
+            success: false,
+            message: "Contact creation is only allowed from public site."
         });
     }
+    // ...existing code (nếu cần giữ lại logic public createContact, hãy chuyển sang submitPublicContact)
 };
 
 // Update contact
 export const updateContact = async (req, res) => {
     try {
         const { id } = req.params;
-        const { 
-            name, 
-            email, 
-            phone, 
-            message, 
-            status, 
-            contact_method, 
-            social_contact, 
-            assigned_to,
-            first_contacted_at,
-            closed_at
+        const {
+            status,
+            contact_method,
+            social_contact
         } = req.body;
         
         const currentUserRole = req.user.role_id;
@@ -549,54 +407,12 @@ export const updateContact = async (req, res) => {
             });
         }
 
-        // Build dynamic update query
-        const updateData = {};
+        // Build update fields (only allow contact_method, social_contact, status)
         const updates = [];
         const values = [];
         let paramCount = 1;
 
-        if (name !== undefined) {
-            updateData.name = name;
-            updates.push(`name = $${paramCount}`);
-            values.push(name);
-            paramCount++;
-        }
-
-        if (email !== undefined) {
-            updateData.email = email;
-            updates.push(`email = $${paramCount}`);
-            values.push(email || null);
-            paramCount++;
-        }
-
-        if (phone !== undefined) {
-            updateData.phone = phone;
-            updates.push(`phone = $${paramCount}`);
-            values.push(phone || null);
-            paramCount++;
-        }
-
-        if (message !== undefined) {
-            updateData.message = message;
-            updates.push(`message = $${paramCount}`);
-            values.push(message || null);
-            paramCount++;
-        }
-
-        if (status !== undefined) {
-            const validStatuses = ['new', 'pending', 'responded', 'closed'];
-            if (!validStatuses.includes(status)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid status. Must be one of: " + validStatuses.join(', ')
-                });
-            }
-            updateData.status = status;
-            updates.push(`status = $${paramCount}`);
-            values.push(status);
-            paramCount++;
-        }
-
+        // contact_method
         if (contact_method !== undefined) {
             const validMethods = ['phone', 'email', 'social'];
             if (contact_method && !validMethods.includes(contact_method)) {
@@ -605,61 +421,52 @@ export const updateContact = async (req, res) => {
                     message: "Invalid contact_method. Must be one of: " + validMethods.join(', ')
                 });
             }
-            updateData.contact_method = contact_method;
             updates.push(`contact_method = $${paramCount}`);
             values.push(contact_method || null);
             paramCount++;
         }
 
+        // social_contact
         if (social_contact !== undefined) {
-            updateData.social_contact = social_contact;
             updates.push(`social_contact = $${paramCount}`);
             values.push(social_contact || null);
             paramCount++;
         }
 
-        if (assigned_to !== undefined) {
-            if (assigned_to) {
-                // Validate assigned user exists and has permissions
-                const userCheck = await db.query(
-                    'SELECT id, role_id FROM users WHERE id = $1', 
-                    [assigned_to]
-                );
-
-                if (userCheck.rows.length === 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Invalid assigned_to user ID"
-                    });
-                }
-
-                const assignedUserRole = userCheck.rows[0].role_id;
-                if (!ALLOWED_CONTACT_ROLES.includes(assignedUserRole)) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Cannot assign contact to user without contact permissions"
-                    });
-                }
+        // status: only allow next status in sequence
+        let willSetClosedAt = false;
+        if (status !== undefined) {
+            const validStatuses = ['new', 'pending', 'responded', 'closed'];
+            const currentStatus = existingContact.status;
+            const currentIdx = validStatuses.indexOf(currentStatus);
+            const nextIdx = currentIdx + 1;
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid status. Must be one of: " + validStatuses.join(', ')
+                });
             }
-
-            updateData.assigned_to = assigned_to;
-            updates.push(`assigned_to = $${paramCount}`);
-            values.push(assigned_to || null);
+            // Only allow next status
+            if (validStatuses.indexOf(status) !== nextIdx) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Status can only be changed to next step: ${validStatuses[nextIdx]}`
+                });
+            }
+            // Consultant cannot change status if already closed
+            if (currentUserRole === 5 && currentStatus === 'closed') {
+                return res.status(403).json({
+                    success: false,
+                    message: "Consultant cannot change status of closed contact."
+                });
+            }
+            updates.push(`status = $${paramCount}`);
+            values.push(status);
             paramCount++;
-        }
-
-        if (first_contacted_at !== undefined) {
-            updateData.first_contacted_at = first_contacted_at;
-            updates.push(`first_contacted_at = $${paramCount}`);
-            values.push(first_contacted_at || null);
-            paramCount++;
-        }
-
-        if (closed_at !== undefined) {
-            updateData.closed_at = closed_at;
-            updates.push(`closed_at = $${paramCount}`);
-            values.push(closed_at || null);
-            paramCount++;
+            // Nếu chuyển sang closed thì cập nhật closed_at
+            if (status === 'closed' && !existingContact.closed_at) {
+                willSetClosedAt = true;
+            }
         }
 
         if (updates.length === 0) {
@@ -669,11 +476,16 @@ export const updateContact = async (req, res) => {
             });
         }
 
-        // Auto-assign contact to current user when updated
+        // Always set assigned_to to current user (last editor)
         updates.push(`assigned_to = $${paramCount}`);
         values.push(currentUserId);
         paramCount++;
-        
+
+        // Nếu chuyển sang closed thì cập nhật closed_at
+        if (willSetClosedAt) {
+            updates.push(`closed_at = NOW()`);
+        }
+
         // Add updated_at
         updates.push(`updated_at = NOW()`);
         values.push(id);
@@ -806,46 +618,7 @@ export const deleteContact = async (req, res) => {
     }
 };
 
-// Get available users for assignment (only users with contact permissions)
-export const getAssignableUsers = async (req, res) => {
-    try {
-        const currentUserRole = req.user.role_id;
-        const currentUserId = req.user.id;
-
-        // Check if user has permission to view assignable users
-        if (!ALLOWED_CONTACT_ROLES.includes(currentUserRole)) {
-            return res.status(403).json({ 
-                success: false,
-                message: "Access denied. You cannot view assignable users." 
-            });
-        }
-
-        // Get users who can handle contacts
-        const result = await db.query(`
-            SELECT u.id, u.name, u.username, r.name as role_name 
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE u.role_id IN (1, 2, 3, 5)
-            AND COALESCE(u.is_active, true) = true
-            ORDER BY u.name ASC
-        `);
-
-        res.json({
-            success: true,
-            data: result.rows
-        });
-
-    } catch (error) {
-        logError('Get assignable users failed', error, {
-            requesterId: req.user?.id
-        });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
-        });
-    }
-};
+// Removed getAssignableUsers endpoint (no longer needed)
 
 // Get contact statistics
 export const getContactStats = async (req, res) => {
@@ -1008,7 +781,7 @@ export const addContactNote = async (req, res) => {
         const contact = contactResult.rows[0];
 
         // Sanitize note content
-        const sanitizedNote = InputSanitizer.sanitizeString(note.trim());
+        const sanitizedNote = InputSanitizer.sanitizeText(note.trim());
 
         // Add the note
         const result = await db.query(`

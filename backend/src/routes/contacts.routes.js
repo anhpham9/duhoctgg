@@ -7,7 +7,7 @@ import {
     createContact,
     updateContact,
     deleteContact,
-    getAssignableUsers,
+    // getAssignableUsers,
     getContactStats,
     getContactNotes,
     addContactNote,
@@ -26,7 +26,7 @@ router.get("/", getContacts);
 router.get("/stats", getContactStats);
 
 // GET /api/contacts/assignable-users - Get users who can be assigned contacts
-router.get("/assignable-users", getAssignableUsers);
+// router.get("/assignable-users", getAssignableUsers);
 
 // GET /api/contacts/:id - Get single contact
 router.get("/:id", getContact);

@@ -29,6 +29,15 @@ export default defineNuxtConfig({
       include: [
         'jwt-decode',
       ]
+    },
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5000', // Địa chỉ backend thực tế
+          changeOrigin: true,
+          // rewrite: path => path.replace(/^\/api/, '')
+        }
+      }
     }
   },
   // TẠMTẮT route rules để test middleware
