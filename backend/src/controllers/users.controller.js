@@ -20,8 +20,8 @@ export const getUsers = async (req, res) => {
 
         // Check if user has permission to view users
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. Insufficient permissions." 
+            return res.status(403).json({
+                message: "Access denied. Insufficient permissions."
             });
         }
 
@@ -45,7 +45,7 @@ export const getUsers = async (req, res) => {
 
         // Filter users based on current user's permissions
         const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
-        const filteredUsers = result.rows.filter(user => 
+        const filteredUsers = result.rows.filter(user =>
             currentUserRole === 1 || // Superadmin sees all
             allowedRoleIds.includes(user.role_id) ||
             user.id === req.user.id // Always show own profile
@@ -62,10 +62,10 @@ export const getUsers = async (req, res) => {
             userId: req.user?.id,
             userRole: req.user?.role_id
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
     }
 };
@@ -78,8 +78,8 @@ export const getUser = async (req, res) => {
 
         // Check if user has permission to view users
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. Insufficient permissions." 
+            return res.status(403).json({
+                message: "Access denied. Insufficient permissions."
             });
         }
 
@@ -100,9 +100,9 @@ export const getUser = async (req, res) => {
         `, [id]);
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "User not found" 
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
             });
         }
 
@@ -113,8 +113,8 @@ export const getUser = async (req, res) => {
         if (currentUserRole !== 1 && // Not superadmin
             !allowedRoleIds.includes(user.role_id) &&
             user.id !== req.user.id) { // Not own profile
-            return res.status(403).json({ 
-                message: "Access denied. Cannot view this user." 
+            return res.status(403).json({
+                message: "Access denied. Cannot view this user."
             });
         }
 
@@ -128,10 +128,10 @@ export const getUser = async (req, res) => {
             requestedUserId: id,
             requesterId: req.user?.id
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
     }
 };
@@ -142,7 +142,7 @@ export const createUser = async (req, res) => {
         // Sanitize input data
         const sanitizedData = InputSanitizer.sanitizeUserData(req.body);
         const { name, username, email, phone, password, role_id, is_active } = sanitizedData;
-        
+
         const currentUserRole = req.user.role_id;
 
         logInfo('User creation attempt', {
@@ -170,22 +170,22 @@ export const createUser = async (req, res) => {
 
         // Check if current user can create users
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot create users." 
+            return res.status(403).json({
+                message: "Access denied. You cannot create users."
             });
         }
 
         // Check if current user can assign this role
         const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
         if (currentUserRole !== 1 && !allowedRoleIds.includes(role_id)) {
-            return res.status(403).json({ 
-                message: `Access denied. You cannot create users with role ID ${role_id}.` 
+            return res.status(403).json({
+                message: `Access denied. You cannot create users with role ID ${role_id}.`
             });
         }
 
         // Validate role exists
         const roleCheck = await db.query(
-            'SELECT id, name FROM roles WHERE id = $1', 
+            'SELECT id, name FROM roles WHERE id = $1',
             [role_id]
         );
 
@@ -198,7 +198,7 @@ export const createUser = async (req, res) => {
 
         // Check if username already exists
         const usernameCheck = await db.query(
-            'SELECT id FROM users WHERE username = $1', 
+            'SELECT id FROM users WHERE username = $1',
             [username]
         );
 
@@ -211,7 +211,7 @@ export const createUser = async (req, res) => {
 
         // Check if email already exists
         const emailCheck = await db.query(
-            'SELECT id FROM users WHERE email = $1', 
+            'SELECT id FROM users WHERE email = $1',
             [email]
         );
 
@@ -225,7 +225,7 @@ export const createUser = async (req, res) => {
         // Check if phone already exists (if provided)
         if (phone && phone.trim()) {
             const phoneCheck = await db.query(
-                'SELECT id FROM users WHERE phone = $1', 
+                'SELECT id FROM users WHERE phone = $1',
                 [phone.trim()]
             );
 
@@ -282,10 +282,10 @@ export const createUser = async (req, res) => {
             createdBy: req.user?.id,
             targetData: req.body ? { ...req.body, password: '[REDACTED]' } : {}
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
     }
 };
@@ -307,14 +307,14 @@ export const updateUser = async (req, res) => {
 
         // Check if current user can update users
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot update users." 
+            return res.status(403).json({
+                message: "Access denied. You cannot update users."
             });
         }
 
         // Get the target user
         const userResult = await db.query(
-            'SELECT * FROM users WHERE id = $1', 
+            'SELECT * FROM users WHERE id = $1',
             [id]
         );
 
@@ -327,27 +327,39 @@ export const updateUser = async (req, res) => {
 
         const targetUser = userResult.rows[0];
 
+        // Không cho phép tự đổi role hoặc trạng thái của chính mình
+        // Self-modification protection (must be checked before role hierarchy checks)
+        if (parseInt(id) === req.user.id) {
+            if ((role_id && role_id !== targetUser.role_id) || (is_active !== undefined && is_active !== targetUser.is_active)) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Bạn không thể thay đổi quyền hoặc trạng thái của chính mình."
+                });
+            }
+        }
+
         // Check if current user can modify this user's current role
         const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
         if (currentUserRole !== 1 && // Not superadmin
             !allowedRoleIds.includes(targetUser.role_id) &&
             targetUser.id !== req.user.id) { // Not own profile
-            return res.status(403).json({ 
-                message: "Access denied. You cannot modify this user." 
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You cannot modify this user."
             });
         }
 
         // If updating role, check if current user can assign new role
         if (role_id && role_id !== targetUser.role_id) {
             if (currentUserRole !== 1 && !allowedRoleIds.includes(role_id)) {
-                return res.status(403).json({ 
-                    message: `Access denied. You cannot assign role ID ${role_id}.` 
+                return res.status(403).json({
+                    message: `Access denied. You cannot assign role ID ${role_id}.`
                 });
             }
 
             // Validate new role exists
             const roleCheck = await db.query(
-                'SELECT id FROM roles WHERE id = $1', 
+                'SELECT id FROM roles WHERE id = $1',
                 [role_id]
             );
 
@@ -372,7 +384,7 @@ export const updateUser = async (req, res) => {
         if (username && username !== targetUser.username) {
             // Check if new username is available
             const usernameCheck = await db.query(
-                'SELECT id FROM users WHERE username = $1 AND id != $2', 
+                'SELECT id FROM users WHERE username = $1 AND id != $2',
                 [username, id]
             );
 
@@ -390,7 +402,7 @@ export const updateUser = async (req, res) => {
         if (email && email !== targetUser.email) {
             // Check if new email is available
             const emailCheck = await db.query(
-                'SELECT id FROM users WHERE email = $1 AND id != $2', 
+                'SELECT id FROM users WHERE email = $1 AND id != $2',
                 [email, id]
             );
 
@@ -408,11 +420,11 @@ export const updateUser = async (req, res) => {
         if (phone !== undefined && phone !== targetUser.phone) {
             // Handle phone update (can be null/empty or a value)
             const trimmedPhone = phone ? phone.trim() : null;
-            
+
             if (trimmedPhone) {
                 // Check if new phone is available
                 const phoneCheck = await db.query(
-                    'SELECT id FROM users WHERE phone = $1 AND id != $2', 
+                    'SELECT id FROM users WHERE phone = $1 AND id != $2',
                     [trimmedPhone, id]
                 );
 
@@ -462,9 +474,19 @@ export const updateUser = async (req, res) => {
 
         // Get role name
         const roleResult = await db.query(
-            'SELECT name FROM roles WHERE id = $1', 
+            'SELECT name FROM roles WHERE id = $1',
             [updatedUser.role_id]
         );
+
+
+        // Xác định các trường đã cập nhật để log
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (username !== undefined) updateData.username = username;
+        if (email !== undefined) updateData.email = email;
+        if (phone !== undefined) updateData.phone = phone;
+        if (role_id !== undefined) updateData.role_id = role_id;
+        if (is_active !== undefined) updateData.is_active = is_active;
 
         // Audit log successful user update
         auditLog('UPDATE_USER', req.user.id, {
@@ -494,11 +516,71 @@ export const updateUser = async (req, res) => {
             targetUserId: req.params?.id,
             updateData: req.body ? { ...req.body, password: '[REDACTED]' } : {}
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
+    }
+};
+
+// Toggle user status (active/inactive) with RBAC
+export const toggleUserStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUserId = req.user.id;
+        const currentUserRole = req.user.role_id;
+
+        // Lấy thông tin user mục tiêu
+        const userResult = await db.query(
+            `SELECT id, role_id, is_active FROM users WHERE id = $1`,
+            [id]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const targetUser = userResult.rows[0];
+
+        // Không cho phép tự đổi trạng thái chính mình
+        if (parseInt(id) === currentUserId) {
+            return res.status(403).json({ success: false, message: "You cannot change your own status." });
+        }
+
+        // Superadmin (role_id=1) được phép thao tác với mọi user
+        if (currentUserRole !== 1) {
+            // Chỉ cho phép nếu role của mình nhỏ hơn role của user mục tiêu
+            if (currentUserRole >= targetUser.role_id) {
+                return res.status(403).json({
+                    success: false,
+                    message: "You do not have permission to change status of this user."
+                });
+            }
+        }
+
+        // Đảo trạng thái
+        const newStatus = !targetUser.is_active;
+        await db.query(
+            `UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2`,
+            [newStatus, id]
+        );
+
+        auditLog('TOGGLE_USER_STATUS', currentUserId, {
+            targetUserId: id,
+            oldStatus: targetUser.is_active,
+            newStatus
+        }, req);
+
+        res.json({
+            success: true,
+            message: `User status updated successfully`,
+            data: { id, is_active: newStatus }
+        });
+    } catch (error) {
+        logError('Toggle user status failed', error, {
+            requestedUserId: req.params.id,
+            requesterId: req.user?.id
+        });
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
@@ -510,14 +592,14 @@ export const deleteUser = async (req, res) => {
 
         // Check if current user can delete users
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot delete users." 
+            return res.status(403).json({
+                message: "Access denied. You cannot delete users."
             });
         }
 
         // Get the target user
         const userResult = await db.query(
-            'SELECT * FROM users WHERE id = $1', 
+            'SELECT * FROM users WHERE id = $1',
             [id]
         );
 
@@ -541,8 +623,21 @@ export const deleteUser = async (req, res) => {
         // Check if current user can delete this user's role
         const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
         if (currentUserRole !== 1 && !allowedRoleIds.includes(targetUser.role_id)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot delete this user." 
+            return res.status(403).json({
+                message: "Access denied. You cannot delete this user."
+            });
+        }
+
+
+        // Kiểm tra liên kết trong contacts (assigned_to)
+        const contactRef = await db.query(
+            'SELECT id FROM contacts WHERE assigned_to = $1 LIMIT 1',
+            [id]
+        );
+        if (contactRef.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xóa người dùng vì còn liên kết với dữ liệu khác (contacts). Hãy chuyển hoặc xóa các liên kết trước."
             });
         }
 
@@ -581,10 +676,10 @@ export const deleteUser = async (req, res) => {
             deletedBy: req.user?.id,
             targetUserId: req.params?.id
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
     }
 };
@@ -596,8 +691,8 @@ export const getAvailableRoles = async (req, res) => {
 
         // Check if current user can create users
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot view assignable roles." 
+            return res.status(403).json({
+                message: "Access denied. You cannot view assignable roles."
             });
         }
 
@@ -611,7 +706,7 @@ export const getAvailableRoles = async (req, res) => {
         `);
 
         // Filter roles based on permissions
-        const availableRoles = result.rows.filter(role => 
+        const availableRoles = result.rows.filter(role =>
             currentUserRole === 1 || allowedRoleIds.includes(role.id)
         );
 
@@ -624,10 +719,10 @@ export const getAvailableRoles = async (req, res) => {
         logError('Get available roles failed', error, {
             requesterId: req.user?.id
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
     }
 };
@@ -640,14 +735,14 @@ export const resetPassword = async (req, res) => {
 
         // Check if current user can reset passwords
         if (![1, 2, 3].includes(currentUserRole)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot reset passwords." 
+            return res.status(403).json({
+                message: "Access denied. You cannot reset passwords."
             });
         }
 
         // Get the target user
         const userResult = await db.query(
-            'SELECT * FROM users WHERE id = $1', 
+            'SELECT * FROM users WHERE id = $1',
             [id]
         );
 
@@ -662,12 +757,12 @@ export const resetPassword = async (req, res) => {
 
         // Permission check based on role hierarchy
         const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
-        
+
         // Superadmin can reset all passwords (including other superadmins)
         // Other roles can only reset passwords for lower roles
         if (currentUserRole !== 1 && !allowedRoleIds.includes(targetUser.role_id)) {
-            return res.status(403).json({ 
-                message: "Access denied. You cannot reset this user's password." 
+            return res.status(403).json({
+                message: "Access denied. You cannot reset this user's password."
             });
         }
 
@@ -687,7 +782,7 @@ export const resetPassword = async (req, res) => {
 
         // Update password in database
         await db.query(
-            'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', 
+            'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
             [hashedPassword, id]
         );
 
@@ -731,10 +826,10 @@ export const resetPassword = async (req, res) => {
             resetBy: req.user?.id,
             targetUserId: req.params?.id
         });
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
     }
 };

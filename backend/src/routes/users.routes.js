@@ -8,7 +8,8 @@ import {
     updateUser,
     deleteUser,
     getAvailableRoles,
-    resetPassword
+    resetPassword,
+    toggleUserStatus
 } from "../controllers/users.controller.js";
 
 const router = Router();
@@ -33,6 +34,9 @@ router.put("/:id", sanitizeInputs, updateUser);
 
 // POST /api/users/:id/reset-password - Reset user password
 router.post("/:id/reset-password", sanitizeInputs, resetPassword);
+
+// PUT /api/users/:id/toggle-status - Toggle user active/inactive (RBAC)
+router.put("/:id/toggle-status", toggleUserStatus);
 
 // DELETE /api/users/:id - Delete user
 router.delete("/:id", deleteUser);

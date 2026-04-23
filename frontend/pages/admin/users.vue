@@ -164,6 +164,13 @@
                                 </option>
                             </select>
                         </div>
+
+                        <!-- Clear Filters Button -->
+                        <div class="filter-group">
+                            <button class="btn btn-outline-secondary" @click="clearAllFilters" style="margin-top: 24px;">
+                                <i class="fas fa-eraser"></i> Xóa bộ lọc
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -250,10 +257,10 @@
                                     </span>
                                 </td>
                                 <td class="user-status">
-                                    <button @click="handleToggleStatus(user)" class="status-toggle"
+                                    <button @click="handleToggleStatusWrapper(user)" class="status-toggle"
                                         :class="user.is_active ? 'status-active' : 'status-inactive'"
-                                        :disabled="loading"
-                                        :title="user.is_active ? 'Click để tạm khóa' : 'Click để kích hoạt'">
+                                        :disabled="loading || user.id === currentUser?.id"
+                                        :title="user.id === currentUser?.id ? 'Bạn không thể thay đổi trạng thái của chính mình!' : (user.is_active ? 'Click để tạm khóa' : 'Click để kích hoạt')">
                                         <i :class="user.is_active ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
                                         <span>{{ user.is_active ? 'Hoạt động' : 'Tạm khóa' }}</span>
                                     </button>
@@ -344,7 +351,7 @@
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <form @submit.prevent="handleCreateUser" class="modal-body">
+                    <form @submit.prevent="handleCreateUserWrapper" class="modal-body">
                         <div class="form-group">
                             <label for="create-name">Họ và tên <span class="required">*</span></label>
                             <input id="create-name" v-model="createForm.name" type="text" required
@@ -474,7 +481,7 @@
                     </form>
                     <div class="modal-footer">
                         <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
-                        <button @click="handleCreateUser" type="button" class="btn btn-primary"
+                        <button @click="handleCreateUserWrapper" type="button" class="btn btn-primary"
                             :disabled="loading || !isCreateFormValid || phoneCheckingDuplicate">
                             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             {{ loading ? 'Đang tạo...' : 'Tạo người dùng' }}
@@ -492,7 +499,7 @@
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <form @submit.prevent="handleUpdateUser" class="modal-body">
+                    <form @submit.prevent="handleUpdateUserWrapper" class="modal-body">
                         <div class="form-group">
                             <label for="edit-name">Họ và tên *</label>
                             <input id="edit-name" v-model="editForm.name" type="text" required
@@ -545,7 +552,9 @@
                             <label for="edit-role">Quyền *</label>
                             <select id="edit-role" v-model="editForm.role_id" required
                                 :class="{ 'input-error': editValidationErrors.role_id }"
-                                @blur="validateEditField('role_id')">
+                                @blur="validateEditField('role_id')"
+                                :disabled="editingUser && editingUser.id === currentUser?.id"
+                            >
                                 <option value="">Chọn quyền</option>
                                 <option v-for="role in availableRoles" :key="role.id" :value="role.id">
                                     {{ getRoleDisplayName(role.name) }}
@@ -557,7 +566,9 @@
                         </div>
                         <div class="form-group">
                             <label for="edit-status">Trạng thái *</label>
-                            <select id="edit-status" v-model="editForm.is_active" required>
+                            <select id="edit-status" v-model="editForm.is_active" required
+                                :disabled="editingUser && editingUser.id === currentUser?.id"
+                            >
                                 <option :value="true">Hoạt động</option>
                                 <option :value="false">Tạm khóa</option>
                             </select>
@@ -565,7 +576,7 @@
                     </form>
                     <div class="modal-footer">
                         <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
-                        <button @click="handleUpdateUser" type="button" class="btn btn-primary"
+                        <button @click="handleUpdateUserWrapper" type="button" class="btn btn-primary"
                             :disabled="loading || !isEditFormValid || editPhoneCheckingDuplicate">
                             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             {{ loading ? 'Đang cập nhật...' : 'Cập nhật' }}
@@ -592,7 +603,7 @@
                     </div>
                     <div class="modal-footer">
                         <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
-                        <button @click="handleDeleteUser" type="button" class="btn btn-danger" :disabled="loading">
+                        <button @click="handleDeleteUserWrapper" type="button" class="btn btn-danger" :disabled="loading">
                             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             {{ loading ? 'Đang xóa...' : 'Xóa người dùng' }}
                         </button>
@@ -673,7 +684,7 @@
                     <div class="modal-footer">
                         <button v-if="!resetPasswordResult" @click="handleCloseAllModals" type="button"
                             class="btn btn-secondary">Hủy</button>
-                        <button v-if="!resetPasswordResult" @click="handleResetPassword" type="button"
+                        <button v-if="!resetPasswordResult" @click="handleResetPasswordWrapper" type="button"
                             class="btn btn-warning" :disabled="loading">
                             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             {{ loading ? 'Đang reset...' : 'Reset mật khẩu' }}
@@ -718,6 +729,12 @@
 </template>
 
 <script setup>
+// Xóa tất cả filter (role, status, search)
+const clearAllFilters = () => {
+    setRoleFilter('')
+    setStatusFilter('')
+    setSearchQuery('')
+}
 // Import composables and components
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useUsersAPI } from '~/composables/useUsersAPI'
@@ -767,66 +784,72 @@ onMounted(async () => {
 // Use the users API composable
 const {
     users,
-    availableRoles,
-    loading,
-    error,
-    stats,
-    editingUser,
-    detailUser,
-    showCreateForm,
-    showDetailModal,
-    showEditForm,
-    showDeleteConfirm,
-    showResetPasswordForm,
-    userToDelete,
-    userToResetPassword,
-    resetPasswordResult,
-    createForm,
-    editForm,
-    // Search and Filter
-    searchQuery,
-    selectedRoleFilter,
-    selectedStatusFilter,
-
-    // Sort
-    sortColumn,
-    sortDirection,
-
-    // Pagination
-    currentPage,
-    itemsPerPage,
-    itemsPerPageOptions,
-    filteredUsers,
-    paginatedUsers,
-    totalPages,
-    // Methods
-    fetchUsers,
-    fetchAvailableRoles,
-    createUser,
-    updateUser,
-    deleteUser,
-    resetPassword,
-    resetCreateForm,
-    resetEditForm,
-    openCreateForm,
-    openDetailModal,
-    openEditForm,
-    openDeleteConfirm,
-    openResetPasswordConfirm,
-    closeAllModals,
-    // Search and Filter Methods
-    setSearchQuery,
-    setRoleFilter,
-    setStatusFilter,
-    handleSort,
-    setItemsPerPage,
-    goToPage,
-    toggleUserStatus,
-    // Helpers
-    getRoleDisplayName,
-    getRoleIcon,
-    getRoleBadgeColor,
-    canResetPassword
+        availableRoles,
+        loading,
+        error,
+        stats,
+        // Search and Filter
+        searchQuery,
+        selectedRoleFilter,
+        selectedStatusFilter,
+        // Sort
+        sortColumn,
+        sortDirection,
+        // Pagination
+        currentPage,
+        itemsPerPage,
+        itemsPerPageOptions,
+        filteredUsers,
+        paginatedUsers,
+        totalPages,
+        // Form state
+        editingUser,
+        detailUser,
+        showCreateForm,
+        showDetailModal,
+        showEditForm,
+        showDeleteConfirm,
+        showResetPasswordForm,
+        userToDelete,
+        userToResetPassword,
+        resetPasswordResult,
+        createForm,
+        editForm,
+        // Methods
+        fetchUsers,
+        fetchAvailableRoles,
+        createUser,
+        updateUser,
+        deleteUser,
+        resetPassword,
+        // Form methods
+        resetCreateForm,
+        resetEditForm,
+        openCreateForm,
+        openDetailModal,
+        openEditForm,
+        openDeleteConfirm,
+        openResetPasswordConfirm,
+        closeAllModals,
+        // Search and Filter Methods
+        setSearchQuery,
+        setRoleFilter,
+        setStatusFilter,
+        handleSort,
+        setItemsPerPage,
+        goToPage,
+        toggleUserStatus,
+        // Helpers
+        getRoleDisplayName,
+        getRoleIcon,
+        getRoleBadgeColor,
+        canResetPassword,
+        // Event handlers for page
+        handleCreateUser,
+        handleUpdateUser,
+        handleDeleteUser,
+        handleResetPassword,
+        handleToggleStatus
 } = useUsersAPI()
 
 // ===========================================
@@ -864,13 +887,6 @@ const {
     normalizePhoneNumber,
     parseBackendValidationError
 } = useValidation()
-
-// detail
-
-// State cho modal xem chi tiết và user đang xem
-// const showDetailModal = ref(false)
-// const detailUser = ref(null)
-
 
 // Password strength checking
 const passwordStrength = createPasswordStrength()
@@ -1232,132 +1248,57 @@ const checkPasswordStrength = () => {
     }
 }
 
-// ===========================================
-// EVENT HANDLERS
-// ===========================================
+// Wrapper: chuẩn hóa gọi handleCreateUser từ composable
+const handleCreateUserWrapper = async () => {
+    await handleCreateUser({
+        validateCreateForm,
+        showError,
+        showSuccess,
+        parseBackendValidationError,
+        validationErrors,
+        setBackendValidationErrors
+    });
+};
 
-const handleCreateUser = async () => {
-    // Validate form first
-    const isValid = await validateCreateForm()
-    if (!isValid) {
-        showError('Vui lòng sửa các lỗi trong form')
+// Wrapper: chuẩn hóa gọi handleUpdateUser từ composable
+const handleUpdateUserWrapper = async () => {
+    await handleUpdateUser({
+        validateEditForm,
+        showError,
+        showSuccess,
+        parseBackendValidationError,
+        editValidationErrors,
+        setBackendValidationErrors
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleDeleteUser từ composable
+const handleDeleteUserWrapper = async () => {
+    await handleDeleteUser({
+        showError,
+        showSuccess
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleResetPassword từ composable
+const handleResetPasswordWrapper = async () => {
+    await handleResetPassword({
+        showError,
+        showSuccess
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleToggleStatus từ composable
+const handleToggleStatusWrapper = async (user) => {
+    if (user.id === currentUser.value?.id) {
+        showError('Bạn không thể thay đổi trạng thái của chính mình!')
         return
     }
-
-    const result = await createUser()
-
-    if (result.success) {
-        showSuccess(result.message || 'Tạo người dùng thành công!')
-        // Clear any previous backend errors
-        Object.keys(validationErrors).forEach(key => {
-            validationErrors[key] = ''
-        })
-    } else {
-        // Parse and set backend validation errors
-        try {
-            const backendErrors = parseBackendValidationError(result.error || result.message)
-
-            // If there are field-specific errors, set them
-            const hasFieldErrors = Object.keys(backendErrors).some(key => key !== '_general')
-
-            if (hasFieldErrors) {
-                setBackendValidationErrors(backendErrors, false)
-                showError('Tạo tài khoản thất bại, xin hãy kiểm tra lại thông tin')
-            } else {
-                // Show general error
-                showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi tạo người dùng')
-            }
-        } catch (error) {
-            console.error('Error parsing backend validation:', error)
-            showError(result.message || 'Có lỗi xảy ra khi tạo người dùng')
-        }
-    }
-}
-
-const handleUpdateUser = async () => {
-    // Validate form first
-    const isValid = await validateEditForm()
-    if (!isValid) {
-        showError('Vui lòng sửa các lỗi trong form')
-        return
-    }
-
-    const result = await updateUser()
-
-    if (result.success) {
-        showSuccess(result.message || 'Cập nhật người dùng thành công!')
-        // Clear any previous backend errors
-        Object.keys(editValidationErrors).forEach(key => {
-            editValidationErrors[key] = ''
-        })
-    } else {
-        // Parse and set backend validation errors
-        try {
-            const backendErrors = parseBackendValidationError(result.error || result.message)
-
-            // If there are field-specific errors, set them
-            const hasFieldErrors = Object.keys(backendErrors).some(key => key !== '_general')
-
-            if (hasFieldErrors) {
-                setBackendValidationErrors(backendErrors, true)
-                showError('Cập nhật tài khoản thất bại, xin hãy kiểm tra lại thông tin')
-            } else {
-                // Show general error
-                showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
-            }
-        } catch (error) {
-            console.error('Error parsing backend validation:', error)
-            showError(result.message || 'Có lỗi xảy ra khi cập nhật người dùng')
-        }
-    }
-}
-
-const handleDeleteUser = async () => {
-    if (!userToDelete.value) return
-
-    const result = await deleteUser(userToDelete.value.id)
-
-    if (result.success) {
-        showSuccess(result.message || 'Xóa người dùng thành công!')
-    } else {
-        showError(result.message || 'Có lỗi xảy ra khi xóa người dùng')
-    }
-}
-
-const handleResetPassword = async () => {
-    if (!userToResetPassword.value) return
-
-    const result = await resetPassword(userToResetPassword.value.id)
-
-    if (result.success) {
-        showSuccess('Reset mật khẩu thành công!')
-        // Result is automatically stored in resetPasswordResult by the API function
-    } else {
-        showError(result.message || 'Có lỗi xảy ra khi reset mật khẩu')
-    }
-}
-
-const copyToClipboard = async (text) => {
-    try {
-        await navigator.clipboard.writeText(text)
-        showSuccess('Đã copy vào clipboard!')
-    } catch (error) {
-        console.error('Copy failed:', error)
-        showError('Không thể copy vào clipboard')
-    }
-}
-
-// Status toggle handler
-const handleToggleStatus = async (user) => {
-    const result = await toggleUserStatus(user.id)
-
-    if (result.success) {
-        const statusText = user.is_active ? 'kích hoạt' : 'tạm khóa'
-        showSuccess(`Đã ${statusText} người dùng ${user.name}`)
-    } else {
-        showError(result.message || 'Có lỗi xảy ra khi thay đổi trạng thái')
-    }
-}
+    await handleToggleStatus(user, {
+        showError,
+        showSuccess
+    });
+};
 
 // Override closeAllModals to reset password strength
 const handleCloseAllModals = () => {
@@ -1411,6 +1352,10 @@ const handleOpenViewDetail = (user) => {
 
 // Override openEditForm to set email validation
 const handleOpenEditForm = (user) => {
+    // if (user.id === currentUser.value?.id) {
+    //     showError('Bạn không thể thay đổi quyền hoặc thông tin của chính mình!')
+    //     return
+    // }
     openEditForm(user)
 
     // Clear validation errors
@@ -1455,6 +1400,16 @@ const handleExportToExcel = () => {
     onSuccess: msg => showSuccess(msg),
     onError: msg => showWarning(msg)
   })
+}
+
+const copyToClipboard = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text)
+        showSuccess('Đã copy vào clipboard!')
+    } catch (error) {
+        console.error('Copy failed:', error)
+        showError('Không thể copy vào clipboard')
+    }
 }
 
 // ===========================================
@@ -1571,7 +1526,7 @@ definePageMeta({
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1rem;
 }
 
@@ -1835,6 +1790,7 @@ definePageMeta({
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    font-size: 0.9rem;
 }
 
 .btn-edit {
