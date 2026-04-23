@@ -167,7 +167,8 @@
 
                         <!-- Clear Filters Button -->
                         <div class="filter-group">
-                            <button class="btn btn-outline-secondary" @click="clearAllFilters" style="margin-top: 24px;">
+                            <button class="btn btn-outline-secondary" @click="clearAllFilters"
+                                style="margin-top: 24px;">
                                 <i class="fas fa-eraser"></i> Xóa bộ lọc
                             </button>
                         </div>
@@ -553,8 +554,7 @@
                             <select id="edit-role" v-model="editForm.role_id" required
                                 :class="{ 'input-error': editValidationErrors.role_id }"
                                 @blur="validateEditField('role_id')"
-                                :disabled="editingUser && editingUser.id === currentUser?.id"
-                            >
+                                :disabled="editingUser && editingUser.id === currentUser?.id">
                                 <option value="">Chọn quyền</option>
                                 <option v-for="role in availableRoles" :key="role.id" :value="role.id">
                                     {{ getRoleDisplayName(role.name) }}
@@ -567,8 +567,7 @@
                         <div class="form-group">
                             <label for="edit-status">Trạng thái *</label>
                             <select id="edit-status" v-model="editForm.is_active" required
-                                :disabled="editingUser && editingUser.id === currentUser?.id"
-                            >
+                                :disabled="editingUser && editingUser.id === currentUser?.id">
                                 <option :value="true">Hoạt động</option>
                                 <option :value="false">Tạm khóa</option>
                             </select>
@@ -603,7 +602,8 @@
                     </div>
                     <div class="modal-footer">
                         <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
-                        <button @click="handleDeleteUserWrapper" type="button" class="btn btn-danger" :disabled="loading">
+                        <button @click="handleDeleteUserWrapper" type="button" class="btn btn-danger"
+                            :disabled="loading">
                             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             {{ loading ? 'Đang xóa...' : 'Xóa người dùng' }}
                         </button>
@@ -625,7 +625,7 @@
                         <div v-if="!resetPasswordResult" class="reset-confirmation">
                             <i class="fas fa-key warning-icon"></i>
                             <p>Bạn có chắc chắn muốn reset mật khẩu cho người dùng <strong>{{ userToResetPassword.name
-                                    }}</strong>?
+                            }}</strong>?
                             </p>
                             <div class="user-info">
                                 <div class="info-item">
@@ -714,7 +714,8 @@
                             <div><strong>Email:</strong> {{ detailUser.email }}</div>
                             <div><strong>Số điện thoại:</strong> {{ detailUser.phone || '-' }}</div>
                             <div><strong>Quyền:</strong> {{ getRoleDisplayName(detailUser.role_name) }}</div>
-                            <div><strong>Trạng thái:</strong> {{ detailUser.is_active ? 'Hoạt động' : 'Tạm khóa' }}</div>
+                            <div><strong>Trạng thái:</strong> {{ detailUser.is_active ? 'Hoạt động' : 'Tạm khóa' }}
+                            </div>
                             <div><strong>Ngày tạo:</strong> {{ formatDate(detailUser.created_at) }}</div>
                             <div><strong>Ngày cập nhật:</strong> {{ formatDate(detailUser.updated_at) }}</div>
                         </div>
@@ -729,23 +730,16 @@
 </template>
 
 <script setup>
-// Xóa tất cả filter (role, status, search)
-const clearAllFilters = () => {
-    setRoleFilter('')
-    setStatusFilter('')
-    setSearchQuery('')
-}
 // Import composables and components
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useUsersAPI } from '~/composables/useUsersAPI'
 import { useNotifications } from '~/composables/useNotifications'
 import { useValidation } from '~/composables/useValidation'
 import Toast from '~/components/Toast.vue'
-import { formatSmartDate, formatDate } from '~/utils/date'
+import { formatDate } from '~/utils/date'
 import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { useVisiblePages } from '~/composables/usePaginationHelper'
 import { useExportExcel } from '~/composables/useExportExcel'
-import * as XLSX from 'xlsx'
 
 // ===========================================
 // AUTHENTICATION & PERMISSIONS
@@ -784,72 +778,72 @@ onMounted(async () => {
 // Use the users API composable
 const {
     users,
-        availableRoles,
-        loading,
-        error,
-        stats,
-        // Search and Filter
-        searchQuery,
-        selectedRoleFilter,
-        selectedStatusFilter,
-        // Sort
-        sortColumn,
-        sortDirection,
-        // Pagination
-        currentPage,
-        itemsPerPage,
-        itemsPerPageOptions,
-        filteredUsers,
-        paginatedUsers,
-        totalPages,
-        // Form state
-        editingUser,
-        detailUser,
-        showCreateForm,
-        showDetailModal,
-        showEditForm,
-        showDeleteConfirm,
-        showResetPasswordForm,
-        userToDelete,
-        userToResetPassword,
-        resetPasswordResult,
-        createForm,
-        editForm,
-        // Methods
-        fetchUsers,
-        fetchAvailableRoles,
-        createUser,
-        updateUser,
-        deleteUser,
-        resetPassword,
-        // Form methods
-        resetCreateForm,
-        resetEditForm,
-        openCreateForm,
-        openDetailModal,
-        openEditForm,
-        openDeleteConfirm,
-        openResetPasswordConfirm,
-        closeAllModals,
-        // Search and Filter Methods
-        setSearchQuery,
-        setRoleFilter,
-        setStatusFilter,
-        handleSort,
-        setItemsPerPage,
-        goToPage,
-        toggleUserStatus,
-        // Helpers
-        getRoleDisplayName,
-        getRoleIcon,
-        getRoleBadgeColor,
-        canResetPassword,
-        // Event handlers for page
-        handleCreateUser,
-        handleUpdateUser,
-        handleDeleteUser,
-        handleResetPassword,
-        handleToggleStatus
+    availableRoles,
+    loading,
+    error,
+    stats,
+    // Search and Filter
+    searchQuery,
+    selectedRoleFilter,
+    selectedStatusFilter,
+    // Sort
+    sortColumn,
+    sortDirection,
+    // Pagination
+    currentPage,
+    itemsPerPage,
+    itemsPerPageOptions,
+    filteredUsers,
+    paginatedUsers,
+    totalPages,
+    // Form state
+    editingUser,
+    detailUser,
+    showCreateForm,
+    showDetailModal,
+    showEditForm,
+    showDeleteConfirm,
+    showResetPasswordForm,
+    userToDelete,
+    userToResetPassword,
+    resetPasswordResult,
+    createForm,
+    editForm,
+    // Methods
+    fetchUsers,
+    fetchAvailableRoles,
+    createUser,
+    updateUser,
+    deleteUser,
+    resetPassword,
+    // Form methods
+    resetCreateForm,
+    resetEditForm,
+    openCreateForm,
+    openDetailModal,
+    openEditForm,
+    openDeleteConfirm,
+    openResetPasswordConfirm,
+    closeAllModals,
+    // Search and Filter Methods
+    setSearchQuery,
+    setRoleFilter,
+    setStatusFilter,
+    handleSort,
+    setItemsPerPage,
+    goToPage,
+    toggleUserStatus,
+    // Helpers
+    getRoleDisplayName,
+    getRoleIcon,
+    getRoleBadgeColor,
+    canResetPassword,
+    // Event handlers for page
+    handleCreateUser,
+    handleUpdateUser,
+    handleDeleteUser,
+    handleResetPassword,
+    handleToggleStatus
 } = useUsersAPI()
 
 // ===========================================
@@ -920,6 +914,13 @@ const editValidationErrors = reactive({
     phone: '',
     role_id: ''
 })
+
+// Xóa tất cả filter (role, status, search)
+const clearAllFilters = () => {
+    setRoleFilter('')
+    setStatusFilter('')
+    setSearchQuery('')
+}
 
 // Email validation function
 const checkEmailValidation = () => {
@@ -1352,10 +1353,7 @@ const handleOpenViewDetail = (user) => {
 
 // Override openEditForm to set email validation
 const handleOpenEditForm = (user) => {
-    // if (user.id === currentUser.value?.id) {
-    //     showError('Bạn không thể thay đổi quyền hoặc thông tin của chính mình!')
-    //     return
-    // }
+    
     openEditForm(user)
 
     // Clear validation errors
@@ -1382,24 +1380,24 @@ const visiblePages = useVisiblePages(totalPages, currentPage)
 // ===========================================
 
 const handleExportToExcel = () => {
-  exportToExcel({
-    data: filteredUsers.value,
-    columns: [
-      { label: 'STT', key: 'id', value: (_row, idx) => idx + 1, width: 5 },
-      { label: 'ID', key: 'id', width: 8 },
-      { label: 'Họ và tên', key: 'name', width: 25 },
-      { label: 'Tên đăng nhập', key: 'username', width: 20 },
-      { label: 'Email', key: 'email', width: 30 },
-      { label: 'Số điện thoại', key: 'phone', value: row => row.phone || '', width: 15 },
-      { label: 'Quyền', key: 'role_name', value: row => getRoleDisplayName(row.role_name), width: 15 },
-      { label: 'Trạng thái', key: 'is_active', value: row => row.is_active ? 'Hoạt động' : 'Tạm khóa', width: 12 },
-      { label: 'Ngày tạo', key: 'created_at', value: row => formatDate(row.created_at), width: 12 },
-      { label: 'Ngày cập nhật', key: 'updated_at', value: row => formatDate(row.updated_at), width: 12 }
-    ],
-    filenamePrefix: 'danh-sach-nguoi-dung',
-    onSuccess: msg => showSuccess(msg),
-    onError: msg => showWarning(msg)
-  })
+    exportToExcel({
+        data: filteredUsers.value,
+        columns: [
+            { label: 'STT', key: 'id', value: (_row, idx) => idx + 1, width: 5 },
+            { label: 'ID', key: 'id', width: 8 },
+            { label: 'Họ và tên', key: 'name', width: 25 },
+            { label: 'Tên đăng nhập', key: 'username', width: 20 },
+            { label: 'Email', key: 'email', width: 30 },
+            { label: 'Số điện thoại', key: 'phone', value: row => row.phone || '', width: 15 },
+            { label: 'Quyền', key: 'role_name', value: row => getRoleDisplayName(row.role_name), width: 15 },
+            { label: 'Trạng thái', key: 'is_active', value: row => row.is_active ? 'Hoạt động' : 'Tạm khóa', width: 12 },
+            { label: 'Ngày tạo', key: 'created_at', value: row => formatDate(row.created_at), width: 12 },
+            { label: 'Ngày cập nhật', key: 'updated_at', value: row => formatDate(row.updated_at), width: 12 }
+        ],
+        filenamePrefix: 'danh-sach-nguoi-dung',
+        onSuccess: msg => showSuccess(msg),
+        onError: msg => showWarning(msg)
+    })
 }
 
 const copyToClipboard = async (text) => {

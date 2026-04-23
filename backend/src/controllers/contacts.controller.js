@@ -360,6 +360,14 @@ export const updateContact = async (req, res) => {
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
 
+        // check required fields for contact_method validation
+        if (contact_method === 'social' && !social_contact) {
+            return res.status(400).json({
+                success: false,
+                message: "Social contact is required for social contact method."
+            });
+        }
+
         // Check if user has permission to update contacts
         if (!ALLOWED_CONTACT_ROLES.includes(currentUserRole)) {
             SecurityLogger.logPermissionViolation(
@@ -446,8 +454,17 @@ export const updateContact = async (req, res) => {
                     message: "Invalid status. Must be one of: " + validStatuses.join(', ')
                 });
             }
-            // Only allow next status
-            if (validStatuses.indexOf(status) !== nextIdx) {
+            // Only allow next status or keep current
+            const statusIdx = validStatuses.indexOf(status);
+            logInfo('Attempting to update contact status', {
+                validStatusesIndex: statusIdx,
+                status,
+                nextIdx,
+                currentIdx,
+                allowed: [currentIdx, nextIdx].includes(statusIdx)
+            });
+
+            if (![currentIdx, nextIdx].includes(statusIdx)) {
                 return res.status(400).json({
                     success: false,
                     message: `Status can only be changed to next step: ${validStatuses[nextIdx]}`
@@ -500,6 +517,11 @@ export const updateContact = async (req, res) => {
 
         const result = await db.query(updateQuery, values);
         const updatedContact = result.rows[0];
+
+        const updateData = {};
+        if (contact_method !== undefined) updateData.contact_method = contact_method;
+        if (social_contact !== undefined) updateData.social_contact = social_contact;
+        if (status !== undefined) updateData.status = status;
 
         // Audit log successful contact update
         auditLog('UPDATE_CONTACT', currentUserId, {
@@ -842,7 +864,7 @@ export const addContactNote = async (req, res) => {
 export const updateContactStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status, note } = req.body;
+        const { status } = req.body;
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
 
@@ -916,30 +938,20 @@ export const updateContactStatus = async (req, res) => {
         const result = await db.query(updateQuery, values);
         const updatedContact = result.rows[0];
 
-        // Add note if provided
-        if (note && note.trim().length > 0) {
-            const sanitizedNote = InputSanitizer.sanitizeString(note.trim());
-            
-            await db.query(`
-                INSERT INTO contact_notes (contact_id, user_id, note)
-                VALUES ($1, $2, $3)
-            `, [id, currentUserId, sanitizedNote]);
-        }
-
         // Audit log
         auditLog('UPDATE_CONTACT_STATUS', currentUserId, {
             contactId: id,
             contactName: updatedContact.name,
             previousStatus: existingContact.status,
-            newStatus: status,
-            hasNote: !!note
+            newStatus: status
         }, req);
 
         logInfo('Contact status updated successfully', {
             updatedBy: currentUserId,
             contactId: id,
             previousStatus: existingContact.status,
-            newStatus: status
+            newStatus: status,
+            data: updatedContact
         });
 
         res.json({

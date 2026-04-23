@@ -138,6 +138,14 @@
                                 </option>
                             </select>
                         </div>
+
+                        <!-- Clear Filters Button -->
+                        <div class="filter-group">
+                            <button class="btn btn-outline-secondary" @click="clearAllFilters"
+                                style="margin-top: 24px;">
+                                <i class="fas fa-eraser"></i> Xóa bộ lọc
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -213,7 +221,7 @@
                                     </span>
                                 </td>
                                 <td class="contact-status">
-                                    <button @click="handleStatusChange(contact)" class="status-badge"
+                                    <button @click="handleChangeStatusWrapper(contact)" class="status-badge"
                                         :class="getStatusBadgeColor(contact.status)" :disabled="loading"
                                         :title="`Click để chuyển sang '${getStatusDisplayName(getNextStatus(contact.status))}'`">
                                         <i :class="getStatusIcon(contact.status)"></i>
@@ -228,10 +236,10 @@
                                             title="Xem chi tiết">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button @click="handleOpenEditForm(contact)" class="btn-action btn-edit"
+                                        <!-- <button @click="handleOpenEditForm(contact)" class="btn-action btn-edit"
                                             title="Chỉnh sửa">
                                             <i class="fas fa-edit"></i>
-                                        </button>
+                                        </button> -->
                                         <!-- <button @click="handleOpenNotes(contact)" class="btn-action btn-notes"
                                             title="Ghi chú">
                                             <i class="fas fa-comment"></i>
@@ -410,10 +418,15 @@
                     </div>
                     <div class="modal-footer">
                         <button @click="handleCloseAllModals" class="btn btn-secondary">Đóng</button>
-                        <button @click="handleOpenEditForm(detailContact)" class="btn btn-primary">
+                        <button @click="handleOpenEditForm(detailContact)" class="btn btn-primary"
+                            :disabled="isConsultant && detailContact?.status === 'closed'">
                             <i class="fas fa-edit"></i>
                             Chỉnh sửa
                         </button>
+
+                        <!-- <button @click="handleOpenEditForm(contact)" class="btn-action btn-edit" title="Chỉnh sửa">
+                            <i class="fas fa-edit"></i>
+                        </button> -->
                     </div>
                 </div>
             </div>
@@ -451,46 +464,11 @@
                 <div class="modal" @click.stop>
                     <div class="modal-header">
                         <h3>Chỉnh sửa liên hệ #{{ editForm.id }}</h3>
-                        <button @click="handleCloseAllModals" class="btn-close">
+                        <button @click="closeEditForm" class="btn-close">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <form @submit.prevent="handleUpdateContact" class="modal-body">
-                        <div class="form-group">
-                            <label for="edit-name">Họ và tên <span class="required">*</span></label>
-                            <input id="edit-name" v-model="editForm.name" type="text" required
-                                placeholder="Nhập họ và tên" :class="{ 'input-error': validationErrors.name }"
-                                @blur="validateField('name')" />
-                            <div v-if="validationErrors.name" class="field-error">
-                                {{ validationErrors.name }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="edit-email">Email <span class="required">*</span></label>
-                            <input id="edit-email" v-model="editForm.email" type="email" required
-                                placeholder="Nhập email" :class="{ 'input-error': validationErrors.email }"
-                                @blur="validateField('email')" />
-                            <div v-if="validationErrors.email" class="field-error">
-                                {{ validationErrors.email }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="edit-phone">Số điện thoại</label>
-                            <input id="edit-phone" v-model="editForm.phone" type="tel" placeholder="Nhập số điện thoại"
-                                :class="{ 'input-error': validationErrors.phone }" @blur="validateField('phone')" />
-                            <div v-if="validationErrors.phone" class="field-error">
-                                {{ validationErrors.phone }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="edit-message">Tin nhắn</label>
-                            <textarea id="edit-message" v-model="editForm.message"
-                                placeholder="Nội dung tin nhắn của khách hàng..." rows="4" />
-                        </div>
-
+                    <form @submit.prevent="handleUpdateContactWrapper" class="modal-body">
                         <div class="form-group">
                             <label for="edit-contact-method">Phương thức liên hệ</label>
                             <select id="edit-contact-method" v-model="editForm.contact_method">
@@ -515,16 +493,14 @@
                                 <option value="closed">Đã đóng</option>
                             </select>
                         </div>
-
-
                     </form>
                     <div class="modal-footer">
-                        <button type="button" @click="handleCloseAllModals" class="btn btn-secondary">Hủy</button>
-                        <button type="submit" @click="handleUpdateContact" :disabled="isUpdating"
+                        <button type="button" @click="closeEditForm" class="btn btn-secondary">Hủy</button>
+                        <button type="submit" @click="handleUpdateContactWrapper" :disabled="loading"
                             class="btn btn-primary">
-                            <i v-if="isUpdating" class="fas fa-spinner fa-spin"></i>
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             <i v-else class="fas fa-save"></i>
-                            {{ isUpdating ? 'Đang cập nhật...' : 'Cập nhật liên hệ' }}
+                            {{ loading ? 'Đang cập nhật...' : 'Cập nhật liên hệ' }}
                         </button>
                     </div>
                 </div>
@@ -575,7 +551,6 @@ import Toast from '~/components/Toast.vue'
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useVisiblePages } from '~/composables/usePaginationHelper'
 import { useExportExcel } from '~/composables/useExportExcel'
-import * as XLSX from 'xlsx'
 
 // ===========================================
 // AUTHENTICATION & PERMISSIONS
@@ -602,14 +577,9 @@ const hasPermission = computed(() => {
 // Initialize user data on component mount
 onMounted(async () => {
     await fetchCurrentUser()
-    // Debug log user info và quyền
-    console.log('[contacts.vue] Debug currentUser:', currentUser.value)
-    console.log('[contacts.vue] Debug loadingUser:', loadingUser.value)
-    console.log('[contacts.vue] Debug hasAnyRole([1,2,3,5]):', hasAnyRole([1, 2, 3, 5]))
-    console.log('[contacts.vue] Debug hasPermission:', hasPermission.value)
     if (hasPermission.value) {
         await fetchContacts()
-        await fetchContactStats()
+        // await fetchContactStats()
 
     }
 })
@@ -617,32 +587,23 @@ onMounted(async () => {
 // ===========================================
 // CONTACTS API & DATA MANAGEMENT
 // ===========================================
+
 // Use the contacts API composable
 const {
     contacts,
-
+    stats,
+    newNote,
     contactNotes,
     loading,
     loadingNotes,
+    isAddingNote,
     error,
-    stats,
-    editingContact,
-    detailContact,
-    showDetailModal,
-    showEditForm,
-    showDeleteConfirm,
-    showAddNoteForm,
-    contactToDelete,
-    editForm,
-    // Search and Filter
+    // Search/Filter/Sort
     searchQuery,
-    selectedMethodFilter,
     selectedStatusFilter,
-
-    // Sort
+    selectedMethodFilter,
     sortColumn,
     sortDirection,
-
     // Pagination
     currentPage,
     itemsPerPage,
@@ -650,37 +611,55 @@ const {
     filteredContacts,
     paginatedContacts,
     totalPages,
+    // Form state
+    detailContact,
+    editingContact,
+    showDetailModal,
+    showEditForm,
+    showDeleteConfirm,
+    contactToDelete,
+    showAddNoteForm,
+    editForm,
     // Methods
     fetchContacts,
-
-    fetchContactStats,
+    // fetchContactStats,
     fetchContactNotes,
     updateContact,
     deleteContact,
     addContactNote,
+    advanceStatus,
+    getNextStatus,
+    // Form helpers
     resetEditForm,
     openDetailModal,
     openEditForm,
-    newNote,
     openAddNoteForm,
     closeAddNoteForm,
 
     openDeleteConfirm,
     closeAllModals,
-    // Search and Filter Methods
+    closeEditForm,
+    // Search/Filter helpers
     setSearchQuery,
     setMethodFilter,
     setStatusFilter,
     handleSort,
     setItemsPerPage,
     goToPage,
-    // Helpers
+    // Display helpers
     getStatusDisplayName,
     getStatusBadgeColor,
     getStatusIcon,
     getMethodDisplayName,
+    getMethodIcon,
     getMethodBadgeColor,
-    getMethodIcon
+    canChangeClosedStatus,
+    canDeleteContact,
+    // Event handlers for direct use in page
+    handleUpdateContact,
+    handleDeleteContact,
+    handleAddNote,
+    handleChangeStatus
 } = useContactsAPI()
 
 // ===========================================
@@ -705,73 +684,69 @@ const { exportToExcel, exportingExcel } = useExportExcel()
 
 // Use validation composable
 const {
-    validateEmail,
-    validatePhone,
-    validateRequired,
-    normalizePhoneNumber,
     parseBackendValidationError
 } = useValidation()
 
-// Email validation
-const isEditEmailValid = ref(false)
+// Method validation
+const isEditMethodValid = ref(false)
 
-// Phone validation
-const isEditPhoneValid = ref(false)
+// Social contact validation
+const isEditSocialContactValid = ref(false)
 
-// Validation errors
-const validationErrors = reactive({
-    name: '',
-    email: '',
-    phone: '',
-    message: '',
-    contact_method: '',
-    social_contact: '',
-
-})
+// Status validation
+const isEditStatusValid = ref(false)
 
 // Edit form validation errors
 const editValidationErrors = reactive({
-    name: '',
-    email: '',
-    phone: '',
+    contact_method: '',
+    social_contact: '',
+    status: '',
 })
 
-// Edit email validation function
-const checkEditEmailValidation = () => {
-    const emailValidation = validateEmail(editForm.email)
-    isEditEmailValid.value = emailValidation.isValid
+// Xóa tất cả filter (role, status, search)
+const clearAllFilters = () => {
+    setMethodFilter('')
+    setStatusFilter('')
+    setSearchQuery('')
+}
 
-    // Clear email error if valid
-    if (isEditEmailValid.value) {
-        editValidationErrors.email = ''
+// Edit contact_method validation function
+const checkEditMethodValidation = () => {
+    const validMethods = ['email', 'phone', 'social']
+    const value = editForm.contact_method
+    isEditMethodValid.value = (!value) || validMethods.includes(value)
+    if (isEditMethodValid.value) {
+        editValidationErrors.contact_method = ''
     }
 }
 
-// Edit phone validation function
-const checkEditPhoneValidation = async () => {
-    editPhoneCheckingDuplicate.value = true
-
-    try {
-        const phoneValidation = await validatePhone(editForm.phone, users.value, editingUser.value?.id)
-        isEditPhoneValid.value = phoneValidation.isValid
-
-        if (!phoneValidation.isValid) {
-            editValidationErrors.phone = phoneValidation.message
-        } else {
-            editValidationErrors.phone = ''
-        }
-    } catch (error) {
-        console.error('Error during edit phone validation:', error)
-        isEditPhoneValid.value = false
-        editValidationErrors.phone = 'Lỗi khi kiểm tra số điện thoại'
-    } finally {
-        editPhoneCheckingDuplicate.value = false
+// Edit social_contact validation function
+const checkEditSocialContactValidation = () => {
+    const value = editForm.social_contact
+    if (editForm.contact_method === 'social') {
+        isEditSocialContactValid.value = !!(value && value.trim() !== '')
+    } else {
+        isEditSocialContactValid.value = true
+    }
+    if (isEditSocialContactValid.value) {
+        editValidationErrors.social_contact = ''
     }
 }
+
+// Edit status validation function
+const checkEditStatusValidation = () => {
+    const value = editForm.status
+    const validStatuses = ['new', 'pending', 'responded', 'closed']
+    isEditStatusValid.value = validStatuses.includes(value)
+    if (isEditStatusValid.value) {
+        editValidationErrors.status = ''
+    }
+}
+
 
 // Set backend validation errors to form fields
-const setBackendValidationErrors = (errors, isEditForm = false) => {
-    const errorObj = isEditForm ? editValidationErrors : validationErrors
+const setBackendValidationErrors = (errors) => {
+    const errorObj = editValidationErrors
 
     // Clear existing errors first
     Object.keys(errorObj).forEach(key => {
@@ -788,11 +763,14 @@ const setBackendValidationErrors = (errors, isEditForm = false) => {
 
             // Reset validation states when backend returns field errors
 
-            if (field === 'email') {
-                isEditEmailValid.value = false
+            if (field === 'contact_method') {
+                isEditMethodValid.value = false
             }
-            if (field === 'phone') {
-                isEditPhoneValid.value = false
+            if (field === 'social_contact') {
+                isEditSocialContactValid.value = false
+            }
+            if (field === 'status') {
+                isEditStatusValid.value = false
             }
         }
     })
@@ -801,34 +779,32 @@ const setBackendValidationErrors = (errors, isEditForm = false) => {
 // Validate edit form field
 const validateEditField = async (fieldName) => {
     const value = editForm[fieldName]
-
-    // Clear previous error (including backend errors)
     editValidationErrors[fieldName] = ''
 
-    // Required field check (phone is optional)
-    if (fieldName !== 'phone' && (!value || (typeof value === 'string' && !value.trim()))) {
-        const fieldLabels = {
-            name: 'Họ và tên',
-            email: 'Email',
-            phone: 'Số điện thoại',
-            message: 'Tin nhắn',
-            contact_method: 'Phương thức liên hệ',
-            social_contact: 'Liên hệ xã hội',
-
+    // Validate contact_method
+    if (fieldName === 'contact_method') {
+        const validMethods = ['email', 'phone', 'social']
+        if (value && !validMethods.includes(value)) {
+            editValidationErrors.contact_method = 'Phương thức liên hệ phải là email, phone hoặc social'
+            return false
         }
-        editValidationErrors[fieldName] = `${fieldLabels[fieldName]} là bắt buộc`
-        return false
     }
 
-    // Specific validations
-    if (fieldName === 'email' && !isEditEmailValid.value) {
-        editValidationErrors.email = 'Địa chỉ email không hợp lệ'
-        return false
+    // Validate social_contact if contact_method is social
+    if (fieldName === 'social_contact') {
+        if (editForm.contact_method === 'social' && (!value || !value.trim())) {
+            editValidationErrors.social_contact = 'Vui lòng nhập link Fb/Zalo khi chọn phương thức social'
+            return false
+        }
     }
 
-    if (fieldName === 'phone' && value && value.trim()) {
-        await checkEditPhoneValidation()
-        return isEditPhoneValid.value
+    // Validate status
+    if (fieldName === 'status') {
+        const validStatuses = ['new', 'pending', 'responded', 'closed']
+        if (!validStatuses.includes(value)) {
+            editValidationErrors.status = 'Trạng thái không hợp lệ'
+            return false
+        }
     }
 
     return true
@@ -836,7 +812,7 @@ const validateEditField = async (fieldName) => {
 
 // Validate entire edit form
 const validateEditForm = async () => {
-    const fields = ['name', 'username', 'email', 'phone', 'role_id']
+    const fields = ['contact_method', 'social_contact', 'status']
     let isValid = true
 
     for (const field of fields) {
@@ -851,97 +827,77 @@ const validateEditForm = async () => {
 
 // Check if edit form is valid
 const isEditFormValid = computed(() => {
-    // Check if all required fields are filled (phone is optional)
-    const hasAllFields = editForm.name &&
-        editForm.email &&
-        (editForm.phone || !editForm.phone)
-
     // Check if no validation errors
-    const hasNoErrors = !editValidationErrors.name &&
-        !editValidationErrors.email &&
-        !editValidationErrors.phone
+    const hasNoErrors = !editValidationErrors.contact_method &&
+        !editValidationErrors.social_contact &&
+        !editValidationErrors.status
 
-    // Check email validation and phone validation (if provided)
-    const emailValid = isEditEmailValid.value
-    const phoneValid = editForm.phone ? isEditPhoneValid.value : true // Phone is optional
+    // Check contact_method validation social_contact validation and status validation (if provided)
+    const contactMethodValid = isEditMethodValid.value
+    const socialContactValid = isEditSocialContactValid.value
+    const statusValid = isEditStatusValid.value
 
-    return hasAllFields && hasNoErrors && emailValid && phoneValid
+    return hasNoErrors && contactMethodValid && socialContactValid && statusValid
 })
 
 // ===========================================
 // EVENT HANDLERS
 // ===========================================
 
-const handleUpdateContact = async () => {
-    // Validate form first
-    const isValid = await validateEditForm()
-    if (!isValid) {
-        showError('Vui lòng sửa các lỗi trong form')
-        return
-    }
+// Wrapper: chuẩn hóa gọi handleUpdateContact từ composable
+const handleUpdateContactWrapper = async () => {
+    await handleUpdateContact({
+        validateEditForm,
+        showError,
+        showSuccess,
+        parseBackendValidationError,
+        editValidationErrors,
+        setBackendValidationErrors
+    });
+};
 
-    const result = await updateContact()
+// Wrapper: chuẩn hóa gọi handleDeleteContact từ composable
+const handleDeleteContactWrapper = async () => {
+    await handleDeleteContact({
+        showError,
+        showSuccess
+    });
+};
 
-    if (result.success) {
-        showSuccess(result.message || 'Cập nhật liên hệ thành công!')
-        // Clear any previous backend errors
-        Object.keys(editValidationErrors).forEach(key => {
-            editValidationErrors[key] = ''
-        })
-    } else {
-        // Parse and set backend validation errors
-        try {
-            const backendErrors = parseBackendValidationError(result.error || result.message)
-
-            // If there are field-specific errors, set them
-            const hasFieldErrors = Object.keys(backendErrors).some(key => key !== '_general')
-
-            if (hasFieldErrors) {
-                setBackendValidationErrors(backendErrors, true)
-                showError('Cập nhật liên hệ thất bại, xin hãy kiểm tra lại thông tin')
-            } else {
-                // Show general error
-                showError(backendErrors._general || result.message || 'Có lỗi xảy ra khi cập nhật liên hệ')
-            }
-        } catch (error) {
-            console.error('Error parsing backend validation:', error)
-            showError(result.message || 'Có lỗi xảy ra khi cập nhật liên hệ')
-        }
-    }
-}
-
-const handleDeleteContact = async () => {
-    if (!contactToDelete.value) return
-
-    const result = await deleteContact(contactToDelete.value.id)
-
-    if (result.success) {
-        showSuccess(result.message || 'Xóa liên hệ thành công!')
-    } else {
-        showError(result.message || 'Có lỗi xảy ra khi xóa liên hệ')
-    }
-}
+// Wrapper: chuẩn hóa gọi handleToggleStatus từ composable
+const handleChangeStatusWrapper = async (contact) => {
+    await handleChangeStatus(contact, {
+        showError,
+        showSuccess
+    });
+};
 
 // Override closeAllModals to reset password strength
 const handleCloseAllModals = () => {
     closeAllModals()
-    // Reset email validation
-    isEditEmailValid.value = false
+    // Reset contact method validation
+    isEditMethodValid.value = false
 
-    // Reset phone validation
-    isEditPhoneValid.value = false
+    // Reset social contact validation
+    isEditSocialContactValid.value = false
+
+    // Reset status validation
+    isEditStatusValid.value = false
 
     // Clear validation errors
-    Object.keys(validationErrors).forEach(key => {
-        validationErrors[key] = ''
-    })
     Object.keys(editValidationErrors).forEach(key => {
         editValidationErrors[key] = ''
     })
 }
 
+// Handle contact details
+const handleOpenViewDetail = async (contact) => {
+    openDetailModal(contact)
+}
+
 // Override openEditForm to set email validation
 const handleOpenEditForm = (contact) => {
+
     openEditForm(contact)
 
     // Clear validation errors
@@ -949,14 +905,15 @@ const handleOpenEditForm = (contact) => {
         editValidationErrors[key] = ''
     })
 
-    // Set email and phone validation for existing data
+    // Set contact method, social contact, and status validation for existing data
     nextTick(() => {
-        checkEditEmailValidation()
-        if (editForm.phone) {
-            checkEditPhoneValidation()
+        checkEditMethodValidation()
+        if (editForm.contact_method === 'social') {
+            checkEditSocialContactValidation()
         } else {
-            isEditPhoneValid.value = true
+            isEditSocialContactValid.value = true
         }
+        checkEditStatusValidation()
     })
 }
 
@@ -1027,8 +984,6 @@ const handleExportToExcel = async () => {
     }
 }
 
-// Utility functions
-
 // ===========================================
 // PAGE CONFIGURATION
 // ===========================================
@@ -1043,167 +998,14 @@ definePageMeta({
 // ===========================================
 
 
-
-// Handle contact details
-const handleOpenViewDetail = async (contact) => {
-    openDetailModal(contact)
-    // selectedContact.value = contact
-    // showDetailModal.value = true
-    // await fetchContactNotes(contact.id)
-}
-
-const closeDetailModal = () => {
-    showDetailModal.value = false
-    detailContact.value = null
-    contactNotes.value = []
-}
-
-// Handle notes
-// const handleOpenNotes = async (contact) => {
-//     detailContact.value = contact
-//     await fetchContactNotes(contact.id)
-//     showDetailModal.value = true
-// }
-
-const isAddingNote = ref(false)
-const handleAddNote = async () => {
-    if (!detailContact.value?.id || !newNote.value.trim()) return
-    isAddingNote.value = true
-    const result = await addContactNote(detailContact.value.id, newNote.value.trim())
-    isAddingNote.value = false
-    if (result.success) {
-        showSuccess(result.message || 'Thêm ghi chú thành công!')
-        newNote.value = ''
-        showAddNoteForm.value = false
-        // Reload notes list
-        await fetchContactNotes(detailContact.value.id)
-    } else {
-        showError(result.message || 'Thêm ghi chú thất bại!')
-    }
-}
-
-// Handle delete
-// const openDeleteConfirm = (contact) => {
-//     contactToDelete.value = contact
-//     showDeleteConfirm.value = true
-// }
-
-const closeDeleteConfirm = () => {
-    showDeleteConfirm.value = false
-    contactToDelete.value = null
-}
-
-// const handleUpdateContact = async () => {
-//     try {
-//         isUpdating.value = true
-
-//         const response = await $fetch(`/api/contacts/${editForm.id}`, {
-//             method: 'PUT',
-//             headers: {
-//                 'Authorization': `Bearer ${useCookie('token').value}`
-//             },
-//             body: {
-//                 name: editForm.name,
-//                 email: editForm.email,
-//                 phone: editForm.phone,
-//                 message: editForm.message,
-//                 contact_method: editForm.contact_method,
-//                 social_contact: editForm.social_contact,
-//                 assigned_to: editForm.assigned_to,
-//                 status: editForm.status
-//             }
-//         })
-
-//         if (response.success) {
-//             showSuccess('Cập nhật liên hệ thành công')
-//             await fetchContacts()
-//             await fetchContactStats()
-//             showEditForm.value = false
-//         } else {
-//             showError(response.message || 'Cập nhật liên hệ thất bại')
-//         }
-//     } catch (err) {
-//         console.error('Update contact error:', err)
-//         showError(err.data?.message || 'Cập nhật liên hệ thất bại')
-//     } finally {
-//         isUpdating.value = false
-//     }
-// }
-
-const closeEditForm = () => {
-    showEditForm.value = false
-    Object.keys(editForm).forEach(key => {
-        editForm[key] = key === 'contact_method' ? 'email' : ''
-    })
-}
-
-// Handle status change
-const handleStatusChange = async (contact) => {
-    const nextStatus = getNextStatus(contact.status)
-
-    try {
-        const response = await $fetch(`/api/contacts/${contact.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${useCookie('token').value}`
-            },
-            body: {
-                status: nextStatus
-            }
-        })
-
-        if (response.success) {
-            showSuccess(`Cập nhật trạng thái thành "${getStatusDisplayName(nextStatus)}" thành công`)
-            await fetchContacts()
-            await fetchContactStats()
-        } else {
-            showError(response.message || 'Cập nhật trạng thái thất bại')
-        }
-    } catch (err) {
-        console.error('Update status error:', err)
-        showError(err.data?.message || 'Cập nhật trạng thái thất bại')
-    }
-}
-
-// Get next status in cycle
-const getNextStatus = (currentStatus) => {
-    const statusCycle = ['new', 'pending', 'responded', 'closed']
-    const currentIndex = statusCycle.indexOf(currentStatus)
-    const nextIndex = (currentIndex + 1) % statusCycle.length
-    return statusCycle[nextIndex]
-}
-
 // Handle assignment
 
 
 // Truncate message
-const truncateMessage = (message, maxLength = 100) => {
+const truncateMessage = (message, maxLength = 30) => {
     if (!message) return '-'
     if (message.length <= maxLength) return message
     return message.substring(0, maxLength) + '...'
-}
-
-// Permission checks
-const canDeleteContact = (contact) => {
-    // Only Superadmin, Admin, Manager can delete
-    return hasAnyRole([1, 2, 3])
-}
-
-// Form validation
-const validateField = (fieldName) => {
-    validationErrors[fieldName] = ''
-
-    switch (fieldName) {
-        case 'name':
-            validationErrors.name = 'Họ và tên là bắt buộc'
-            break
-        case 'email':
-            validationErrors.email = 'Email không hợp lệ'
-            break
-        case 'phone':
-            validationErrors.phone = 'Số điện thoại không hợp lệ'
-            break
-    }
 }
 
 </script>

@@ -11,11 +11,6 @@ export const useUsersAPI = () => {
     // Pagination settings (persistent across sessions)
     const { itemsPerPage, itemsPerPageOptions, setItemsPerPage } = usePaginationSettings()
 
-    // Watch itemsPerPage changes to reset current page
-    watch(itemsPerPage, () => {
-        currentPage.value = 1
-    })
-
     // Search and Filter State
     const searchQuery = ref('')
     const selectedRoleFilter = ref('')
@@ -25,6 +20,52 @@ export const useUsersAPI = () => {
     // Sort State
     const sortColumn = ref('')
     const sortDirection = ref('asc')
+
+    // Form state
+    const editingUser = ref(null)
+    const detailUser = ref(null)
+    const showCreateForm = ref(false)
+    const showDetailModal = ref(false)
+    const showEditForm = ref(false)
+    const showDeleteConfirm = ref(false)
+    const showResetPasswordForm = ref(false)
+    const userToDelete = ref(null)
+    const userToResetPassword = ref(null)
+    const resetPasswordResult = ref(null)
+
+    // API Base URL
+    const config = useRuntimeConfig()
+    const API_BASE = config.public.apiBase
+
+    // Helper to get auth headers (cookies sent automatically)
+    const getAuthHeaders = () => {
+        return {
+            'Content-Type': 'application/json'
+            // Cookie will be sent automatically by browser
+        }
+    }
+
+    // Form data
+    const createForm = reactive({
+        name: '',
+        username: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: '',
+        role_id: null,
+        is_active: true
+    })
+
+    const editForm = reactive({
+        id: null,
+        name: '',
+        username: '',
+        email: '',
+        phone: '',
+        role_id: null,
+        is_active: true
+    })
 
     // Filtered and paginated users
     const filteredUsers = computed(() => {
@@ -125,51 +166,10 @@ export const useUsersAPI = () => {
         return { ...roleStats, ...statusStats, total: users.value.length }
     })
 
-    // Form state
-    const editingUser = ref(null)
-    const detailUser = ref(null)
-    const showCreateForm = ref(false)
-    const showDetailModal = ref(false)
-    const showEditForm = ref(false)
-    const showDeleteConfirm = ref(false)
-    const showResetPasswordForm = ref(false)
-    const userToDelete = ref(null)
-    const userToResetPassword = ref(null)
-    const resetPasswordResult = ref(null)
-
-    // Form data
-    const createForm = reactive({
-        name: '',
-        username: '',
-        email: '',
-        phone: '',
-        password: '',
-        confirmPassword: '',
-        role_id: null,
-        is_active: true
+    // Watch itemsPerPage changes to reset current page
+    watch(itemsPerPage, () => {
+        currentPage.value = 1
     })
-
-    const editForm = reactive({
-        id: null,
-        name: '',
-        username: '',
-        email: '',
-        phone: '',
-        role_id: null,
-        is_active: true
-    })
-
-    // API Base URL
-    const config = useRuntimeConfig()
-    const API_BASE = config.public.apiBase
-
-    // Helper to get auth headers (cookies sent automatically)
-    const getAuthHeaders = () => {
-        return {
-            'Content-Type': 'application/json'
-            // Cookie will be sent automatically by browser
-        }
-    }
 
     // API Methods
     const fetchUsers = async () => {
@@ -331,6 +331,39 @@ export const useUsersAPI = () => {
         }
     }
 
+    const toggleUserStatus = async (userId) => {
+        loading.value = true
+        error.value = null
+
+        try {
+            const user = users.value.find(u => u.id === userId)
+            if (!user) throw new Error('User not found')
+
+            // Gọi API mới để toggle status
+            const response = await fetch(`${API_BASE}/users/${userId}/toggle-status`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                credentials: 'include'
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP ${response.status}`)
+            }
+
+            // Update local state theo kết quả trả về
+            user.is_active = data.data?.is_active
+            return { success: true, message: data.message }
+
+        } catch (err) {
+            error.value = err.message
+            return { success: false, message: err.message }
+        } finally {
+            loading.value = false
+        }
+    }
+
     const resetPassword = async (userId) => {
         loading.value = true
         error.value = null
@@ -422,39 +455,6 @@ export const useUsersAPI = () => {
     const goToPage = (page) => {
         if (page >= 1 && page <= totalPages.value) {
             currentPage.value = page
-        }
-    }
-
-    const toggleUserStatus = async (userId) => {
-        loading.value = true
-        error.value = null
-
-        try {
-            const user = users.value.find(u => u.id === userId)
-            if (!user) throw new Error('User not found')
-
-            // Gọi API mới để toggle status
-            const response = await fetch(`${API_BASE}/users/${userId}/toggle-status`, {
-                method: 'PUT',
-                headers: getAuthHeaders(),
-                credentials: 'include'
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP ${response.status}`)
-            }
-
-            // Update local state theo kết quả trả về
-            user.is_active = data.data?.is_active
-            return { success: true, message: data.message }
-
-        } catch (err) {
-            error.value = err.message
-            return { success: false, message: err.message }
-        } finally {
-            loading.value = false
         }
     }
 
@@ -562,14 +562,6 @@ export const useUsersAPI = () => {
         return false
     }
 
-    // Initialize
-    onMounted(async () => {
-        await Promise.all([
-            fetchUsers(),
-            fetchAvailableRoles()
-        ])
-    })
-
     // Event handler logic for page to import directly
     // These handlers only call the composable's own methods and should be used in the page
     const handleCreateUser = async ({ validateCreateForm, showError, showSuccess, parseBackendValidationError, validationErrors, setBackendValidationErrors }) => {
@@ -658,6 +650,14 @@ export const useUsersAPI = () => {
         }
         return result
     }
+
+    // Initialize
+    onMounted(async () => {
+        await Promise.all([
+            fetchUsers(),
+            fetchAvailableRoles()
+        ])
+    })
 
     return {
         // State
