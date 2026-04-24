@@ -232,9 +232,9 @@
                                 <td class="contact-date">{{ formatDate(contact.created_at) }}</td>
                                 <td>
                                     <div class="contact-actions">
-                                        <button @click="handleOpenViewDetail(contact)" class="btn-action btn-view"
+                                        <button @click="handleOpenViewDetail(contact)" class="btn-action btn-edit"
                                             title="Xem chi tiết">
-                                            <i class="fas fa-eye"></i>
+                                            <i class="fas fa-edit"></i>
                                         </button>
                                         <!-- <button @click="handleOpenEditForm(contact)" class="btn-action btn-edit"
                                             title="Chỉnh sửa">
@@ -525,10 +525,10 @@
                     </div>
                     <div class="modal-footer">
                         <button @click="handleCloseAllModals" class="btn btn-secondary">Hủy</button>
-                        <button @click="handleDeleteContact" :disabled="isDeleting" class="btn btn-danger">
-                            <i v-if="isDeleting" class="fas fa-spinner fa-spin"></i>
+                        <button @click="handleDeleteContactWrapper" :disabled="loading" class="btn btn-danger">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                             <i v-else class="fas fa-trash"></i>
-                            {{ isDeleting ? 'Đang xóa...' : 'Xóa liên hệ' }}
+                            {{ loading ? 'Đang xóa...' : 'Xóa liên hệ' }}
                         </button>
                     </div>
                 </div>

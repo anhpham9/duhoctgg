@@ -565,8 +565,8 @@ export const deleteContact = async (req, res) => {
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
 
-        // Check if user has permission to delete contacts (only superadmin, admin, manager - NOT consultant)
-        if (![1, 2, 3].includes(currentUserRole)) {
+        // Check if user has permission to delete contacts (only superadmin - NOT consultant, admin, manager)
+        if (![1].includes(currentUserRole)) {
             SecurityLogger.logPermissionViolation(
                 currentUserId,
                 req.ip,

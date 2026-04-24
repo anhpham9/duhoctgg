@@ -539,10 +539,10 @@ export const useContactsAPI = () => {
     const canDeleteContact = (currentUser) => {
         if (!currentUser) return false
         const currentRoleName = currentUser.role_name
-        // Only consultant cannot delete contacts
-        if (currentRoleName === ROLES.CONSULTANT) return false
-        // Other roles can delete contacts
-        return true
+        // Only superadmin can delete contacts
+        if (currentRoleName === ROLES.SUPERADMIN) return true
+        // Other roles cannot delete contacts
+        return false
     }
 
     const handleUpdateContact = async ({ validateEditForm, showError, showSuccess, parseBackendValidationError, editValidationErrors, setBackendValidationErrors }) => {
