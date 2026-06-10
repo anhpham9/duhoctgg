@@ -4,11 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false, // Tắt SSR hoàn toàn để test middleware
   
-  // Router config for active classes
-  router: {
-    linkActiveClass: 'active',
-    linkExactActiveClass: 'active'
-  },
+  
   
   // Nuxt 4: Sử dụng app.head cho external CSS
   app: {

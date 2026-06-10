@@ -217,6 +217,12 @@ node scripts/seeds/seedPermissions.js
 node scripts/seeds/seedRolePermissions.js
 ```
 
+### Seed full dữ liệu
+
+```
+node scripts/seeds/seedAll.cjs
+```
+
 ---
 
 ## 👑 Tạo tài khoản Super Admin

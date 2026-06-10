@@ -54,6 +54,18 @@ CREATE TABLE users (
 );
 ```
 
+refresh_tokens
+
+```SQL
+CREATE TABLE refresh_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER,
+  token TEXT,
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ### 🧱 5. Bảng categories
 
 ```SQL

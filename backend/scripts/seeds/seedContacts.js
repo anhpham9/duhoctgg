@@ -31,8 +31,7 @@ const run = async () => {
         for (const c of contacts) {
             await db.query(
                 `INSERT INTO contacts (name, email, phone, message, status, contact_method, social_contact, assigned_to, first_contacted_at, closed_at, created_at, updated_at)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-                 ON CONFLICT (email) DO NOTHING`,
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
                 c
             );
         }

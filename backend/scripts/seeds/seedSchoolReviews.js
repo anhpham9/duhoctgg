@@ -1,6 +1,25 @@
 
 import db from "../../src/config/db.js";
-import faker from "faker";
+
+const firstNames = ['An', 'Binh', 'Chi', 'Dung', 'Huy', 'Khanh', 'Linh', 'Minh', 'Nam', 'Phuong', 'Quang', 'Trang', 'Tuan', 'Vy'];
+const lastNames = ['Nguyen', 'Tran', 'Le', 'Pham', 'Hoang', 'Phan', 'Vu', 'Dang', 'Bui', 'Do'];
+const reviewTemplates = [
+  'Giang vien nhiet tinh, ho tro hoc vien rat tot. Co so vat chat hien dai va lop hoc de theo sat.',
+  'Moi truong hoc tap than thien, chuong trinh hoc phu hop cho du hoc sinh quoc te.',
+  'Thong tin ve hoc bong ro rang, phong dao tao phan hoi nhanh va chuyen nghiep.',
+  'Toi hai long voi chat luong giang day va cach nha truong ho tro trong qua trinh hoc tap.'
+];
+
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randFrom = (arr) => arr[randInt(0, arr.length - 1)];
+
+const randomName = () => `${randFrom(lastNames)} ${randFrom(firstNames)}`;
+const randomAvatarUrl = () => `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(randomName())}`;
+const randomCoursePeriod = () => {
+  const start = randInt(2021, 2026);
+  const end = randInt(start + 1, start + 4);
+  return `${start}-${end}`;
+};
 
 const nationalities = [
   'Việt Nam', 'Nhật Bản', 'Hàn Quốc', 'Trung Quốc', 'Mỹ', 'Úc', 'Anh', 'Pháp', 'Đức', 'Thái Lan'
@@ -17,14 +36,14 @@ const run = async () => {
 
     let total = 0;
     for (const schoolId of schoolIds) {
-      const numReviews = faker.datatype.number({ min: 2, max: 4 });
+      const numReviews = randInt(2, 4);
       for (let i = 0; i < numReviews; i++) {
-        const studentName = faker.name.findName();
-        const avatarUrl = faker.image.avatar();
-        const nationality = faker.random.arrayElement(nationalities);
-        const coursePeriod = `${faker.datatype.number({ min: 2021, max: 2026 })}-${faker.datatype.number({ min: 2027, max: 2030 })}`;
-        const rating = faker.datatype.number({ min: 3, max: 5 });
-        const content = faker.lorem.paragraphs(2);
+        const studentName = randomName();
+        const avatarUrl = randomAvatarUrl();
+        const nationality = randFrom(nationalities);
+        const coursePeriod = randomCoursePeriod();
+        const rating = randInt(3, 5);
+        const content = `${randFrom(reviewTemplates)} ${randFrom(reviewTemplates)}`;
         await db.query(
           `INSERT INTO school_reviews (school_id, student_name, avatar_url, nationality, course_period, rating, content)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,

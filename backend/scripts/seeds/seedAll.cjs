@@ -33,10 +33,11 @@ async function runAllSeeds() {
       execSync(`node "${scriptPath}"`, { stdio: 'inherit' });
     } catch (err) {
       console.error(`Error running ${script}:`, err.message);
-      // Continue to next script
+      console.error(`\nSeeding stopped at ${script}.`);
+      process.exit(1);
     }
   }
-  console.log('\nAll seed scripts executed!');
+  console.log('\nAll seed scripts executed successfully!');
 }
 
 runAllSeeds();

@@ -5,10 +5,13 @@ import { errorHandler, notFoundHandler } from "./utils/errorHandler.js";
 import { rateLimiter } from "./middlewares/rateLimiter.js";
 import { sanitizeInputs } from "./utils/sanitizer.js";
 
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import session from "express-session";
+
 
 import authRoutes from "./routes/auth.routes.js";
 import usersRoutes from "./routes/users.routes.js";
@@ -20,6 +23,22 @@ import regionsRoutes from "./routes/regions.routes.js";
 import schoolTypesRoutes from "./routes/schoolTypes.routes.js";
 import faqsRoutes from "./routes/faqs.routes.js";
 import schoolReviewsRoutes from "./routes/schoolReviews.routes.js";
+// Bổ sung các route cho các bảng mở rộng
+import notificationsRoutes from "./routes/notifications.routes.js";
+// import notificationSettingsRoutes from "./routes/notificationSettings.routes.js";
+// import filesRoutes from "./routes/files.routes.js";
+// import auditLogsRoutes from "./routes/auditLogs.routes.js";
+// import activityLogsRoutes from "./routes/activityLogs.routes.js";
+
+
+// RBAC/permission middleware mẫu
+const checkPermission = (permission) => (req, res, next) => {
+    // Giả sử req.user.permissions là mảng quyền
+    if (req.user && req.user.permissions && req.user.permissions.includes(permission)) {
+        return next();
+    }
+    return res.status(403).json({ success: false, message: "Forbidden: insufficient permissions" });
+};
 
 const app = express();
 
@@ -41,17 +60,12 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// CORS with credentials support
+
+// CORS with credentials support (allowedOrigins từ biến môi trường)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'https://yourdomain.com'
-        ];
-        
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -63,9 +77,18 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+
 // Cookie parser for httpOnly cookies
 app.use(cookieParser());
 app.use(express.json());
+
+// Session middleware (dùng cho session-based auth)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, secure: false } // secure: true nếu dùng HTTPS
+}));
 
 // Request logging middleware
 app.use(requestLogger);
@@ -92,32 +115,44 @@ app.get("/", (req, res) => {
 // auth routes
 app.use("/api/auth", authRoutes);
 
+
 // users CRUD routes (RBAC protected)
-app.use("/api/users", usersRoutes);
+app.use("/api/users", authenticate, /*checkPermission('users:read')*/ usersRoutes);
 
 // contacts CRUD routes (RBAC protected)
-app.use("/api/contacts", contactsRoutes);
+app.use("/api/contacts", authenticate, /*checkPermission('contacts:read')*/ contactsRoutes);
 
 // news CRUD routes (RBAC protected)
-app.use("/api/news", newsRoutes);
+app.use("/api/news", authenticate, /*checkPermission('news:read')*/ newsRoutes);
 
-// categories CRUD routes (RBAC protected)
-app.use("/api/categories", categoriesRoutes);
+// categories of news CRUD routes (RBAC protected)
+app.use("/api/categories", authenticate, /*checkPermission('categories:read')*/ categoriesRoutes);
 
 // schools CRUD routes (RBAC protected)
-app.use("/api/schools", schoolsRoutes);
+app.use("/api/schools", authenticate, /*checkPermission('schools:read')*/ schoolsRoutes);
 
-// regions CRUD routes (RBAC protected)
-app.use("/api/regions", regionsRoutes);
+// regions of schools CRUD routes (RBAC protected)
+app.use("/api/regions", authenticate, /*checkPermission('regions:read')*/ regionsRoutes);
 
 // school types CRUD routes (RBAC protected)
-app.use("/api/school-types", schoolTypesRoutes);
+app.use("/api/school-types", authenticate, /*checkPermission('school_types:read')*/ schoolTypesRoutes);
 
 // FAQs CRUD routes (RBAC protected)
-app.use("/api/faqs", faqsRoutes);
+app.use("/api/faqs", authenticate, /*checkPermission('faqs:read')*/ faqsRoutes);
 
 // school reviews CRUD routes (RBAC protected)
-app.use("/api/school-reviews", schoolReviewsRoutes);
+app.use("/api/school-reviews", authenticate, /*checkPermission('school_reviews:read')*/ schoolReviewsRoutes);
+
+// notifications CRUD routes
+app.use("/api/notifications", authenticate, notificationsRoutes);
+// notification_settings CRUD routes
+// app.use("/api/notification-settings", authenticate, notificationSettingsRoutes);
+// files CRUD routes
+// app.use("/api/files", authenticate, filesRoutes);
+// audit_logs CRUD routes
+// app.use("/api/audit-logs", authenticate, auditLogsRoutes);
+// activity_logs CRUD routes
+// app.use("/api/activity-logs", authenticate, activityLogsRoutes);
 
 // test protected route
 app.get("/api/me", authenticate, (req, res) => {
