@@ -59,7 +59,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
                     return;
                 }
 
-                console.log('👤 User data from API:', user);
+                // console.log('👤 User data from API:', user);
 
                 // Superadmin có tất cả quyền
                 if (user.role_id === 1) {

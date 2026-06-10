@@ -18,6 +18,15 @@ export const authenticate = (req, res, next) => {
 
         const user = verifyToken(token);
 
+        // Reject stale tokens that were issued before the role_id migration
+        if (!user.role_id) {
+            res.clearCookie('authToken');
+            return res.status(401).json({
+                success: false,
+                message: "Session expired, please log in again"
+            });
+        }
+
         req.user = user;
 
         next();

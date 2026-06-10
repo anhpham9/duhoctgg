@@ -1419,6 +1419,13 @@ definePageMeta({
     middleware: ["auth", "permission"],
     ssr: false
 })
+
+// ========================================
+// PAGE TITLE & SEO
+// ========================================
+useHead({
+    title: 'Quản lý người dùng - Admin'
+})
 </script>
 
 <style scoped>
