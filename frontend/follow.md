@@ -464,7 +464,7 @@ import "~/assets/css/public.css";
 
 ### 🧱 Cách 1 (khuyên dùng trong Nuxt)
 
-👉 KHÔNG dùng <script> như HTML
+👉 KHÔNG dùng `<script>` như `HTML`
 
 👉 dùng plugin
 
@@ -1403,4 +1403,95 @@ definePageMeta({
     ssr: false
 });
 </script>
+```
+
+# ABC
+
+## Restore and Backup Feature
+
+Đã làm xong backend end-to-end cho backup/restore để khớp với frontend trang backup.
+
+**Đã triển khai**
+1. Tạo bảng lịch sử backup (migration):
+    create_backup_records_table.sql
+2. Thêm service backup đầy đủ:
+    backup.service.js
+
+    - Tạo backup thủ công (json snapshot dữ liệu bảng public)
+    - Upload backup file lên server
+    - Download theo id
+    - Restore từ file backup json
+    - Lịch sử backup
+    - Cấu hình auto backup daily
+    - Cron chạy mỗi phút, đến đúng giờ thì chạy daily backup
+    - Retention tự động xóa bản cũ, giữ tối đa 30 bản
+3. Thêm controller backup:
+    backup.controller.js
+    - Role check cho Superadmin/Admin
+    - Audit log cho create/upload/download/restore/config update
+    - Xử lý lỗi chuẩn response
+4. Mở rộng routes settings:
+    settings.routes.js
+    - GET /settings/backups/history
+    - POST /settings/backups/create
+    - POST /settings/backups/upload
+    - GET /settings/backups/:id/download
+    - POST /settings/backups/restore
+    - GET /settings/backups/config
+    - PUT /settings/backups/config
+5. Bật scheduler khi app start:
+    app.js
+    - Gọi startBackupScheduler khi server listen
+6. Tăng độ an toàn transaction restore:
+    db.js
+    - Thêm getClient để dùng transaction đúng connection
+        backup.service.js
+    - Restore dùng BEGIN/COMMIT/ROLLBACK trên cùng client
+7. Cài dependency upload:
+    package.json
+    - Thêm multer
+        package-lock.json
+    - Lock dependency tương ứng
+
+
+**Đã kiểm tra**
+
+1. Kiểm tra lỗi file: không có lỗi ở các file backend mới/sửa.
+2. Smoke-check import module backup service: thành công.
+
+Việc bạn cần chạy để dùng ngay
+
+1. Chạy migration:
+
+```
+psql -U <db_user> -d <db_name> -f create_backup_records_table.sql
+```
+
+2. Khởi động lại backend:
+    npm run dev (trong thư mục backend)
+
+**Lưu ý kỹ thuật*
+
+1. Restore hiện hỗ trợ chuẩn backup json do hệ thống tạo.
+2. Nếu upload file zip/sql/bak không đúng format json snapshot, endpoint restore sẽ trả lỗi định dạng không hỗ trợ. Upload vẫn lưu vào lịch sử bình thường.
+3. Retention được ép cứng giữ 30 bản gần nhất theo yêu cầu.
+
+**Response mẫu khi gọi endpoint**
+
+```
+{
+  "success": true,
+  "data": {
+    "schedulerRunning": true,
+    "startedAt": "2026-06-12T02:00:00.000Z",
+    "lastRunAt": "2026-06-12T02:00:00.000Z",
+    "lastRunStatus": "success",
+    "lastRunBackupId": 5,
+    "lastRunBackupName": "backup-auto-2026-06-12T02-00-00-000Z.json",
+    "lastErrorMessage": null,
+    "totalAutoRuns": 3,
+    "config": { "enabled": true, "frequency": "daily", "runAt": "02:00", "retentionCount": 30 },
+    "nextRunAt": "2026-06-13T02:00:00.000Z"
+  }
+}
 ```

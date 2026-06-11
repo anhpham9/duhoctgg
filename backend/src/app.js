@@ -24,6 +24,8 @@ import schoolTypesRoutes from "./routes/schoolTypes.routes.js";
 import faqsRoutes from "./routes/faqs.routes.js";
 import schoolReviewsRoutes from "./routes/schoolReviews.routes.js";
 import staticPagesRoutes from "./routes/staticPages.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
+import { backupService } from "./services/backup.service.js";
 // Bổ sung các route cho các bảng mở rộng
 import notificationsRoutes from "./routes/notifications.routes.js";
 // import notificationSettingsRoutes from "./routes/notificationSettings.routes.js";
@@ -147,6 +149,9 @@ app.use("/api/school-reviews", authenticate, /*checkPermission('school_reviews:r
 // static pages CRUD routes (RBAC protected)
 app.use("/api/static-pages", authenticate, staticPagesRoutes);
 
+// settings CRUD routes (RBAC protected)
+app.use("/api/settings", authenticate, settingsRoutes);
+
 // notifications CRUD routes
 app.use("/api/notifications", authenticate, notificationsRoutes);
 // notification_settings CRUD routes
@@ -172,6 +177,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
+    backupService.startBackupScheduler();
+
     logInfo('Server started successfully', {
         port: PORT,
         environment: process.env.NODE_ENV || 'development',

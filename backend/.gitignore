@@ -1,6 +1,9 @@
 # node_modules
 node_modules/
 
+# backups files
+backups/
+
 # env files (RẤT QUAN TRỌNG)
 .env
 .env.*

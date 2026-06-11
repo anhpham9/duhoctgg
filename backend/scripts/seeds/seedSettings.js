@@ -15,6 +15,11 @@ const settings = [
     description: 'URL logo chính của website.'
   },
   {
+    key: 'site_description',
+    value: 'Nền tảng thông tin du học Nhật Bản toàn diện, cập nhật tin tức, trường học, điều kiện và hỗ trợ.',
+    description: 'Mô tả website.'
+  },
+  {
     key: 'contact_email',
     value: 'support@duhocnb.vn',
     description: 'Email liên hệ chính.'

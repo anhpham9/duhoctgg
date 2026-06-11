@@ -311,3 +311,21 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_activity_logs_user ON activity_logs(user_id);
+
+-- Create table for backup history and file metadata
+CREATE TABLE IF NOT EXISTS backup_records (
+    id BIGSERIAL PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL UNIQUE,
+    file_path TEXT NOT NULL,
+    backup_type VARCHAR(20) NOT NULL CHECK (backup_type IN ('manual', 'auto', 'upload')),
+    status VARCHAR(20) NOT NULL DEFAULT 'success' CHECK (status IN ('success', 'failed', 'running')),
+    file_size BIGINT DEFAULT 0,
+    created_by BIGINT REFERENCES users(id),
+    restored_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_backup_records_created_at ON backup_records(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backup_records_type ON backup_records(backup_type);
+CREATE INDEX IF NOT EXISTS idx_backup_records_status ON backup_records(status);
+CREATE INDEX IF NOT EXISTS idx_backup_records_created_by ON backup_records(created_by);

@@ -60,8 +60,8 @@ feature/frontend-contacts-admin
 feature/frontend-news-admin
 feature/frontend-schools-admin
 feature/frontend-contents-admin
+feature/frontend-settings-admin
 feature/frontend-news-public
-feature/frontend-news-admin
 feature/frontend-auth-rbac
 
 ```

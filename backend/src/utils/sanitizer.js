@@ -785,6 +785,59 @@ export class InputSanitizer {
         return sanitized;
     }
 
+    // Comprehensive general settings data sanitization
+    static sanitizeGeneralSettingsData(settingsData) {
+        const payload = settingsData || {};
+        const sanitized = {};
+
+        sanitized.siteName = this.sanitizeText(payload.siteName || '', {
+            maxLength: 255,
+            escapeHtml: false
+        });
+
+        sanitized.siteLogoUrl = this.sanitizeUrl(payload.siteLogoUrl || '');
+
+        sanitized.siteDescription = this.sanitizeText(payload.siteDescription || '', {
+            maxLength: 2000,
+            escapeHtml: false
+        });
+
+        sanitized.contactEmail = '';
+        const emailRaw = String(payload.contactEmail || '').trim();
+        if (emailRaw) {
+            sanitized.contactEmail = this.sanitizeEmail(emailRaw);
+        }
+
+        sanitized.phone = this.sanitizePhone(payload.phone || '');
+        sanitized.hotline = this.sanitizePhone(payload.hotline || '');
+        sanitized.facebookUrl = this.sanitizeUrl(payload.facebookUrl || '');
+        sanitized.zaloUrl = this.sanitizeUrl(payload.zaloUrl || '');
+
+        sanitized.address = this.sanitizeText(payload.address || '', {
+            maxLength: 1000,
+            escapeHtml: false
+        });
+
+        sanitized.seoDefaultTitle = this.sanitizeText(payload.seoDefaultTitle || '', {
+            maxLength: 255,
+            escapeHtml: false
+        });
+
+        sanitized.seoDefaultDescription = this.sanitizeText(payload.seoDefaultDescription || '', {
+            maxLength: 2000,
+            escapeHtml: false
+        });
+
+        sanitized.maintenanceMode = this.sanitizeBoolean(payload.maintenanceMode, false);
+
+        logger.debug('General settings data sanitized', {
+            originalFields: Object.keys(payload),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
     // Sanitize JSON data
     static sanitizeJSONData(jsonData) {
         if (typeof jsonData !== 'object' || jsonData === null) {

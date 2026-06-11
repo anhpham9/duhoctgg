@@ -347,6 +347,27 @@ const staticPagesLimiter = rateLimit({
     }
 });
 
+// Rate limiter for settings endpoints
+const settingsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 80,
+    message: {
+        success: false,
+        message: "Too many requests to settings API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for settings endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
 export const rateLimiter = {
     auth: authLimiter,
     users: usersLimiter,
@@ -359,6 +380,7 @@ export const rateLimiter = {
     faqs: faqsLimiter,
     schoolReviews: schoolReviewsLimiter,
     staticPages: staticPagesLimiter,
+    settings: settingsLimiter,
     global: globalLimiter,
     strict: strictLimiter,
     upload: uploadLimiter,
@@ -377,6 +399,7 @@ export const rateLimiter = {
     faqsLimiter,
     schoolReviewsLimiter,
     staticPagesLimiter,
+    settingsLimiter,
     globalLimiter,
     strictLimiter,
     uploadLimiter,
