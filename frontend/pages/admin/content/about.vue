@@ -3,15 +3,15 @@
         <div v-if="loadingUser || !hasPermission" class="permission-check">
             <div v-if="loadingUser" class="loading-permission">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Dang kiem tra quyen truy cap...</p>
+                <p>Đang kiểm tra quyền truy cập...</p>
             </div>
             <div v-else class="permission-denied">
                 <i class="fas fa-shield-alt"></i>
-                <h3>Khong the truy cap Quan ly noi dung Gioi thieu</h3>
-                <p>Chi Superadmin, Admin va Manager moi co the quan ly noi dung nay.</p>
+                <h3>Không thể truy cập Quản lý nội dung About</h3>
+                <p>Chỉ Superadmin, Admin và Manager mới có thể quản lý nội dung này.</p>
                 <NuxtLink to="/admin" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i>
-                    Quay lai Dashboard
+                    Quay lại Dashboard
                 </NuxtLink>
             </div>
         </div>
@@ -21,14 +21,14 @@
                 <div class="header-content">
                     <h1>
                         <i class="fas fa-file-alt"></i>
-                        Quan ly noi dung Gioi thieu
+                        Quản lý nội dung About
                     </h1>
-                    <p>Dong bo du lieu voi static_pages (slug: about)</p>
+                    <p>Cập nhật SEO, hero và nội dung chi tiết cho trang About.</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-secondary" :disabled="loading" @click="loadPageData">
                         <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-                        Lam moi
+                        Làm mới
                     </button>
                     <button class="btn btn-outline" @click="previewPublicPage">
                         <i class="fas fa-eye"></i>
@@ -37,32 +37,32 @@
                     <button class="btn btn-primary" :disabled="saving || !hasChanges" @click="savePageData">
                         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
                         <i v-else class="fas fa-save"></i>
-                        Luu thay doi
+                        {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
                     </button>
                 </div>
             </div>
 
             <div v-if="loading" class="loading-state">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Dang tai noi dung...</p>
+                <p>Đang tải nội dung...</p>
             </div>
 
             <div v-else class="form-layout">
                 <div class="content-section">
                     <div class="section-header">
-                        <h3><i class="fas fa-info-circle"></i> Thong tin trang</h3>
-                        <p>Thong tin tong quan cua static page</p>
+                        <h3><i class="fas fa-info-circle"></i> Thông tin trang</h3>
+                        <p>Thông tin tổng quan của trang</p>
                     </div>
                     <div class="form-grid two-columns">
                         <div class="form-group">
-                            <label>Tieu de trang <span class="required">*</span></label>
+                            <label>Tiêu đề trang <span class="required">*</span></label>
                             <input
                                 v-model.trim="form.title"
                                 @input="clearFieldError('title')"
                                 type="text"
                                 class="form-control"
                                 :class="{ 'is-invalid': !!formErrors.title }"
-                                placeholder="Vi du: Ve chung toi"
+                                placeholder="Ví dụ: Về chúng tôi"
                             >
                             <p v-if="formErrors.title" class="field-error">{{ formErrors.title }}</p>
                         </div>
@@ -71,14 +71,14 @@
                             <input type="text" class="form-control" :value="form.slug" disabled>
                         </div>
                         <div class="form-group">
-                            <label>Trang thai</label>
+                            <label>Trạng thái</label>
                             <select v-model="form.status" class="form-control">
                                 <option value="draft">draft</option>
                                 <option value="published">published</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Loai trang</label>
+                            <label>Loại trang</label>
                             <input type="text" class="form-control" :value="form.type" disabled>
                         </div>
                     </div>
@@ -87,16 +87,16 @@
                 <div class="content-section">
                     <div class="section-header">
                         <h3><i class="fas fa-heading"></i> Hero</h3>
-                        <p>Noi dung hien thi phan dau trang</p>
+                        <p>Nội dung hiển thị phần đầu trang</p>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Hero title</label>
-                            <input v-model.trim="form.hero_title" type="text" class="form-control" placeholder="Nhap hero title">
+                            <input v-model.trim="form.hero_title" type="text" class="form-control" placeholder="Nhập hero title">
                         </div>
                         <div class="form-group">
                             <label>Hero description</label>
-                            <textarea v-model="form.hero_description" class="form-control" rows="3" placeholder="Nhap mo ta hero"></textarea>
+                            <textarea v-model="form.hero_description" class="form-control" rows="3" placeholder="Nhập mô tả hero"></textarea>
                         </div>
                     </div>
                 </div>
@@ -104,32 +104,32 @@
                 <div class="content-section">
                     <div class="section-header">
                         <h3><i class="fas fa-search"></i> SEO</h3>
-                        <p>Tieu de va mo ta metadata</p>
+                        <p>Tiêu đề và mô tả metadata</p>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Meta title</label>
-                            <input v-model.trim="form.meta_title" type="text" class="form-control" maxlength="255" placeholder="Nhap meta title">
-                            <small class="field-hint">{{ form.meta_title.length }}/255 ky tu</small>
+                            <input v-model.trim="form.meta_title" type="text" class="form-control" maxlength="255" placeholder="Nhập meta title">
+                            <small class="field-hint">{{ form.meta_title.length }}/255 ký tự</small>
                         </div>
                         <div class="form-group">
                             <label>Meta description</label>
-                            <textarea v-model="form.meta_description" class="form-control" rows="3" maxlength="500" placeholder="Nhap meta description"></textarea>
-                            <small class="field-hint">{{ form.meta_description.length }}/500 ky tu</small>
+                            <textarea v-model="form.meta_description" class="form-control" rows="3" maxlength="500" placeholder="Nhập meta description"></textarea>
+                            <small class="field-hint">{{ form.meta_description.length }}/500 ký tự</small>
                         </div>
                     </div>
                 </div>
 
-                <div class="content-section">
+                <div v-if="!isDynamicPage" class="content-section">
                     <div class="section-header">
-                        <h3><i class="fas fa-pen"></i> Noi dung chinh</h3>
-                        <p>Noi dung luu trong bang page_contents</p>
+                        <h3><i class="fas fa-pen"></i> Nội dung chính</h3>
+                        <p>Nội dung lưu trong bảng page_contents</p>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Content</label>
-                            <textarea v-model="form.content" class="form-control content-editor" rows="16" placeholder="Nhap noi dung trang gioi thieu..."></textarea>
-                            <small class="field-hint">{{ form.content.length }} ky tu</small>
+                            <textarea v-model="form.content" class="form-control content-editor" rows="16" placeholder="Nhập nội dung trang About..."></textarea>
+                            <small class="field-hint">{{ form.content.length }} ký tự</small>
                         </div>
                     </div>
                 </div>
@@ -137,12 +137,12 @@
                 <div class="form-actions">
                     <button class="btn btn-secondary" :disabled="saving" @click="restoreSnapshot">
                         <i class="fas fa-undo"></i>
-                        Khoi phuc
+                        Khôi phục
                     </button>
                     <button class="btn btn-primary" :disabled="saving || !hasChanges" @click="savePageData">
                         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
                         <i v-else class="fas fa-save"></i>
-                        Luu thay doi
+                        {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
                     </button>
                 </div>
             </div>
@@ -165,10 +165,10 @@ definePageMeta({
 })
 
 useHead({
-    title: 'Quan ly noi dung Gioi thieu - Admin'
+    title: 'Quản lý nội dung About - Admin'
 })
 
-const ABOUT_SLUG = 'about'
+const PAGE_SLUG = 'about'
 
 const config = useRuntimeConfig()
 const API_BASE = config.public.apiBase
@@ -183,15 +183,17 @@ const saving = ref(false)
 
 const form = reactive({
     title: '',
-    slug: ABOUT_SLUG,
+    slug: PAGE_SLUG,
     hero_title: '',
     hero_description: '',
     meta_title: '',
     meta_description: '',
-    type: 'static',
+    type: '',
     status: 'published',
     content: ''
 })
+
+const isDynamicPage = computed(() => form.type === 'dynamic')
 
 const snapshot = ref(null)
 
@@ -201,7 +203,7 @@ const formErrors = reactive({
 
 const normalizePayload = (payload = {}) => ({
     title: payload.title || '',
-    slug: payload.slug || ABOUT_SLUG,
+    slug: payload.slug || PAGE_SLUG,
     hero_title: payload.hero_title || '',
     hero_description: payload.hero_description || '',
     meta_title: payload.meta_title || '',
@@ -227,12 +229,12 @@ const validateForm = () => {
 
     const title = (form.title || '').trim()
     if (!title) {
-        formErrors.title = 'Tieu de trang la bat buoc'
+        formErrors.title = 'Tiêu đề trang là bắt buộc'
         return false
     }
 
     if (title.length < 3) {
-        formErrors.title = 'Tieu de phai co it nhat 3 ky tu'
+        formErrors.title = 'Tiêu đề phải có ít nhất 3 ký tự'
         return false
     }
 
@@ -248,7 +250,7 @@ const applyForm = (data = {}) => {
 const loadPageData = async () => {
     loading.value = true
     try {
-        const response = await fetch(`${API_BASE}/static-pages/${ABOUT_SLUG}`, {
+        const response = await fetch(`${API_BASE}/static-pages/${PAGE_SLUG}`, {
             method: 'GET',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
@@ -259,17 +261,17 @@ const loadPageData = async () => {
         if (!response.ok) {
             if (response.status === 404) {
                 applyForm({
-                    title: 'Ve chung toi',
-                    slug: ABOUT_SLUG,
-                    hero_title: 'Ve DuhocNB',
-                    hero_description: 'Su menh, tam nhin va doi ngu cua chung toi.',
-                    meta_title: 'Ve chung toi - DuhocNB',
-                    meta_description: 'Gioi thieu ve DuhocNB, doi ngu sang lap va gia tri cot loi.',
+                    title: 'Về chúng tôi',
+                    slug: PAGE_SLUG,
+                    hero_title: 'Về DuhocNB',
+                    hero_description: 'Sứ mệnh, tầm nhìn và đội ngũ của chúng tôi.',
+                    meta_title: 'Về chúng tôi - DuhocNB',
+                    meta_description: 'Giới thiệu về DuhocNB, đội ngũ sáng lập và giá trị cốt lõi.',
                     type: 'static',
                     status: 'published',
                     content: ''
                 })
-                showWarning('Chua co du lieu trang about tren he thong. Dang su dung gia tri mac dinh.')
+                showWarning('Chưa có dữ liệu trang about trên hệ thống. Đang sử dụng giá trị mặc định.')
                 return
             }
             throw new Error(data?.message || `HTTP ${response.status}`)
@@ -277,7 +279,7 @@ const loadPageData = async () => {
 
         applyForm(data?.data || {})
     } catch (error) {
-        showError(error.message || 'Khong the tai noi dung trang')
+        showError(error.message || 'Không thể tải nội dung trang')
     } finally {
         loading.value = false
     }
@@ -285,7 +287,7 @@ const loadPageData = async () => {
 
 const savePageData = async () => {
     if (!validateForm()) {
-        showError('Vui long kiem tra lai thong tin truoc khi luu')
+        showError('Vui lòng kiểm tra lại thông tin trước khi lưu')
         return
     }
 
@@ -301,7 +303,7 @@ const savePageData = async () => {
             content: form.content || ''
         }
 
-        const response = await fetch(`${API_BASE}/static-pages/${ABOUT_SLUG}`, {
+        const response = await fetch(`${API_BASE}/static-pages/${PAGE_SLUG}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -315,9 +317,9 @@ const savePageData = async () => {
         }
 
         applyForm(data?.data || payload)
-        showSuccess(data?.message || 'Da luu noi dung trang gioi thieu thanh cong')
+        showSuccess(data?.message || 'Đã lưu nội dung trang about thành công')
     } catch (error) {
-        showError(error.message || 'Khong the luu noi dung trang')
+        showError(error.message || 'Không thể lưu nội dung trang about')
     } finally {
         saving.value = false
     }
@@ -326,7 +328,7 @@ const savePageData = async () => {
 const restoreSnapshot = () => {
     if (!snapshot.value) return
     applyForm(snapshot.value)
-    showSuccess('Da khoi phuc ve noi dung gan nhat')
+    showSuccess('Đã khôi phục về nội dung gần nhất')
 }
 
 const previewPublicPage = () => {

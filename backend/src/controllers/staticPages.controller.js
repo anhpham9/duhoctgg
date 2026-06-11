@@ -5,6 +5,11 @@ import { SecurityLogger } from "../utils/securityLogger.js";
 
 const MANAGE_STATIC_PAGES_ROLES = [1, 2, 3];
 const ALLOWED_STATUSES = ["draft", "published"];
+const DYNAMIC_PAGE_SLUGS = ["home", "schools", "news", "contact"];
+
+const resolvePageTypeBySlug = (slug) => {
+    return DYNAMIC_PAGE_SLUGS.includes(slug) ? "dynamic" : "static";
+};
 
 const normalizeStatus = (status) => {
     const sanitized = InputSanitizer.sanitizeText(String(status || ""), { maxLength: 20 }).toLowerCase();
@@ -38,6 +43,7 @@ const sanitizePagePayload = (payload = {}, slugFromPath = "") => {
     });
 
     const slug = InputSanitizer.sanitizeSlug(slugFromPath || payload.slug || "");
+    const pageType = resolvePageTypeBySlug(slug);
 
     return {
         title,
@@ -46,7 +52,7 @@ const sanitizePagePayload = (payload = {}, slugFromPath = "") => {
         hero_description: heroDescription,
         meta_title: metaTitle,
         meta_description: metaDescription,
-        type: "static",
+        type: pageType,
         status: normalizeStatus(payload.status),
         content
     };
@@ -125,6 +131,7 @@ export const upsertStaticPageBySlug = async (req, res) => {
         const currentUserRole = req.user?.role_id;
         const currentUserId = req.user?.id;
         const payload = sanitizePagePayload(req.body, req.params.slug);
+        const shouldStoreContent = payload.type !== "dynamic" && Boolean((payload.content || "").trim());
 
         if (!MANAGE_STATIC_PAGES_ROLES.includes(currentUserRole)) {
             SecurityLogger.logPermissionViolation(
@@ -161,7 +168,9 @@ export const upsertStaticPageBySlug = async (req, res) => {
         logInfo("Static page upsert attempt", {
             slug: payload.slug,
             updatedBy: currentUserId,
-            status: payload.status
+            status: payload.status,
+            pageType: payload.type,
+            shouldStoreContent
         });
 
         const result = await db.query(
@@ -207,11 +216,17 @@ export const upsertStaticPageBySlug = async (req, res) => {
                 INSERT INTO page_contents (page_id, content, updated_at)
                 SELECT id, $10, CURRENT_TIMESTAMP
                 FROM upsert_page
+                WHERE $11
                 ON CONFLICT (page_id)
                 DO UPDATE SET
                     content = EXCLUDED.content,
                     updated_at = CURRENT_TIMESTAMP
                 RETURNING page_id, content, updated_at
+            ), delete_content AS (
+                DELETE FROM page_contents
+                WHERE page_id IN (SELECT id FROM upsert_page)
+                  AND $12
+                RETURNING page_id
             )
             SELECT
                 p.id,
@@ -226,10 +241,10 @@ export const upsertStaticPageBySlug = async (req, res) => {
                 p.updated_by,
                 p.created_at,
                 p.updated_at,
-                c.content,
-                c.updated_at AS content_updated_at
+                COALESCE(pc.content, '') AS content,
+                pc.updated_at AS content_updated_at
             FROM upsert_page p
-            LEFT JOIN upsert_content c ON c.page_id = p.id`,
+            LEFT JOIN page_contents pc ON pc.page_id = p.id`,
             [
                 payload.title,
                 payload.slug,
@@ -240,7 +255,9 @@ export const upsertStaticPageBySlug = async (req, res) => {
                 payload.type,
                 payload.status,
                 currentUserId,
-                payload.content
+                payload.content,
+                shouldStoreContent,
+                !shouldStoreContent
             ]
         );
 

@@ -11,7 +11,7 @@ const pages = [
     hero_description: 'Nền tảng thông tin du học Nhật Bản toàn diện.',
     meta_title: 'Trang chủ - DuhocNB',
     meta_description: 'Thông tin tổng quan về du học Nhật Bản, trường học, tin tức, điều kiện và hỗ trợ.',
-    type: 'static',
+    type: 'dynamic',
     status: 'published',
   },
   {
@@ -31,7 +31,7 @@ const pages = [
     hero_description: 'Tìm kiếm và khám phá các trường Nhật ngữ uy tín.',
     meta_title: 'Danh sách trường Nhật ngữ - DuhocNB',
     meta_description: 'Danh sách các trường Nhật ngữ, thông tin chi tiết, đánh giá và liên hệ.',
-    type: 'static',
+    type: 'dynamic',
     status: 'published',
   },
   {
@@ -51,7 +51,7 @@ const pages = [
     hero_description: 'Cập nhật tin tức mới nhất về du học Nhật Bản.',
     meta_title: 'Tin tức - DuhocNB',
     meta_description: 'Tin tức, sự kiện, thông báo và xu hướng du học Nhật Bản.',
-    type: 'static',
+    type: 'dynamic',
     status: 'published',
   },
   {
@@ -61,7 +61,7 @@ const pages = [
     hero_description: 'Gửi câu hỏi, góp ý hoặc yêu cầu hỗ trợ.',
     meta_title: 'Liên hệ - DuhocNB',
     meta_description: 'Thông tin liên hệ, hỗ trợ và phản hồi từ DuhocNB.',
-    type: 'static',
+    type: 'dynamic',
     status: 'published',
   },
   {
