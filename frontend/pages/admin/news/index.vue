@@ -140,6 +140,31 @@
             </div>
         </div>
 
+        <div v-if="showDeleteConfirm && newsToDelete" class="modal-overlay" @click="closeDeleteConfirm">
+            <div class="modal modal-small" @click.stop>
+                <div class="modal-header">
+                    <h3>Xác nhận xóa</h3>
+                    <button @click="closeDeleteConfirm" class="btn-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirmation">
+                        <i class="fas fa-exclamation-triangle warning-icon"></i>
+                        <p>Bạn có chắc chắn muốn xóa bài viết <strong>{{ newsToDelete.title }}</strong>?</p>
+                        <p class="warning-text">Thao tác này không thể hoàn tác!</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
+                    <button @click="confirmDeleteNews" type="button" class="btn btn-danger" :disabled="deletingId === newsToDelete.id">
+                        <i v-if="deletingId === newsToDelete.id" class="fas fa-spinner fa-spin"></i>
+                        {{ deletingId === newsToDelete.id ? 'Đang xóa...' : 'Xóa bài viết' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <Toast />
     </div>
 </template>
@@ -172,8 +197,7 @@ const {
 
 const {
     showSuccess,
-    showError,
-    showInfo
+    showError
 } = useNotifications()
 
 const hasPermission = computed(() => {
@@ -192,6 +216,8 @@ const perPage = 10
 const loading = ref(false)
 const error = ref('')
 const deletingId = ref(null)
+const showDeleteConfirm = ref(false)
+const newsToDelete = ref(null)
 
 const newsData = ref([])
 const categories = ref([])
@@ -283,15 +309,15 @@ watch(totalPages, (pages) => {
 })
 
 const createNews = () => {
-    showInfo('Trang tạo bài viết chưa được triển khai trong workspace này.')
+    navigateTo('/admin/news/create')
 }
 
-const editNews = () => {
-    showInfo('Trang chỉnh sửa bài viết chưa được triển khai trong workspace này.')
+const editNews = (id) => {
+    navigateTo(`/admin/news/edit/${id}`)
 }
 
-const viewNews = () => {
-    showInfo('Trang xem chi tiết bài viết chưa được triển khai trong workspace này.')
+const viewNews = (id) => {
+    navigateTo(`/admin/news/view/${id}`)
 }
 
 const deleteNews = async (id, title) => {
@@ -300,13 +326,21 @@ const deleteNews = async (id, title) => {
         return
     }
 
-    if (!confirm(`Bạn có chắc chắn muốn xóa bài viết "${title}"?`)) {
-        return
-    }
+    newsToDelete.value = { id, title }
+    showDeleteConfirm.value = true
+}
 
-    deletingId.value = id
+const closeDeleteConfirm = () => {
+    showDeleteConfirm.value = false
+    newsToDelete.value = null
+}
+
+const confirmDeleteNews = async () => {
+    if (!newsToDelete.value) return
+
+    deletingId.value = newsToDelete.value.id
     try {
-        const response = await fetch(`${API_BASE}/news/${id}`, {
+        const response = await fetch(`${API_BASE}/news/${newsToDelete.value.id}`, {
             method: 'DELETE',
             credentials: 'include',
             headers: {
@@ -320,6 +354,7 @@ const deleteNews = async (id, title) => {
         }
 
         showSuccess(data?.message || 'Đã xóa bài viết thành công!')
+        closeDeleteConfirm()
         await fetchNews()
     } catch (err) {
         showError(err.message || 'Không thể xóa bài viết')
@@ -630,6 +665,94 @@ onMounted(async () => {
     padding: 1rem 0;
 }
 
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 520px;
+    overflow: hidden;
+}
+
+.modal-small {
+    max-width: 460px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+
+.btn-close:hover {
+    background: #f0f0f0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.delete-confirmation {
+    text-align: center;
+}
+
+.warning-icon {
+    font-size: 2.5rem;
+    color: #f59e0b;
+    margin-bottom: 0.75rem;
+}
+
+.warning-text {
+    margin-top: 0.5rem;
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #bb2d3b;
+}
+
 @media (max-width: 1024px) {
     .page-header {
         flex-direction: column;
@@ -673,6 +796,16 @@ onMounted(async () => {
 
     .btn-sm {
         padding: 0.35rem 0.45rem;
+    }
+
+    .modal-overlay {
+        padding: 1rem;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
     }
 }
 </style>

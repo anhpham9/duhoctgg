@@ -407,6 +407,31 @@ export class InputSanitizer {
             sanitized.status = validStatuses.includes(status) ? status : 'draft';
         }
 
+        if (newsData.published_at !== undefined) {
+            if (newsData.published_at === null || newsData.published_at === '') {
+                sanitized.published_at = null;
+            } else {
+                const publishedAtRaw = String(newsData.published_at).trim();
+                const localDateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
+
+                // Keep datetime-local input as local DB timestamp to avoid timezone shifting.
+                if (localDateTimePattern.test(publishedAtRaw)) {
+                    sanitized.published_at = publishedAtRaw.length === 16
+                        ? `${publishedAtRaw.replace('T', ' ')}:00`
+                        : publishedAtRaw.replace('T', ' ');
+                } else {
+                    const publishedAt = new Date(publishedAtRaw);
+                    if (!isNaN(publishedAt.getTime())) {
+                        sanitized.published_at = publishedAt.toISOString().slice(0, 19).replace('T', ' ');
+                    } else {
+                        logger.warn('Invalid published_at format detected', {
+                            original: newsData.published_at
+                        });
+                    }
+                }
+            }
+        }
+
         if (newsData.meta_title) {
             sanitized.meta_title = this.sanitizeText(newsData.meta_title, {
                 maxLength: 255,

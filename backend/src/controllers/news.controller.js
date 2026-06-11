@@ -12,6 +12,129 @@ const DELETE_NEWS_ROLES = [1, 2];
 // Roles that can change status: superadmin, admin, manager
 const STATUS_CHANGE_ROLES = [1, 2, 3];
 
+const NEWS_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const VALID_NEWS_STATUSES = ['draft', 'published', 'archived'];
+
+const normalizeNewsSlug = (text = '') => {
+    return String(text)
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+};
+
+const isValidHttpUrl = (value) => {
+    try {
+        const url = new URL(String(value));
+        return ['http:', 'https:'].includes(url.protocol);
+    } catch {
+        return false;
+    }
+};
+
+const validateNewsPayload = (payload = {}, { isUpdate = false } = {}) => {
+    const errors = {};
+
+    const shouldValidateRequired = !isUpdate;
+
+    if (shouldValidateRequired || Object.prototype.hasOwnProperty.call(payload, 'title')) {
+        const title = String(payload.title || '').trim();
+        if (!title) {
+            errors.title = 'Tiêu đề là bắt buộc';
+        } else if (title.length < 3) {
+            errors.title = 'Tiêu đề phải có ít nhất 3 ký tự';
+        } else if (title.length > 255) {
+            errors.title = 'Tiêu đề không được vượt quá 255 ký tự';
+        }
+    }
+
+    if (shouldValidateRequired || Object.prototype.hasOwnProperty.call(payload, 'content')) {
+        const content = String(payload.content || '').trim();
+        if (!content) {
+            errors.content = 'Nội dung là bắt buộc';
+        } else if (content.length < 10) {
+            errors.content = 'Nội dung phải có ít nhất 10 ký tự';
+        } else if (content.length > 50000) {
+            errors.content = 'Nội dung không được vượt quá 50000 ký tự';
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'slug')) {
+        const rawSlug = payload.slug;
+        if (rawSlug !== undefined && rawSlug !== null && String(rawSlug).trim() !== '') {
+            const slug = String(rawSlug).trim().toLowerCase();
+            if (slug.length < 2) {
+                errors.slug = 'Slug phải có ít nhất 2 ký tự';
+            } else if (slug.length > 255) {
+                errors.slug = 'Slug không được vượt quá 255 ký tự';
+            } else if (!NEWS_SLUG_PATTERN.test(slug)) {
+                errors.slug = 'Slug chỉ gồm chữ thường, số và dấu gạch ngang';
+            }
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'excerpt') && payload.excerpt !== undefined && payload.excerpt !== null) {
+        const excerpt = String(payload.excerpt).trim();
+        if (!excerpt) {
+            errors.excerpt = 'Mô tả ngắn là bắt buộc';
+        }
+        if (excerpt.length > 500) {
+            errors.excerpt = 'Mô tả ngắn không được vượt quá 500 ký tự';
+        }
+    } else if (!isUpdate) {
+        errors.excerpt = 'Mô tả ngắn là bắt buộc';
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'thumbnail_url') && payload.thumbnail_url !== undefined && payload.thumbnail_url !== null && String(payload.thumbnail_url).trim() !== '') {
+        if (!isValidHttpUrl(payload.thumbnail_url)) {
+            errors.thumbnail_url = 'Thumbnail URL không hợp lệ (chỉ chấp nhận http/https)';
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'category_id') && payload.category_id !== undefined && payload.category_id !== null && String(payload.category_id).trim() !== '') {
+        const categoryId = Number(payload.category_id);
+        if (!Number.isInteger(categoryId) || categoryId < 1) {
+            errors.category_id = 'Danh mục không hợp lệ';
+        }
+    } else if (!isUpdate) {
+        errors.category_id = 'Danh mục là bắt buộc';
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'status') && payload.status !== undefined && payload.status !== null && String(payload.status).trim() !== '') {
+        const status = String(payload.status).trim().toLowerCase();
+        if (!VALID_NEWS_STATUSES.includes(status)) {
+            errors.status = 'Trạng thái không hợp lệ';
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'published_at') && payload.published_at !== undefined && payload.published_at !== null && String(payload.published_at).trim() !== '') {
+        const publishedAt = new Date(payload.published_at);
+        if (isNaN(publishedAt.getTime())) {
+            errors.published_at = 'Ngày xuất bản không hợp lệ';
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'meta_title') && payload.meta_title !== undefined && payload.meta_title !== null) {
+        const metaTitle = String(payload.meta_title).trim();
+        if (metaTitle.length > 255) {
+            errors.meta_title = 'Meta title không được vượt quá 255 ký tự';
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'meta_description') && payload.meta_description !== undefined && payload.meta_description !== null) {
+        const metaDescription = String(payload.meta_description).trim();
+        if (metaDescription.length > 500) {
+            errors.meta_description = 'Meta description không được vượt quá 500 ký tự';
+        }
+    }
+
+    return errors;
+};
+
 // Get all news with author and category info
 export const getNews = async (req, res) => {
     try {
@@ -218,6 +341,15 @@ export const getNewsById = async (req, res) => {
 // Create new news
 export const createNews = async (req, res) => {
     try {
+        const validationErrors = validateNewsPayload(req.body || {}, { isUpdate: false });
+        if (Object.keys(validationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu bài viết không hợp lệ',
+                errors: validationErrors
+            });
+        }
+
         // Sanitize input data
         const sanitizedData = InputSanitizer.sanitizeNewsData(req.body);
         const { 
@@ -227,6 +359,7 @@ export const createNews = async (req, res) => {
             excerpt,
             thumbnail_url,
             category_id,
+            published_at,
             meta_title,
             meta_description
         } = sanitizedData;
@@ -260,29 +393,51 @@ export const createNews = async (req, res) => {
         if (!title || !content) {
             return res.status(400).json({
                 success: false,
-                message: "Title and content are required"
+                message: 'Dữ liệu bài viết không hợp lệ',
+                errors: {
+                    title: !title ? 'Tiêu đề là bắt buộc' : undefined,
+                    content: !content ? 'Nội dung là bắt buộc' : undefined
+                }
             });
         }
 
         // Generate slug if not provided
         let newsSlug = slug;
         if (!newsSlug) {
-            newsSlug = title.toLowerCase()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/[\s_-]+/g, '-')
-                .replace(/^-+|-+$/g, '');
+            newsSlug = normalizeNewsSlug(title);
+        }
+
+        const sanitizedValidationErrors = validateNewsPayload(
+            {
+                ...sanitizedData,
+                slug: newsSlug,
+                title,
+                content
+            },
+            { isUpdate: false }
+        );
+
+        if (Object.keys(sanitizedValidationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu bài viết không hợp lệ',
+                errors: sanitizedValidationErrors
+            });
         }
 
         // Check slug uniqueness within category
         const slugCheck = await db.query(
-            'SELECT id FROM news WHERE slug = $1 AND category_id = $2', 
+            'SELECT id FROM news WHERE slug = $1 AND category_id IS NOT DISTINCT FROM $2', 
             [newsSlug, category_id || null]
         );
 
         if (slugCheck.rows.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: "Slug already exists in this category"
+                message: 'Slug đã tồn tại trong danh mục này',
+                errors: {
+                    slug: 'Slug đã tồn tại trong danh mục này'
+                }
             });
         }
 
@@ -296,7 +451,10 @@ export const createNews = async (req, res) => {
             if (categoryCheck.rows.length === 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid category ID"
+                    message: 'Danh mục không hợp lệ',
+                    errors: {
+                        category_id: 'Danh mục không tồn tại'
+                    }
                 });
             }
         }
@@ -311,13 +469,18 @@ export const createNews = async (req, res) => {
             }
         }
 
+        // Resolve published_at based on payload/status
+        const resolvedPublishedAt = published_at || new Date().toISOString();
+        const resolvedMetaTitle = meta_title || title;
+        const resolvedMetaDescription = meta_description || excerpt;
+
         // Create news
         const result = await db.query(`
             INSERT INTO news (
                 title, slug, content, excerpt, thumbnail_url,
-                category_id, author_id, status, meta_title, meta_description
+                category_id, author_id, status, published_at, meta_title, meta_description
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
         `, [
             title,
@@ -328,8 +491,9 @@ export const createNews = async (req, res) => {
             category_id || null,
             currentUserId, // author_id
             status,
-            meta_title || null,
-            meta_description || null
+            resolvedPublishedAt,
+            resolvedMetaTitle,
+            resolvedMetaDescription
         ]);
 
         const newNews = result.rows[0];
@@ -379,6 +543,15 @@ export const createNews = async (req, res) => {
 export const updateNews = async (req, res) => {
     try {
         const { id } = req.params;
+        const validationErrors = validateNewsPayload(req.body || {}, { isUpdate: true });
+        if (Object.keys(validationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu bài viết không hợp lệ',
+                errors: validationErrors
+            });
+        }
+
         const sanitizedData = InputSanitizer.sanitizeNewsData(req.body);
         const { 
             title, 
@@ -388,6 +561,7 @@ export const updateNews = async (req, res) => {
             thumbnail_url,
             category_id,
             status,
+            published_at,
             meta_title,
             meta_description
         } = sanitizedData;
@@ -459,14 +633,17 @@ export const updateNews = async (req, res) => {
             // Check slug uniqueness within category
             const currentCategoryId = category_id !== undefined ? category_id : existingNews.category_id;
             const slugCheck = await db.query(
-                'SELECT id FROM news WHERE slug = $1 AND category_id = $2 AND id != $3', 
+                'SELECT id FROM news WHERE slug = $1 AND category_id IS NOT DISTINCT FROM $2 AND id != $3', 
                 [slug, currentCategoryId || null, id]
             );
 
             if (slugCheck.rows.length > 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Slug already exists in this category"
+                    message: 'Slug đã tồn tại trong danh mục này',
+                    errors: {
+                        slug: 'Slug đã tồn tại trong danh mục này'
+                    }
                 });
             }
 
@@ -508,7 +685,10 @@ export const updateNews = async (req, res) => {
                 if (categoryCheck.rows.length === 0) {
                     return res.status(400).json({
                         success: false,
-                        message: "Invalid category ID"
+                        message: 'Danh mục không hợp lệ',
+                        errors: {
+                            category_id: 'Danh mục không tồn tại'
+                        }
                     });
                 }
             }
@@ -524,7 +704,10 @@ export const updateNews = async (req, res) => {
             if (!validStatuses.includes(status)) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid status. Must be one of: " + validStatuses.join(', ')
+                    message: 'Trạng thái không hợp lệ',
+                    errors: {
+                        status: 'Trạng thái không hợp lệ'
+                    }
                 });
             }
             updateData.status = status;
@@ -533,9 +716,16 @@ export const updateNews = async (req, res) => {
             paramCount++;
 
             // Set published_at if status changed to published
-            if (status === 'published' && existingNews.status !== 'published') {
+            if (status === 'published' && existingNews.status !== 'published' && published_at === undefined) {
                 updates.push(`published_at = NOW()`);
             }
+        }
+
+        if (published_at !== undefined && STATUS_CHANGE_ROLES.includes(currentUserRole)) {
+            updateData.published_at = published_at;
+            updates.push(`published_at = $${paramCount}`);
+            values.push(published_at || null);
+            paramCount++;
         }
 
         if (meta_title !== undefined) {

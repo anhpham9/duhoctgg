@@ -9,6 +9,50 @@ const MANAGE_CATEGORIES_ROLES = [1, 2, 3];
 // Roles that can view categories: all news roles
 const VIEW_CATEGORIES_ROLES = [1, 2, 3, 4];
 
+const CATEGORY_NAME_MAX_LENGTH = 100;
+const CATEGORY_SLUG_MAX_LENGTH = 120;
+const CATEGORY_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const generateCategorySlug = (name = '') => {
+    return String(name)
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+};
+
+const validateCategoryPayload = ({ name, slug }, { requireName = false } = {}) => {
+    const errors = {};
+
+    if (requireName || name !== undefined) {
+        if (!name || !String(name).trim()) {
+            errors.name = 'Tên danh mục là bắt buộc';
+        } else if (String(name).trim().length < 2) {
+            errors.name = 'Tên danh mục phải có ít nhất 2 ký tự';
+        } else if (String(name).trim().length > CATEGORY_NAME_MAX_LENGTH) {
+            errors.name = `Tên danh mục không được vượt quá ${CATEGORY_NAME_MAX_LENGTH} ký tự`;
+        }
+    }
+
+    if (slug !== undefined && slug !== null && String(slug).trim() !== '') {
+        const normalizedSlug = String(slug).trim().toLowerCase();
+
+        if (normalizedSlug.length < 2) {
+            errors.slug = 'Slug phải có ít nhất 2 ký tự';
+        } else if (normalizedSlug.length > CATEGORY_SLUG_MAX_LENGTH) {
+            errors.slug = `Slug không được vượt quá ${CATEGORY_SLUG_MAX_LENGTH} ký tự`;
+        } else if (!CATEGORY_SLUG_PATTERN.test(normalizedSlug)) {
+            errors.slug = 'Slug chỉ gồm chữ thường, số và dấu gạch ngang';
+        }
+    }
+
+    return errors;
+};
+
 // Get all categories
 export const getCategories = async (req, res) => {
     try {
@@ -119,6 +163,15 @@ export const getCategoryById = async (req, res) => {
 // Create new category
 export const createCategory = async (req, res) => {
     try {
+        const payloadValidationErrors = validateCategoryPayload(req.body || {}, { requireName: true });
+        if (Object.keys(payloadValidationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu danh mục không hợp lệ',
+                errors: payloadValidationErrors
+            });
+        }
+
         // Sanitize input data
         const sanitizedData = InputSanitizer.sanitizeCategoryData(req.body);
         const { name, slug } = sanitizedData;
@@ -148,21 +201,30 @@ export const createCategory = async (req, res) => {
             });
         }
 
-        // Validate required fields
+        // Validate required fields after sanitization
         if (!name) {
             return res.status(400).json({
                 success: false,
-                message: "Category name is required"
+                message: 'Dữ liệu danh mục không hợp lệ',
+                errors: {
+                    name: 'Tên danh mục là bắt buộc'
+                }
             });
         }
 
         // Generate slug if not provided
         let categorySlug = slug;
         if (!categorySlug) {
-            categorySlug = name.toLowerCase()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/[\s_-]+/g, '-')
-                .replace(/^-+|-+$/g, '');
+            categorySlug = generateCategorySlug(name);
+        }
+
+        const finalValidationErrors = validateCategoryPayload({ name, slug: categorySlug }, { requireName: true });
+        if (Object.keys(finalValidationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu danh mục không hợp lệ',
+                errors: finalValidationErrors
+            });
         }
 
         // Check slug uniqueness
@@ -174,7 +236,10 @@ export const createCategory = async (req, res) => {
         if (slugCheck.rows.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: "Category slug already exists"
+                message: 'Slug danh mục đã tồn tại',
+                errors: {
+                    slug: 'Slug danh mục đã tồn tại'
+                }
             });
         }
 
@@ -223,8 +288,17 @@ export const createCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
+        const payloadValidationErrors = validateCategoryPayload(req.body || {}, { requireName: false });
+        if (Object.keys(payloadValidationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu danh mục không hợp lệ',
+                errors: payloadValidationErrors
+            });
+        }
+
         const sanitizedData = InputSanitizer.sanitizeCategoryData(req.body);
-        const { name, slug } = sanitizedData;
+        let { name, slug } = sanitizedData;
         
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
@@ -260,6 +334,33 @@ export const updateCategory = async (req, res) => {
 
         const existingCategory = categoryResult.rows[0];
 
+        if (name !== undefined && (!name || !String(name).trim())) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu danh mục không hợp lệ',
+                errors: {
+                    name: 'Tên danh mục là bắt buộc'
+                }
+            });
+        }
+
+        if (slug === undefined && name !== undefined && String(name).trim() !== existingCategory.name) {
+            slug = generateCategorySlug(name);
+        }
+
+        const finalValidationErrors = validateCategoryPayload(
+            { name, slug },
+            { requireName: false }
+        );
+
+        if (Object.keys(finalValidationErrors).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu danh mục không hợp lệ',
+                errors: finalValidationErrors
+            });
+        }
+
         // Build dynamic update query
         const updateData = {};
         const updates = [];
@@ -283,7 +384,10 @@ export const updateCategory = async (req, res) => {
             if (slugCheck.rows.length > 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Category slug already exists"
+                    message: 'Slug danh mục đã tồn tại',
+                    errors: {
+                        slug: 'Slug danh mục đã tồn tại'
+                    }
                 });
             }
 

@@ -104,7 +104,7 @@
             </div>
         </div>
 
-        <div v-if="showCategoryModal" class="modal-overlay" @click="closeModal">
+        <div v-if="showCategoryModal" class="modal-overlay">
             <div class="modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới' }}</h3>
@@ -117,19 +117,27 @@
                         <label>Tên danh mục <span class="required">*</span></label>
                         <input
                             v-model.trim="categoryForm.name"
+                            @input="clearFieldError('name')"
+                            @blur="handleNameBlur"
                             type="text"
                             class="form-control"
+                            :class="{ 'is-invalid': !!formErrors.name }"
                             placeholder="Nhập tên danh mục"
                         >
+                        <p v-if="formErrors.name" class="field-error">{{ formErrors.name }}</p>
                     </div>
                     <div class="form-group">
                         <label>Slug</label>
                         <input
                             v-model.trim="categoryForm.slug"
+                            @input="clearFieldError('slug')"
+                            @blur="validateField('slug')"
                             type="text"
                             class="form-control"
+                            :class="{ 'is-invalid': !!formErrors.slug }"
                             placeholder="slug-danh-muc (để trống sẽ tự tạo)"
                         >
+                        <p v-if="formErrors.slug" class="field-error">{{ formErrors.slug }}</p>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -137,6 +145,31 @@
                     <button class="btn btn-primary" :disabled="saving" @click="saveCategory">
                         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
                         {{ editingCategory ? 'Cập nhật' : 'Tạo mới' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showDeleteConfirm && categoryToDelete" class="modal-overlay">
+            <div class="modal modal-small" @click.stop>
+                <div class="modal-header">
+                    <h3>Xác nhận xóa</h3>
+                    <button @click="closeDeleteConfirm" class="btn-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirmation">
+                        <i class="fas fa-exclamation-triangle warning-icon"></i>
+                        <p>Bạn có chắc chắn muốn xóa danh mục <strong>{{ categoryToDelete.name }}</strong>?</p>
+                        <p class="warning-text">Thao tác này không thể hoàn tác!</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
+                    <button @click="confirmDeleteCategory" type="button" class="btn btn-danger" :disabled="saving || deletingId === categoryToDelete.id">
+                        <i v-if="deletingId === categoryToDelete.id" class="fas fa-spinner fa-spin"></i>
+                        {{ deletingId === categoryToDelete.id ? 'Đang xóa...' : 'Xóa danh mục' }}
                     </button>
                 </div>
             </div>
@@ -184,12 +217,18 @@ const categories = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const deletingId = ref(null)
+const showDeleteConfirm = ref(false)
+const categoryToDelete = ref(null)
 const error = ref('')
 const searchQuery = ref('')
 
 const showCategoryModal = ref(false)
 const editingCategory = ref(null)
 const categoryForm = reactive({
+    name: '',
+    slug: ''
+})
+const formErrors = reactive({
     name: '',
     slug: ''
 })
@@ -214,6 +253,91 @@ const toSlug = (text) => {
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-+|-+$/g, '')
+}
+
+const handleNameBlur = () => {
+    const name = (categoryForm.name || '').trim()
+    const slug = (categoryForm.slug || '').trim()
+
+    // Auto-fill slug when leaving name input so user can review/edit before submit.
+    if (name && !slug) {
+        categoryForm.slug = toSlug(name)
+    }
+
+    validateField('name')
+    validateField('slug')
+}
+
+const clearFieldError = (field) => {
+    if (formErrors[field]) {
+        formErrors[field] = ''
+    }
+}
+
+const validateField = (field) => {
+    const name = (categoryForm.name || '').trim()
+    const slug = (categoryForm.slug || '').trim()
+
+    if (field === 'name') {
+        if (!name) {
+            formErrors.name = 'Tên danh mục là bắt buộc'
+            return false
+        }
+        if (name.length < 2) {
+            formErrors.name = 'Tên danh mục phải có ít nhất 2 ký tự'
+            return false
+        }
+        if (name.length > 100) {
+            formErrors.name = 'Tên danh mục không được vượt quá 100 ký tự'
+            return false
+        }
+        formErrors.name = ''
+        return true
+    }
+
+    if (field === 'slug') {
+        if (!slug) {
+            formErrors.slug = ''
+            return true
+        }
+
+        if (slug.length < 2) {
+            formErrors.slug = 'Slug phải có ít nhất 2 ký tự'
+            return false
+        }
+
+        if (slug.length > 120) {
+            formErrors.slug = 'Slug không được vượt quá 120 ký tự'
+            return false
+        }
+
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+            formErrors.slug = 'Slug chỉ gồm chữ thường, số và dấu gạch ngang'
+            return false
+        }
+
+        formErrors.slug = ''
+        return true
+    }
+
+    return true
+}
+
+const validateCategoryForm = () => {
+    const nameValid = validateField('name')
+
+    if (!(categoryForm.slug || '').trim()) {
+        const generatedSlug = toSlug(categoryForm.name || '')
+        categoryForm.slug = generatedSlug
+    }
+
+    const slugValid = validateField('slug')
+    return nameValid && slugValid
+}
+
+const setBackendFieldErrors = (errors = {}) => {
+    formErrors.name = errors?.name || ''
+    formErrors.slug = errors?.slug || ''
 }
 
 const fetchCategories = async () => {
@@ -245,6 +369,8 @@ const fetchCategories = async () => {
 const resetForm = () => {
     categoryForm.name = ''
     categoryForm.slug = ''
+    formErrors.name = ''
+    formErrors.slug = ''
 }
 
 const openCreateModal = () => {
@@ -266,17 +392,56 @@ const closeModal = () => {
     resetForm()
 }
 
-const saveCategory = async () => {
-    const name = categoryForm.name.trim()
-    const slug = (categoryForm.slug || '').trim() || toSlug(name)
+const openDeleteConfirm = (category) => {
+    categoryToDelete.value = category
+    showDeleteConfirm.value = true
+}
 
-    if (!name) {
-        showError('Tên danh mục là bắt buộc')
+const closeDeleteConfirm = () => {
+    showDeleteConfirm.value = false
+    categoryToDelete.value = null
+}
+
+const confirmDeleteCategory = async () => {
+    if (!categoryToDelete.value) return
+
+    deletingId.value = categoryToDelete.value.id
+    try {
+        const response = await fetch(`${API_BASE}/categories/${categoryToDelete.value.id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+            throw new Error(data?.message || `HTTP ${response.status}`)
+        }
+
+        showSuccess(data?.message || 'Đã xóa danh mục thành công')
+        closeDeleteConfirm()
+        await fetchCategories()
+    } catch (err) {
+        showError(err.message || 'Không thể xóa danh mục')
+    } finally {
+        deletingId.value = null
+    }
+}
+
+const saveCategory = async () => {
+    if (!validateCategoryForm()) {
+        showError('Vui lòng kiểm tra lại thông tin danh mục')
         return
     }
 
+    const name = categoryForm.name.trim()
+    const slug = (categoryForm.slug || '').trim() || toSlug(name)
+
     saving.value = true
     try {
+        setBackendFieldErrors({})
         const isEditing = !!editingCategory.value
         const url = isEditing
             ? `${API_BASE}/categories/${editingCategory.value.id}`
@@ -293,7 +458,10 @@ const saveCategory = async () => {
 
         const data = await response.json()
         if (!response.ok) {
-            throw new Error(data?.message || `HTTP ${response.status}`)
+            if (data?.errors) {
+                setBackendFieldErrors(data.errors)
+            }
+            throw new Error(data?.message || 'Không thể lưu danh mục')
         }
 
         showSuccess(data?.message || 'Lưu danh mục thành công')
@@ -306,33 +474,8 @@ const saveCategory = async () => {
     }
 }
 
-const handleDeleteCategory = async (category) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa danh mục "${category.name}"?`)) {
-        return
-    }
-
-    deletingId.value = category.id
-    try {
-        const response = await fetch(`${API_BASE}/categories/${category.id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-
-        const data = await response.json()
-        if (!response.ok) {
-            throw new Error(data?.message || `HTTP ${response.status}`)
-        }
-
-        showSuccess(data?.message || 'Đã xóa danh mục thành công')
-        await fetchCategories()
-    } catch (err) {
-        showError(err.message || 'Không thể xóa danh mục')
-    } finally {
-        deletingId.value = null
-    }
+const handleDeleteCategory = (category) => {
+    openDeleteConfirm(category)
 }
 
 onMounted(async () => {
@@ -574,33 +717,33 @@ onMounted(async () => {
 
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .modal {
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    max-width: 500px;
     width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
+    max-width: 520px;
+    overflow: hidden;
+}
+
+.modal-small {
+    max-width: 460px;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
+    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid #eee;
 }
 
@@ -624,15 +767,40 @@ onMounted(async () => {
 }
 
 .modal-body {
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 1rem;
-    padding: 1.5rem 2rem;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
     border-top: 1px solid #eee;
+}
+
+.delete-confirmation {
+    text-align: center;
+}
+
+.warning-icon {
+    font-size: 2.5rem;
+    color: #f59e0b;
+    margin-bottom: 0.75rem;
+}
+
+.warning-text {
+    margin-top: 0.5rem;
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #bb2d3b;
 }
 
 .form-group {
@@ -651,6 +819,17 @@ onMounted(async () => {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.field-error {
+    margin: 0.4rem 0 0;
+    color: #dc3545;
+    font-size: 0.85rem;
 }
 
 .required {
