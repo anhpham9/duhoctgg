@@ -326,6 +326,27 @@ const schoolReviewsLimiter = rateLimit({
     }
 });
 
+// Rate limiter for static pages endpoints
+const staticPagesLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,
+    message: {
+        success: false,
+        message: "Too many requests to static pages API, please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        logWarn('Rate limit exceeded for static pages endpoint', {
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            endpoint: req.originalUrl,
+            userId: req.user?.id
+        });
+        res.status(options.statusCode).json(options.message);
+    }
+});
+
 export const rateLimiter = {
     auth: authLimiter,
     users: usersLimiter,
@@ -337,6 +358,7 @@ export const rateLimiter = {
     schoolTypes: schoolTypesLimiter,
     faqs: faqsLimiter,
     schoolReviews: schoolReviewsLimiter,
+    staticPages: staticPagesLimiter,
     global: globalLimiter,
     strict: strictLimiter,
     upload: uploadLimiter,
@@ -354,6 +376,7 @@ export const rateLimiter = {
     schoolTypesLimiter,
     faqsLimiter,
     schoolReviewsLimiter,
+    staticPagesLimiter,
     globalLimiter,
     strictLimiter,
     uploadLimiter,

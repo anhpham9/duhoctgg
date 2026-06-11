@@ -23,6 +23,7 @@ import regionsRoutes from "./routes/regions.routes.js";
 import schoolTypesRoutes from "./routes/schoolTypes.routes.js";
 import faqsRoutes from "./routes/faqs.routes.js";
 import schoolReviewsRoutes from "./routes/schoolReviews.routes.js";
+import staticPagesRoutes from "./routes/staticPages.routes.js";
 // Bổ sung các route cho các bảng mở rộng
 import notificationsRoutes from "./routes/notifications.routes.js";
 // import notificationSettingsRoutes from "./routes/notificationSettings.routes.js";
@@ -142,6 +143,9 @@ app.use("/api/faqs", authenticate, /*checkPermission('faqs:read')*/ faqsRoutes);
 
 // school reviews CRUD routes (RBAC protected)
 app.use("/api/school-reviews", authenticate, /*checkPermission('school_reviews:read')*/ schoolReviewsRoutes);
+
+// static pages CRUD routes (RBAC protected)
+app.use("/api/static-pages", authenticate, staticPagesRoutes);
 
 // notifications CRUD routes
 app.use("/api/notifications", authenticate, notificationsRoutes);
