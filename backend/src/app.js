@@ -25,6 +25,8 @@ import faqsRoutes from "./routes/faqs.routes.js";
 import schoolReviewsRoutes from "./routes/schoolReviews.routes.js";
 import staticPagesRoutes from "./routes/staticPages.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import socialLinksRoutes from "./routes/socialLinks.routes.js";
+import seoSettingsRoutes from "./routes/seoSettings.routes.js";
 import { backupService } from "./services/backup.service.js";
 // Bổ sung các route cho các bảng mở rộng
 import notificationsRoutes from "./routes/notifications.routes.js";
@@ -151,6 +153,10 @@ app.use("/api/static-pages", authenticate, staticPagesRoutes);
 
 // settings CRUD routes (RBAC protected)
 app.use("/api/settings", authenticate, settingsRoutes);
+
+// social links CRUD routes (RBAC protected)
+app.use("/api/settings/socials", authenticate, socialLinksRoutes);
+app.use("/api/settings/seo", authenticate, seoSettingsRoutes);
 
 // notifications CRUD routes
 app.use("/api/notifications", authenticate, notificationsRoutes);

@@ -9,45 +9,39 @@ const GENERAL_SETTINGS_PREFIX = "general.";
 const GENERAL_SETTINGS_KEYS = {
     siteName: `${GENERAL_SETTINGS_PREFIX}site_name`,
     siteLogoUrl: `${GENERAL_SETTINGS_PREFIX}site_logo_url`,
+    siteFaviconUrl: `${GENERAL_SETTINGS_PREFIX}site_favicon_url`,
     siteDescription: `${GENERAL_SETTINGS_PREFIX}site_description`,
     contactEmail: `${GENERAL_SETTINGS_PREFIX}contact_email`,
     phone: `${GENERAL_SETTINGS_PREFIX}phone`,
     hotline: `${GENERAL_SETTINGS_PREFIX}hotline`,
-    facebookUrl: `${GENERAL_SETTINGS_PREFIX}facebook_url`,
-    zaloUrl: `${GENERAL_SETTINGS_PREFIX}zalo_url`,
     address: `${GENERAL_SETTINGS_PREFIX}address`,
-    seoDefaultTitle: `${GENERAL_SETTINGS_PREFIX}seo_default_title`,
-    seoDefaultDescription: `${GENERAL_SETTINGS_PREFIX}seo_default_description`,
+    googleMapIframe: `${GENERAL_SETTINGS_PREFIX}google_map_iframe`,
     maintenanceMode: `${GENERAL_SETTINGS_PREFIX}maintenance_mode`
 };
 
 const GENERAL_SETTINGS_DESCRIPTIONS = {
     [GENERAL_SETTINGS_KEYS.siteName]: "General setting: website name",
     [GENERAL_SETTINGS_KEYS.siteLogoUrl]: "General setting: website logo URL",
+    [GENERAL_SETTINGS_KEYS.siteFaviconUrl]: "General setting: website favicon URL",
     [GENERAL_SETTINGS_KEYS.siteDescription]: "General setting: website description",
     [GENERAL_SETTINGS_KEYS.contactEmail]: "General setting: contact email",
     [GENERAL_SETTINGS_KEYS.phone]: "General setting: contact phone",
     [GENERAL_SETTINGS_KEYS.hotline]: "General setting: hotline",
-    [GENERAL_SETTINGS_KEYS.facebookUrl]: "General setting: Facebook URL",
-    [GENERAL_SETTINGS_KEYS.zaloUrl]: "General setting: Zalo URL",
     [GENERAL_SETTINGS_KEYS.address]: "General setting: office address",
-    [GENERAL_SETTINGS_KEYS.seoDefaultTitle]: "General setting: SEO default title",
-    [GENERAL_SETTINGS_KEYS.seoDefaultDescription]: "General setting: SEO default description",
+    [GENERAL_SETTINGS_KEYS.googleMapIframe]: "General setting: Google Map iframe",
     [GENERAL_SETTINGS_KEYS.maintenanceMode]: "General setting: maintenance mode"
 };
 
 const getDefaultGeneralSettings = () => ({
     siteName: "",
     siteLogoUrl: "",
+    siteFaviconUrl: "",
     siteDescription: "",
     contactEmail: "",
     phone: "",
     hotline: "",
-    facebookUrl: "",
-    zaloUrl: "",
     address: "",
-    seoDefaultTitle: "",
-    seoDefaultDescription: "",
+    googleMapIframe: "",
     maintenanceMode: false
 });
 
@@ -57,15 +51,13 @@ const mapRowsToGeneralSettings = (rows = []) => {
     for (const row of rows) {
         if (row.key === GENERAL_SETTINGS_KEYS.siteName) data.siteName = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteLogoUrl) data.siteLogoUrl = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.siteFaviconUrl) data.siteFaviconUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteDescription) data.siteDescription = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.contactEmail) data.contactEmail = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.phone) data.phone = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.hotline) data.hotline = row.value || "";
-        if (row.key === GENERAL_SETTINGS_KEYS.facebookUrl) data.facebookUrl = row.value || "";
-        if (row.key === GENERAL_SETTINGS_KEYS.zaloUrl) data.zaloUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.address) data.address = row.value || "";
-        if (row.key === GENERAL_SETTINGS_KEYS.seoDefaultTitle) data.seoDefaultTitle = row.value || "";
-        if (row.key === GENERAL_SETTINGS_KEYS.seoDefaultDescription) data.seoDefaultDescription = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.googleMapIframe) data.googleMapIframe = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.maintenanceMode) data.maintenanceMode = InputSanitizer.sanitizeBoolean(row.value, false);
     }
 
@@ -173,15 +165,13 @@ export const updateGeneralSettings = async (req, res) => {
         const settingsEntries = [
             [GENERAL_SETTINGS_KEYS.siteName,              String(payload.siteName)],
             [GENERAL_SETTINGS_KEYS.siteLogoUrl,           String(payload.siteLogoUrl)],
+            [GENERAL_SETTINGS_KEYS.siteFaviconUrl,       String(payload.siteFaviconUrl)],
             [GENERAL_SETTINGS_KEYS.siteDescription,       String(payload.siteDescription)],
             [GENERAL_SETTINGS_KEYS.contactEmail,          String(payload.contactEmail)],
             [GENERAL_SETTINGS_KEYS.phone,                 String(payload.phone)],
             [GENERAL_SETTINGS_KEYS.hotline,               String(payload.hotline)],
-            [GENERAL_SETTINGS_KEYS.facebookUrl,           String(payload.facebookUrl)],
-            [GENERAL_SETTINGS_KEYS.zaloUrl,               String(payload.zaloUrl)],
             [GENERAL_SETTINGS_KEYS.address,               String(payload.address)],
-            [GENERAL_SETTINGS_KEYS.seoDefaultTitle,       String(payload.seoDefaultTitle)],
-            [GENERAL_SETTINGS_KEYS.seoDefaultDescription, String(payload.seoDefaultDescription)],
+            [GENERAL_SETTINGS_KEYS.googleMapIframe,       String(payload.googleMapIframe)],
             [GENERAL_SETTINGS_KEYS.maintenanceMode,       String(payload.maintenanceMode)]
         ];
 

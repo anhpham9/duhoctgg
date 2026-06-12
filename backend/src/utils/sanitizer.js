@@ -810,8 +810,6 @@ export class InputSanitizer {
 
         sanitized.phone = this.sanitizePhone(payload.phone || '');
         sanitized.hotline = this.sanitizePhone(payload.hotline || '');
-        sanitized.facebookUrl = this.sanitizeUrl(payload.facebookUrl || '');
-        sanitized.zaloUrl = this.sanitizeUrl(payload.zaloUrl || '');
 
         sanitized.address = this.sanitizeText(payload.address || '', {
             maxLength: 1000,

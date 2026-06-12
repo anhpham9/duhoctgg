@@ -76,6 +76,19 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Favicon URL</label>
+                    <input
+                        v-model.trim="settings.siteFaviconUrl"
+                        @input="clearFieldError('siteFaviconUrl')"
+                        type="url"
+                        class="form-control"
+                        :class="{ 'is-invalid': !!formErrors.siteFaviconUrl }"
+                        placeholder="https://example.com/favicon.png"
+                    >
+                    <p v-if="formErrors.siteFaviconUrl" class="field-error">{{ formErrors.siteFaviconUrl }}</p>
+                </div>
+
+                <div class="form-group">
                     <label>Mô tả website</label>
                     <textarea
                         v-model="settings.siteDescription"
@@ -128,32 +141,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Facebook URL</label>
-                    <input
-                        v-model.trim="settings.facebookUrl"
-                        @input="clearFieldError('facebookUrl')"
-                        type="url"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.facebookUrl }"
-                        placeholder="https://facebook.com/yourpage"
-                    >
-                    <p v-if="formErrors.facebookUrl" class="field-error">{{ formErrors.facebookUrl }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Zalo URL</label>
-                    <input
-                        v-model.trim="settings.zaloUrl"
-                        @input="clearFieldError('zaloUrl')"
-                        type="url"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.zaloUrl }"
-                        placeholder="https://zalo.me/..."
-                    >
-                    <p v-if="formErrors.zaloUrl" class="field-error">{{ formErrors.zaloUrl }}</p>
-                </div>
-
-                <div class="form-group">
                     <label>Địa chỉ</label>
                     <textarea
                         v-model="settings.address"
@@ -167,29 +154,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label>SEO Title mặc định</label>
+                    <label>iframe google map</label>
                     <input
-                        v-model="settings.seoDefaultTitle"
-                        @input="clearFieldError('seoDefaultTitle')"
+                        v-model="settings.googleMapIframe"
+                        @input="clearFieldError('googleMapIframe')"
                         type="text"
                         class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.seoDefaultTitle }"
-                        placeholder="Tiêu đề SEO mặc định"
+                        :class="{ 'is-invalid': !!formErrors.googleMapIframe }"
+                        placeholder="Nhập iframe Google Map"
                     >
-                    <p v-if="formErrors.seoDefaultTitle" class="field-error">{{ formErrors.seoDefaultTitle }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>SEO Description mặc định</label>
-                    <textarea
-                        v-model="settings.seoDefaultDescription"
-                        @input="clearFieldError('seoDefaultDescription')"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.seoDefaultDescription }"
-                        rows="3"
-                        placeholder="Mô tả SEO mặc định"
-                    ></textarea>
-                    <p v-if="formErrors.seoDefaultDescription" class="field-error">{{ formErrors.seoDefaultDescription }}</p>
+                    <p v-if="formErrors.googleMapIframe" class="field-error">{{ formErrors.googleMapIframe }}</p>
                 </div>
 
                 <div class="form-group maintenance-group">
@@ -253,30 +227,26 @@ const lastSavedData = ref(null)
 const settings = reactive({
     siteName: '',
     siteLogoUrl: '',
+    siteFaviconUrl: '',
     siteDescription: '',
     contactEmail: '',
     phone: '',
     hotline: '',
-    facebookUrl: '',
-    zaloUrl: '',
     address: '',
-    seoDefaultTitle: '',
-    seoDefaultDescription: '',
+    googleMapIframe: '',
     maintenanceMode: false
 })
 
 const formErrors = reactive({
     siteName: '',
     siteLogoUrl: '',
+    siteFaviconUrl: '',
     siteDescription: '',
     contactEmail: '',
     phone: '',
     hotline: '',
-    facebookUrl: '',
-    zaloUrl: '',
     address: '',
-    seoDefaultTitle: '',
-    seoDefaultDescription: '',
+    googleMapIframe: '',
     maintenanceMode: ''
 })
 
@@ -297,30 +267,26 @@ const clearFieldError = (field) => {
 const setSettings = (data = {}) => {
     settings.siteName = data.siteName || ''
     settings.siteLogoUrl = data.siteLogoUrl || ''
+    settings.siteFaviconUrl = data.siteFaviconUrl || ''
     settings.siteDescription = data.siteDescription || ''
     settings.contactEmail = data.contactEmail || ''
     settings.phone = data.phone || ''
     settings.hotline = data.hotline || ''
-    settings.facebookUrl = data.facebookUrl || ''
-    settings.zaloUrl = data.zaloUrl || ''
     settings.address = data.address || ''
-    settings.seoDefaultTitle = data.seoDefaultTitle || ''
-    settings.seoDefaultDescription = data.seoDefaultDescription || ''
+    settings.googleMapIframe = data.googleMapIframe || ''
     settings.maintenanceMode = Boolean(data.maintenanceMode)
 }
 
 const clearAllErrors = () => {
     formErrors.siteName = ''
     formErrors.siteLogoUrl = ''
+    formErrors.siteFaviconUrl = ''
     formErrors.siteDescription = ''
     formErrors.contactEmail = ''
     formErrors.phone = ''
     formErrors.hotline = ''
-    formErrors.facebookUrl = ''
-    formErrors.zaloUrl = ''
     formErrors.address = ''
-    formErrors.seoDefaultTitle = ''
-    formErrors.seoDefaultDescription = ''
+    formErrors.googleMapIframe = ''
     formErrors.maintenanceMode = ''
 }
 
@@ -339,6 +305,10 @@ const validateForm = () => {
         formErrors.siteLogoUrl = 'Logo URL không hợp lệ (cần bắt đầu bằng http/https)'
     }
 
+    if (settings.siteFaviconUrl && !isValidUrl(settings.siteFaviconUrl)) {
+        formErrors.siteFaviconUrl = 'Favicon URL không hợp lệ (cần bắt đầu bằng http/https)'
+    }
+
     if (settings.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.contactEmail)) {
         formErrors.contactEmail = 'Email không hợp lệ'
     }
@@ -351,24 +321,8 @@ const validateForm = () => {
         formErrors.hotline = 'Hotline không hợp lệ'
     }
 
-    if (settings.facebookUrl && !isValidUrl(settings.facebookUrl)) {
-        formErrors.facebookUrl = 'Facebook URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
-    if (settings.zaloUrl && !isValidUrl(settings.zaloUrl)) {
-        formErrors.zaloUrl = 'Zalo URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
     if (settings.address.length > 1000) {
         formErrors.address = 'Địa chỉ tối đa 1000 ký tự'
-    }
-
-    if (settings.seoDefaultTitle.length > 255) {
-        formErrors.seoDefaultTitle = 'SEO Title tối đa 255 ký tự'
-    }
-
-    if (settings.seoDefaultDescription.length > 2000) {
-        formErrors.seoDefaultDescription = 'SEO Description tối đa 2000 ký tự'
     }
 
     return !Object.values(formErrors).some(Boolean)
@@ -411,15 +365,13 @@ const saveSettings = async () => {
         const payload = {
             siteName: settings.siteName.trim(),
             siteLogoUrl: settings.siteLogoUrl.trim(),
+            siteFaviconUrl: settings.siteFaviconUrl.trim(),
             siteDescription: settings.siteDescription || '',
             contactEmail: settings.contactEmail.trim(),
             phone: settings.phone.trim(),
             hotline: settings.hotline.trim(),
-            facebookUrl: settings.facebookUrl.trim(),
-            zaloUrl: settings.zaloUrl.trim(),
             address: settings.address || '',
-            seoDefaultTitle: settings.seoDefaultTitle || '',
-            seoDefaultDescription: settings.seoDefaultDescription || '',
+            googleMapIframe: settings.googleMapIframe || '',
             maintenanceMode: Boolean(settings.maintenanceMode)
         }
 
@@ -435,13 +387,12 @@ const saveSettings = async () => {
             if (data?.errors) {
                 formErrors.siteName = data.errors.siteName || ''
                 formErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
+                formErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
                 formErrors.contactEmail = data.errors.contactEmail || ''
                 formErrors.phone = data.errors.phone || ''
                 formErrors.hotline = data.errors.hotline || ''
-                formErrors.facebookUrl = data.errors.facebookUrl || ''
-                formErrors.zaloUrl = data.errors.zaloUrl || ''
-                formErrors.seoDefaultTitle = data.errors.seoDefaultTitle || ''
-                formErrors.seoDefaultDescription = data.errors.seoDefaultDescription || ''
+                formErrors.address = data.errors.address || ''
+                formErrors.googleMapIframe = data.errors.googleMapIframe || ''
             }
             throw new Error(data?.message || 'Không thể lưu cài đặt')
         }
@@ -469,15 +420,13 @@ const resetForm = () => {
     setSettings({
         siteName: '',
         siteLogoUrl: '',
+        siteFaviconUrl: '',
         siteDescription: '',
         contactEmail: '',
         phone: '',
         hotline: '',
-        facebookUrl: '',
-        zaloUrl: '',
         address: '',
-        seoDefaultTitle: '',
-        seoDefaultDescription: '',
+        googleMapIframe: '',
         maintenanceMode: false
     })
     clearAllErrors()
@@ -672,6 +621,40 @@ onMounted(async () => {
     gap: 0.75rem;
 }
 
+.settings-links {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #eee;
+}
+
+.section-label {
+    color: #555;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.settings-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.2rem;
+    margin-right: 0.75rem;
+    margin-bottom: 0.75rem;
+    background: #f0f7ff;
+    color: #1976d2;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid #1976d2;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.settings-link:hover {
+    background: #1976d2;
+    color: white;
+}
+
 .btn {
     padding: 0.75rem 1.2rem;
     border: none;
@@ -735,6 +718,15 @@ onMounted(async () => {
     .form-actions .btn {
         flex: 1;
         justify-content: center;
+    }
+
+    .settings-links {
+        flex-direction: column;
+    }
+
+    .settings-link {
+        width: 100%;
+        text-align: center;
     }
 }
 </style>

@@ -1495,3 +1495,13 @@ psql -U <db_user> -d <db_name> -f create_backup_records_table.sql
   }
 }
 ```
+
+Quyết định kiến trúc:
+
+- Social links → Tách ra /admin/settings/social, unlimited entries với CRUD (icon, name, url, description, order) — cần thêm bảng DB
+- Logo preview + upload, favicon upload, Google Maps → Giữ ở General Settings, thêm UI upload + preview tại chỗ
+- Maintenance mode → Giữ ở General Settings (liên quan operational config, không liên quan backup/restore)
+- SEO → Tách ra /admin/settings/seo — gom SEO fields + thêm OG image URL
+
+# việc cần làm 
+- thay đổi xác nhận confirm thành modal trong socials.vue

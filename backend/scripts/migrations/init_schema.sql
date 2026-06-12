@@ -329,3 +329,20 @@ CREATE INDEX IF NOT EXISTS idx_backup_records_created_at ON backup_records(creat
 CREATE INDEX IF NOT EXISTS idx_backup_records_type ON backup_records(backup_type);
 CREATE INDEX IF NOT EXISTS idx_backup_records_status ON backup_records(status);
 CREATE INDEX IF NOT EXISTS idx_backup_records_created_by ON backup_records(created_by);
+
+-- Social links table: unlimited configurable social/contact links
+CREATE TABLE IF NOT EXISTS social_links (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(100) NOT NULL,
+    url TEXT NOT NULL,
+    description TEXT,
+    display_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by BIGINT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_social_links_order ON social_links(display_order ASC);
+CREATE INDEX IF NOT EXISTS idx_social_links_active ON social_links(is_active);
