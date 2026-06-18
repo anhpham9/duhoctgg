@@ -40,21 +40,16 @@
             <!-- Add/Edit Form -->
             <div v-if="showAddForm" class="add-form-card">
                 <h3>{{ editingId ? 'Chỉnh sửa liên kết' : 'Thêm liên kết mới' }}</h3>
+
                 <form @submit.prevent="saveLink" class="form">
                     <div class="form-group">
                         <label>Tên liên kết <span class="required">*</span></label>
-                        <input
-                            v-model.trim="formData.name"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!formErrors.name }"
-                            placeholder="ví dụ: Facebook"
-                            maxlength="100"
-                        >
+                        <input v-model.trim="formData.name" type="text" class="form-control"
+                            :class="{ 'is-invalid': !!formErrors.name }" placeholder="ví dụ: Facebook" maxlength="100">
                         <p v-if="formErrors.name" class="field-error">{{ formErrors.name }}</p>
                     </div>
 
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <label>Icon <span class="required">*</span></label>
                         <input
                             v-model.trim="formData.icon"
@@ -66,40 +61,45 @@
                         >
                         <p v-if="formErrors.icon" class="field-error">{{ formErrors.icon }}</p>
                         <small>Dùng Font Awesome icons (ví dụ: fab fa-facebook, fab fa-twitter)</small>
+                    </div> -->
+
+                    <div class="form-group">
+                        <label>Icon <span class="required">*</span></label>
+
+                        <select v-model="formData.icon" class="form-control"
+                            :class="{ 'is-invalid': !!formErrors.icon }">
+                            <option value="">-- Chọn icon mạng xã hội --</option>
+                            <option v-for="opt in SOCIAL_ICON_OPTIONS" :key="opt.value" :value="opt.value">
+                                {{ opt.label }} ({{ opt.value }})
+                            </option>
+                        </select>
+
+                        <p v-if="formErrors.icon" class="field-error">{{ formErrors.icon }}</p>
+
+                        <div v-if="formData.icon" class="icon-preview">
+                            <span>Xem trước:</span>
+                            <i :class="formData.icon"></i>
+                            <code>{{ formData.icon }}</code>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label>URL <span class="required">*</span></label>
-                        <input
-                            v-model.trim="formData.url"
-                            type="url"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!formErrors.url }"
-                            placeholder="https://facebook.com/yourpage"
-                        >
+                        <input v-model.trim="formData.url" type="url" class="form-control"
+                            :class="{ 'is-invalid': !!formErrors.url }" placeholder="https://facebook.com/yourpage">
                         <p v-if="formErrors.url" class="field-error">{{ formErrors.url }}</p>
                     </div>
 
                     <div class="form-group">
                         <label>Mô tả</label>
-                        <textarea
-                            v-model="formData.description"
-                            class="form-control"
-                            rows="2"
-                            placeholder="Mô tả ngắn về liên kết này"
-                            maxlength="500"
-                        ></textarea>
+                        <textarea v-model="formData.description" class="form-control" rows="2"
+                            placeholder="Mô tả ngắn về liên kết này" maxlength="500"></textarea>
                     </div>
 
                     <div class="form-group">
                         <label>Thứ tự hiển thị <span class="required">*</span></label>
-                        <input
-                            v-model.number="formData.display_order"
-                            type="number"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!formErrors.display_order }"
-                            min="0"
-                        >
+                        <input v-model.number="formData.display_order" type="number" class="form-control"
+                            :class="{ 'is-invalid': !!formErrors.display_order }" min="0">
                         <p v-if="formErrors.display_order" class="field-error">{{ formErrors.display_order }}</p>
                     </div>
 
@@ -166,20 +166,11 @@
                                 </span>
                             </td>
                             <td class="action-col">
-                                <button
-                                    class="btn-edit"
-                                    :disabled="saving"
-                                    @click="editLink(link)"
-                                    title="Chỉnh sửa"
-                                >
+                                <button class="btn-edit" :disabled="saving" @click="editLink(link)" title="Chỉnh sửa">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button
-                                    class="btn-delete"
-                                    :disabled="saving || deletingId === link.id"
-                                    @click="deleteLink(link.id, link.name)"
-                                    title="Xóa"
-                                >
+                                <button class="btn-delete" :disabled="saving || deletingId === link.id"
+                                    @click="deleteLink(link.id, link.name)" title="Xóa">
                                     <i :class="deletingId === link.id ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
                                 </button>
                             </td>
@@ -212,7 +203,8 @@
                 </div>
                 <div class="modal-footer">
                     <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
-                    <button @click="confirmDeleteLink" type="button" class="btn btn-danger" :disabled="deletingId === linkToDelete.id">
+                    <button @click="confirmDeleteLink" type="button" class="btn btn-danger"
+                        :disabled="deletingId === linkToDelete.id">
                         <i v-if="deletingId === linkToDelete.id" class="fas fa-spinner fa-spin"></i>
                         {{ deletingId === linkToDelete.id ? 'Đang xóa...' : 'Xóa link' }}
                     </button>
@@ -278,6 +270,60 @@ const formErrors = reactive({
     display_order: ''
 })
 
+// icon
+const SOCIAL_ICON_OPTIONS = [
+    { label: 'Facebook', value: 'fa-brands fa-facebook' },
+    { label: 'Zalo', value: 'fa-zalo' },
+    { label: 'Facebook F', value: 'fa-brands fa-facebook-f' },
+    { label: 'Facebook Messenger', value: 'fa-brands fa-facebook-messenger' },
+    { label: 'Instagram', value: 'fa-brands fa-instagram' },
+    { label: 'Twitter', value: 'fa-brands fa-twitter' }, // FA 6.0.0
+    { label: 'YouTube', value: 'fa-brands fa-youtube' },
+    { label: 'TikTok', value: 'fa-brands fa-tiktok' },
+    { label: 'LinkedIn', value: 'fa-brands fa-linkedin' },
+    { label: 'LinkedIn In', value: 'fa-brands fa-linkedin-in' },
+    { label: 'GitHub', value: 'fa-brands fa-github' },
+    { label: 'GitLab', value: 'fa-brands fa-gitlab' },
+    { label: 'Discord', value: 'fa-brands fa-discord' },
+    { label: 'Telegram', value: 'fa-brands fa-telegram' },
+    { label: 'WhatsApp', value: 'fa-brands fa-whatsapp' },
+    { label: 'Pinterest', value: 'fa-brands fa-pinterest' },
+    { label: 'Reddit', value: 'fa-brands fa-reddit' },
+    { label: 'Snapchat', value: 'fa-brands fa-snapchat' },
+    { label: 'Tumblr', value: 'fa-brands fa-tumblr' },
+    { label: 'Twitch', value: 'fa-brands fa-twitch' },
+    { label: 'Viber', value: 'fa-brands fa-viber' },
+    { label: 'Weixin', value: 'fa-brands fa-weixin' },
+    { label: 'QQ', value: 'fa-brands fa-qq' },
+    { label: 'Weibo', value: 'fa-brands fa-weibo' },
+    { label: 'Line', value: 'fa-brands fa-line' },
+    { label: 'Skype', value: 'fa-brands fa-skype' },
+    { label: 'Stack Overflow', value: 'fa-brands fa-stack-overflow' },
+    { label: 'Medium', value: 'fa-brands fa-medium' },
+    { label: 'DEV', value: 'fa-brands fa-dev' },
+    { label: 'Dribbble', value: 'fa-brands fa-dribbble' },
+    { label: 'Behance', value: 'fa-brands fa-behance' },
+    { label: 'Vimeo', value: 'fa-brands fa-vimeo-v' },
+    { label: 'WordPress', value: 'fa-brands fa-wordpress' },
+    { label: 'Blogger', value: 'fa-brands fa-blogger-b' },
+    { label: 'Yelp', value: 'fa-brands fa-yelp' },
+    { label: 'Tripadvisor', value: 'fa-brands fa-tripadvisor' },
+    { label: 'SoundCloud', value: 'fa-brands fa-soundcloud' },
+    { label: 'Spotify', value: 'fa-brands fa-spotify' },
+    { label: 'Apple', value: 'fa-brands fa-apple' },
+    { label: 'Google', value: 'fa-brands fa-google' },
+    { label: 'Microsoft', value: 'fa-brands fa-microsoft' },
+    { label: 'Amazon', value: 'fa-brands fa-amazon' },
+    { label: 'Paypal', value: 'fa-brands fa-paypal' }
+]
+
+const ALLOWED_SOCIAL_ICONS = new Set(SOCIAL_ICON_OPTIONS.map(i => i.value))
+
+const normalizeIconClass = (icon = '') => {
+    // Hỗ trợ dữ liệu cũ đang lưu theo FA5: "fab ..."
+    return icon.replace(/^fab\s+/, 'fa-brands ').trim()
+}
+
 const isValidUrl = (value) => {
     if (!value) return false
     try {
@@ -303,8 +349,14 @@ const validateForm = () => {
         formErrors.name = 'Tên liên kết là bắt buộc'
     }
 
+    // if (!formData.icon.trim()) {
+    //     formErrors.icon = 'Icon là bắt buộc'
+    // }
+
     if (!formData.icon.trim()) {
         formErrors.icon = 'Icon là bắt buộc'
+    } else if (!ALLOWED_SOCIAL_ICONS.has(formData.icon)) {
+        formErrors.icon = 'Vui lòng chọn icon từ danh sách có sẵn'
     }
 
     if (!formData.url.trim()) {
@@ -358,6 +410,7 @@ const fetchSocialLinks = async () => {
 
 const editLink = (link) => {
     formData.name = link.name
+    // formData.icon = link.icon
     formData.icon = link.icon
     formData.url = link.url
     formData.description = link.description || ''
@@ -859,22 +912,151 @@ small {
     color: #dc3545;
 }
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem; }
-.modal { background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); width: 100%; max-width: 520px; overflow: hidden; }
-.modal-small { max-width: 460px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #eee; }
-.modal-header h3 { margin: 0; color: #333; }
-.btn-close { background: none; border: none; font-size: 1.2rem; color: #666; cursor: pointer; padding: 0.25rem; border-radius: 4px; }
-.btn-close:hover { background: #f0f0f0; }
-.modal-body { padding: 1.5rem; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid #eee; }
-.delete-confirmation { text-align: center; }
-.warning-icon { font-size: 2.5rem; color: #f59e0b; margin-bottom: 0.75rem; }
-.warning-text { margin-top: 0.5rem; color: #dc3545; font-weight: 600; }
-.permission-check { display: flex; align-items: center; justify-content: center; min-height: 60vh; padding: 2rem; }
-.loading-permission, .permission-denied { text-align: center; max-width: 500px; padding: 3rem 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
-.loading-permission i { font-size: 3rem; color: #2196f3; margin-bottom: 1rem; }
-.permission-denied i { font-size: 3rem; color: #f44336; margin-bottom: 1rem; }
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 520px;
+    overflow: hidden;
+}
+
+.modal-small {
+    max-width: 460px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+
+.btn-close:hover {
+    background: #f0f0f0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.delete-confirmation {
+    text-align: center;
+}
+
+.warning-icon {
+    font-size: 2.5rem;
+    color: #f59e0b;
+    margin-bottom: 0.75rem;
+}
+
+.warning-text {
+    margin-top: 0.5rem;
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.permission-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.loading-permission,
+.permission-denied {
+    text-align: center;
+    max-width: 500px;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.loading-permission i {
+    font-size: 3rem;
+    color: #2196f3;
+    margin-bottom: 1rem;
+}
+
+.permission-denied i {
+    font-size: 3rem;
+    color: #f44336;
+    margin-bottom: 1rem;
+}
+
+.icon-preview {
+    margin-top: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.icon-preview i {
+    font-size: 1.2rem;
+    color: #1976d2;
+}
+
+.icon-preview code {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.8rem;
+}
+
+.fa-zalo {
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    background-color: white;
+    /* -webkit-mask: url('/assets/icons/zalo.svg') no-repeat center / contain;
+    mask: url('/assets/icons/zalo.svg') no-repeat center / contain;
+    vertical-align: -0.15em; */
+    background-image: url('/assets/icons/zalo.svg');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+
+}
+
 @media (max-width: 1024px) {
     .page-header {
         flex-direction: column;
@@ -913,11 +1095,25 @@ small {
         flex-direction: column;
         gap: 0.25rem;
     }
+
     @media (max-width: 480px) {
-        .header-content h1 { font-size: 1.5rem; }
-        .btn-sm { padding: 0.35rem 0.45rem; }
-        .modal-overlay { padding: 1rem; }
-        .modal-header, .modal-body, .modal-footer { padding: 1rem; }
+        .header-content h1 {
+            font-size: 1.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.45rem;
+        }
+
+        .modal-overlay {
+            padding: 1rem;
+        }
+
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+            padding: 1rem;
+        }
     }
 }
 </style>
