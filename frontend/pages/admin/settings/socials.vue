@@ -94,18 +94,18 @@
                     <div class="form-group">
                         <label>Thứ tự hiển thị <span class="required">*</span></label>
                         <input
-                            v-model.number="formData.displayOrder"
+                            v-model.number="formData.display_order"
                             type="number"
                             class="form-control"
-                            :class="{ 'is-invalid': !!formErrors.displayOrder }"
+                            :class="{ 'is-invalid': !!formErrors.display_order }"
                             min="0"
                         >
-                        <p v-if="formErrors.displayOrder" class="field-error">{{ formErrors.displayOrder }}</p>
+                        <p v-if="formErrors.display_order" class="field-error">{{ formErrors.display_order }}</p>
                     </div>
 
                     <div class="form-group checkbox-group">
                         <label class="checkbox-label">
-                            <input v-model="formData.isActive" type="checkbox">
+                            <input v-model="formData.is_active" type="checkbox">
                             <span>Kích hoạt liên kết này</span>
                         </label>
                     </div>
@@ -159,10 +159,10 @@
                             <td class="url-col">
                                 <a :href="link.url" target="_blank" rel="noopener">{{ link.url }}</a>
                             </td>
-                            <td class="order-col">{{ link.displayOrder }}</td>
+                            <td class="order-col">{{ link.display_order }}</td>
                             <td class="status-col">
-                                <span :class="['badge', link.isActive ? 'badge-success' : 'badge-danger']">
-                                    {{ link.isActive ? 'Kích hoạt' : 'Vô hiệu' }}
+                                <span :class="['badge', link.is_active ? 'badge-success' : 'badge-danger']">
+                                    {{ link.is_active ? 'Kích hoạt' : 'Vô hiệu' }}
                                 </span>
                             </td>
                             <td class="action-col">
@@ -176,11 +176,11 @@
                                 </button>
                                 <button
                                     class="btn-delete"
-                                    :disabled="saving || deleting === link.id"
-                                    @click="deleteLink(link.id)"
+                                    :disabled="saving || deletingId === link.id"
+                                    @click="deleteLink(link.id, link.name)"
                                     title="Xóa"
                                 >
-                                    <i :class="deleting === link.id ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
+                                    <i :class="deletingId === link.id ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
                                 </button>
                             </td>
                         </tr>
@@ -191,6 +191,31 @@
                     <i class="fas fa-link"></i>
                     <p>Chưa có liên kết nào</p>
                     <p class="hint">Nhấn "Thêm liên kết" để tạo liên kết mới</p>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showDeleteConfirm && linkToDelete" class="modal-overlay">
+            <div class="modal modal-small" @click.stop>
+                <div class="modal-header">
+                    <h3>Xác nhận xóa</h3>
+                    <button @click="closeDeleteConfirm" class="btn-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirmation">
+                        <i class="fas fa-exclamation-triangle warning-icon"></i>
+                        <p>Bạn có chắc chắn muốn xóa link social <strong>{{ linkToDelete.name }}</strong>?</p>
+                        <p class="warning-text">Thao tác này không thể hoàn tác!</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
+                    <button @click="confirmDeleteLink" type="button" class="btn btn-danger" :disabled="deletingId === linkToDelete.id">
+                        <i v-if="deletingId === linkToDelete.id" class="fas fa-spinner fa-spin"></i>
+                        {{ deletingId === linkToDelete.id ? 'Đang xóa...' : 'Xóa link' }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -222,22 +247,27 @@ const { loadingUser, hasAnyRole, fetchCurrentUser } = useCurrentUser()
 const { showSuccess, showError, showInfo } = useNotifications()
 
 const hasPermission = computed(() => !loadingUser.value && hasAnyRole([1, 2]))
-
+const canDelete = computed(() => hasAnyRole([1, 2]))
 const loading = ref(false)
 const saving = ref(false)
-const deleting = ref(null)
+// const deleting = ref(null)
 const error = ref('')
 const showAddForm = ref(false)
 const editingId = ref(null)
 const socialLinks = ref([])
+
+
+const deletingId = ref(null)
+const showDeleteConfirm = ref(false)
+const linkToDelete = ref(null)
 
 const formData = reactive({
     name: '',
     icon: '',
     url: '',
     description: '',
-    displayOrder: 0,
-    isActive: true
+    display_order: 0,
+    is_active: true
 })
 
 const formErrors = reactive({
@@ -245,7 +275,7 @@ const formErrors = reactive({
     icon: '',
     url: '',
     description: '',
-    displayOrder: ''
+    display_order: ''
 })
 
 const isValidUrl = (value) => {
@@ -263,7 +293,7 @@ const clearErrors = () => {
     formErrors.icon = ''
     formErrors.url = ''
     formErrors.description = ''
-    formErrors.displayOrder = ''
+    formErrors.display_order = ''
 }
 
 const validateForm = () => {
@@ -283,8 +313,8 @@ const validateForm = () => {
         formErrors.url = 'URL không hợp lệ (cần bắt đầu bằng http/https)'
     }
 
-    if (formData.displayOrder < 0) {
-        formErrors.displayOrder = 'Thứ tự phải là số không âm'
+    if (formData.display_order < 0) {
+        formErrors.display_order = 'Thứ tự phải là số không âm'
     }
 
     return !Object.values(formErrors).some(Boolean)
@@ -295,8 +325,8 @@ const resetForm = () => {
     formData.icon = ''
     formData.url = ''
     formData.description = ''
-    formData.displayOrder = 0
-    formData.isActive = true
+    formData.display_order = 0
+    formData.is_active = true
     editingId.value = null
     showAddForm.value = false
     clearErrors()
@@ -318,7 +348,7 @@ const fetchSocialLinks = async () => {
             throw new Error(data?.message || `HTTP ${response.status}`)
         }
 
-        socialLinks.value = (data?.data || []).sort((a, b) => a.displayOrder - b.displayOrder)
+        socialLinks.value = (data?.data || []).sort((a, b) => a.display_order - b.display_order)
     } catch (err) {
         error.value = err.message || 'Không thể tải danh sách liên kết'
     } finally {
@@ -331,8 +361,8 @@ const editLink = (link) => {
     formData.icon = link.icon
     formData.url = link.url
     formData.description = link.description || ''
-    formData.displayOrder = link.displayOrder
-    formData.isActive = link.isActive
+    formData.display_order = link.display_order
+    formData.is_active = link.is_active
     editingId.value = link.id
     showAddForm.value = true
     clearErrors()
@@ -351,8 +381,8 @@ const saveLink = async () => {
             icon: formData.icon.trim(),
             url: formData.url.trim(),
             description: formData.description || '',
-            displayOrder: formData.displayOrder,
-            isActive: Boolean(formData.isActive)
+            display_order: formData.display_order,
+            is_active: Boolean(formData.is_active)
         }
 
         const method = editingId.value ? 'PUT' : 'POST'
@@ -383,12 +413,22 @@ const saveLink = async () => {
     }
 }
 
-const deleteLink = async (id) => {
-    if (!confirm('Bạn chắc chắn muốn xóa liên kết này?')) return
+const deleteLink = (id, name) => {
+    if (!canDelete.value) {
+        showError('Ban khong co quyen xoa link.')
+        return
+    }
+    linkToDelete.value = { id, name }
+    showDeleteConfirm.value = true
+}
 
-    deleting.value = id
+const confirmDeleteLink = async () => {
+    //if (!confirm('Bạn chắc chắn muốn xóa liên kết này?')) return
+    if (!linkToDelete.value) return
+
+    deletingId.value = linkToDelete.value.id
     try {
-        const response = await fetch(`${API_BASE}/settings/socials/${id}`, {
+        const response = await fetch(`${API_BASE}/settings/socials/${linkToDelete.value.id}`, {
             method: 'DELETE',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
@@ -401,12 +441,18 @@ const deleteLink = async (id) => {
         }
 
         showSuccess(data?.message || 'Đã xóa liên kết')
+        closeDeleteConfirm()
         await fetchSocialLinks()
     } catch (err) {
         showError(err.message || 'Không thể xóa liên kết')
     } finally {
-        deleting.value = null
+        deletingId.value = null
     }
+}
+
+const closeDeleteConfirm = () => {
+    showDeleteConfirm.value = false
+    linkToDelete.value = null
 }
 
 onMounted(async () => {
@@ -813,6 +859,22 @@ small {
     color: #dc3545;
 }
 
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem; }
+.modal { background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); width: 100%; max-width: 520px; overflow: hidden; }
+.modal-small { max-width: 460px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #eee; }
+.modal-header h3 { margin: 0; color: #333; }
+.btn-close { background: none; border: none; font-size: 1.2rem; color: #666; cursor: pointer; padding: 0.25rem; border-radius: 4px; }
+.btn-close:hover { background: #f0f0f0; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid #eee; }
+.delete-confirmation { text-align: center; }
+.warning-icon { font-size: 2.5rem; color: #f59e0b; margin-bottom: 0.75rem; }
+.warning-text { margin-top: 0.5rem; color: #dc3545; font-weight: 600; }
+.permission-check { display: flex; align-items: center; justify-content: center; min-height: 60vh; padding: 2rem; }
+.loading-permission, .permission-denied { text-align: center; max-width: 500px; padding: 3rem 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
+.loading-permission i { font-size: 3rem; color: #2196f3; margin-bottom: 1rem; }
+.permission-denied i { font-size: 3rem; color: #f44336; margin-bottom: 1rem; }
 @media (max-width: 1024px) {
     .page-header {
         flex-direction: column;
@@ -851,550 +913,11 @@ small {
         flex-direction: column;
         gap: 0.25rem;
     }
-}
-</style>
-                    <input
-                        v-model.trim="settings.zaloUrl"
-                        @input="clearFieldError('zaloUrl')"
-                        type="url"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.zaloUrl }"
-                        placeholder="https://zalo.me/..."
-                    >
-                    <p v-if="formErrors.zaloUrl" class="field-error">{{ formErrors.zaloUrl }}</p>
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn btn-secondary" :disabled="saving || loading" @click="resetForm">
-                        <i class="fas fa-undo"></i>
-                        Khôi phục
-                    </button>
-                    <button class="btn btn-primary" :disabled="saving || loading" @click="saveSettings">
-                        <i class="fas" :class="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-                        {{ saving ? 'Đang lưu...' : 'Lưu cài đặt' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <Toast />
-    </div>
-</template>
-
-<script setup>
-import { onMounted, reactive, ref, computed } from 'vue'
-import Toast from '~/components/Toast.vue'
-import { useCurrentUser } from '~/composables/useCurrentUser'
-import { useNotifications } from '~/composables/useNotifications'
-
-definePageMeta({
-    layout: 'admin',
-    middleware: ['auth', 'permission'],
-    ssr: false
-})
-
-useHead({
-    title: 'Cài đặt chung - Admin'
-})
-
-const config = useRuntimeConfig()
-const API_BASE = config.public.apiBase
-
-const { loadingUser, hasAnyRole, fetchCurrentUser } = useCurrentUser()
-const { showSuccess, showError, showInfo } = useNotifications()
-
-const hasPermission = computed(() => !loadingUser.value && hasAnyRole([1, 2]))
-
-const loading = ref(false)
-const saving = ref(false)
-const error = ref('')
-const lastSavedData = ref(null)
-
-const settings = reactive({
-    siteName: '',
-    siteLogoUrl: '',
-    siteDescription: '',
-    contactEmail: '',
-    phone: '',
-    hotline: '',
-    facebookUrl: '',
-    zaloUrl: '',
-    address: '',
-    seoDefaultTitle: '',
-    seoDefaultDescription: '',
-    maintenanceMode: false
-})
-
-const formErrors = reactive({
-    siteName: '',
-    siteLogoUrl: '',
-    siteDescription: '',
-    contactEmail: '',
-    phone: '',
-    hotline: '',
-    facebookUrl: '',
-    zaloUrl: '',
-    address: '',
-    seoDefaultTitle: '',
-    seoDefaultDescription: '',
-    maintenanceMode: ''
-})
-
-const isValidUrl = (value) => {
-    if (!value) return true
-    try {
-        const url = new URL(value)
-        return url.protocol === 'http:' || url.protocol === 'https:'
-    } catch {
-        return false
-    }
-}
-
-const clearFieldError = (field) => {
-    if (formErrors[field]) formErrors[field] = ''
-}
-
-const setSettings = (data = {}) => {
-    settings.siteName = data.siteName || ''
-    settings.siteLogoUrl = data.siteLogoUrl || ''
-    settings.siteDescription = data.siteDescription || ''
-    settings.contactEmail = data.contactEmail || ''
-    settings.phone = data.phone || ''
-    settings.hotline = data.hotline || ''
-    settings.facebookUrl = data.facebookUrl || ''
-    settings.zaloUrl = data.zaloUrl || ''
-    settings.address = data.address || ''
-    settings.seoDefaultTitle = data.seoDefaultTitle || ''
-    settings.seoDefaultDescription = data.seoDefaultDescription || ''
-    settings.maintenanceMode = Boolean(data.maintenanceMode)
-}
-
-const clearAllErrors = () => {
-    formErrors.siteName = ''
-    formErrors.siteLogoUrl = ''
-    formErrors.siteDescription = ''
-    formErrors.contactEmail = ''
-    formErrors.phone = ''
-    formErrors.hotline = ''
-    formErrors.facebookUrl = ''
-    formErrors.zaloUrl = ''
-    formErrors.address = ''
-    formErrors.seoDefaultTitle = ''
-    formErrors.seoDefaultDescription = ''
-    formErrors.maintenanceMode = ''
-}
-
-const validateForm = () => {
-    clearAllErrors()
-
-    if (!settings.siteName.trim()) {
-        formErrors.siteName = 'Tên website là bắt buộc'
-    }
-
-    if (settings.siteDescription.length > 2000) {
-        formErrors.siteDescription = 'Mô tả website tối đa 2000 ký tự'
-    }
-
-    if (settings.siteLogoUrl && !isValidUrl(settings.siteLogoUrl)) {
-        formErrors.siteLogoUrl = 'Logo URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
-    if (settings.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.contactEmail)) {
-        formErrors.contactEmail = 'Email không hợp lệ'
-    }
-
-    if (settings.phone && !/^[0-9+()\-\s]{8,20}$/.test(settings.phone)) {
-        formErrors.phone = 'Số điện thoại không hợp lệ'
-    }
-
-    if (settings.hotline && !/^[0-9+()\-\s]{8,20}$/.test(settings.hotline)) {
-        formErrors.hotline = 'Hotline không hợp lệ'
-    }
-
-    if (settings.facebookUrl && !isValidUrl(settings.facebookUrl)) {
-        formErrors.facebookUrl = 'Facebook URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
-    if (settings.zaloUrl && !isValidUrl(settings.zaloUrl)) {
-        formErrors.zaloUrl = 'Zalo URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
-    if (settings.address.length > 1000) {
-        formErrors.address = 'Địa chỉ tối đa 1000 ký tự'
-    }
-
-    if (settings.seoDefaultTitle.length > 255) {
-        formErrors.seoDefaultTitle = 'SEO Title tối đa 255 ký tự'
-    }
-
-    if (settings.seoDefaultDescription.length > 2000) {
-        formErrors.seoDefaultDescription = 'SEO Description tối đa 2000 ký tự'
-    }
-
-    return !Object.values(formErrors).some(Boolean)
-}
-
-const fetchSettings = async () => {
-    loading.value = true
-    error.value = ''
-
-    try {
-        const response = await fetch(`${API_BASE}/settings/general`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        const data = await response.json()
-
-        if (!response.ok) {
-            throw new Error(data?.message || `HTTP ${response.status}`)
-        }
-
-        const payload = data?.data || {}
-        setSettings(payload)
-        lastSavedData.value = { ...payload }
-    } catch (err) {
-        error.value = err.message || 'Không thể tải cài đặt chung'
-    } finally {
-        loading.value = false
-    }
-}
-
-const saveSettings = async () => {
-    if (!validateForm()) {
-        showError('Vui lòng kiểm tra lại thông tin trước khi lưu')
-        return
-    }
-
-    saving.value = true
-    try {
-        const payload = {
-            siteName: settings.siteName.trim(),
-            siteLogoUrl: settings.siteLogoUrl.trim(),
-            siteDescription: settings.siteDescription || '',
-            contactEmail: settings.contactEmail.trim(),
-            phone: settings.phone.trim(),
-            hotline: settings.hotline.trim(),
-            facebookUrl: settings.facebookUrl.trim(),
-            zaloUrl: settings.zaloUrl.trim(),
-            address: settings.address || '',
-            seoDefaultTitle: settings.seoDefaultTitle || '',
-            seoDefaultDescription: settings.seoDefaultDescription || '',
-            maintenanceMode: Boolean(settings.maintenanceMode)
-        }
-
-        const response = await fetch(`${API_BASE}/settings/general`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        const data = await response.json()
-
-        if (!response.ok) {
-            if (data?.errors) {
-                formErrors.siteName = data.errors.siteName || ''
-                formErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
-                formErrors.contactEmail = data.errors.contactEmail || ''
-                formErrors.phone = data.errors.phone || ''
-                formErrors.hotline = data.errors.hotline || ''
-                formErrors.facebookUrl = data.errors.facebookUrl || ''
-                formErrors.zaloUrl = data.errors.zaloUrl || ''
-                formErrors.seoDefaultTitle = data.errors.seoDefaultTitle || ''
-                formErrors.seoDefaultDescription = data.errors.seoDefaultDescription || ''
-            }
-            throw new Error(data?.message || 'Không thể lưu cài đặt')
-        }
-
-        const savedData = data?.data || payload
-        setSettings(savedData)
-        lastSavedData.value = { ...savedData }
-
-        showSuccess(data?.message || 'Đã lưu cài đặt chung thành công')
-    } catch (err) {
-        showError(err.message || 'Không thể lưu cài đặt chung')
-    } finally {
-        saving.value = false
-    }
-}
-
-const resetForm = () => {
-    if (lastSavedData.value) {
-        setSettings(lastSavedData.value)
-        clearAllErrors()
-        showInfo('Đã khôi phục dữ liệu gần nhất')
-        return
-    }
-
-    setSettings({
-        siteName: '',
-        siteLogoUrl: '',
-        siteDescription: '',
-        contactEmail: '',
-        phone: '',
-        hotline: '',
-        facebookUrl: '',
-        zaloUrl: '',
-        address: '',
-        seoDefaultTitle: '',
-        seoDefaultDescription: '',
-        maintenanceMode: false
-    })
-    clearAllErrors()
-    showInfo('Đã đặt lại form')
-}
-
-onMounted(async () => {
-    await fetchCurrentUser()
-    if (hasPermission.value) {
-        await fetchSettings()
-    }
-})
-</script>
-
-<style scoped>
-.settings-general-page {
-    padding: 0;
-    min-height: 100vh;
-}
-
-.permission-check {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    padding: 2rem;
-}
-
-.loading-permission,
-.permission-denied {
-    text-align: center;
-    max-width: 500px;
-    padding: 3rem 2rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.loading-permission i {
-    font-size: 3rem;
-    color: #2196f3;
-    margin-bottom: 1rem;
-}
-
-.permission-denied i {
-    font-size: 3rem;
-    color: #f44336;
-    margin-bottom: 1rem;
-}
-
-.permission-denied h3 {
-    color: #333;
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
-}
-
-.permission-denied p {
-    color: #666;
-    margin-bottom: 2rem;
-    line-height: 1.5;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    padding: 1.5rem 0;
-    border-bottom: 2px solid #eee;
-}
-
-.header-content h1 {
-    color: #333;
-    margin: 0 0 0.5rem 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 2rem;
-}
-
-.header-content h1 i {
-    color: #1976d2;
-}
-
-.header-content p {
-    color: #666;
-    margin: 0;
-    font-size: 1.05rem;
-}
-
-.header-actions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.settings-form {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #333;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #1976d2;
-    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.14);
-}
-
-.form-control.is-invalid {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
-}
-
-.field-error {
-    margin: 0.35rem 0 0;
-    color: #dc3545;
-    font-size: 0.85rem;
-}
-
-.maintenance-group {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
-    background: #f8fafc;
-}
-
-.checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    font-weight: 600;
-    color: #1f2937;
-}
-
-.help-text {
-    margin: 0.4rem 0 0;
-    color: #64748b;
-    font-size: 0.9rem;
-}
-
-.required {
-    color: #dc3545;
-}
-
-.loading-state,
-.error-state {
-    padding: 3rem 2rem;
-    text-align: center;
-    color: #666;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.loading-state i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: #2196f3;
-}
-
-.error-state i {
-    font-size: 2.5rem;
-    color: #f59e0b;
-    margin-bottom: 1rem;
-}
-
-.form-actions {
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-}
-
-.btn {
-    padding: 0.75rem 1.2rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-primary {
-    background: #1976d2;
-    color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: #1565c0;
-}
-
-.btn-secondary {
-    background: #f5f5f5;
-    color: #666;
-}
-
-.btn-secondary:hover:not(:disabled) {
-    background: #eee;
-}
-
-@media (max-width: 1024px) {
-    .page-header {
-        flex-direction: column;
-        gap: 1rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .header-content h1 {
-        font-size: 1.5rem;
-    }
-
-    .settings-form {
-        padding: 1rem;
-    }
-
-    .header-actions,
-    .form-actions {
-        width: 100%;
-        justify-content: stretch;
-    }
-
-    .header-actions .btn,
-    .form-actions .btn {
-        flex: 1;
-        justify-content: center;
+    @media (max-width: 480px) {
+        .header-content h1 { font-size: 1.5rem; }
+        .btn-sm { padding: 0.35rem 0.45rem; }
+        .modal-overlay { padding: 1rem; }
+        .modal-header, .modal-body, .modal-footer { padding: 1rem; }
     }
 }
 </style>
