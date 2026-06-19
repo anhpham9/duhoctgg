@@ -1,17 +1,17 @@
-﻿<template>
+<template>
     <div class="settings-general-page">
         <div v-if="loadingUser || !hasPermission" class="permission-check">
             <div v-if="loadingUser" class="loading-permission">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Đang kiểm tra quyền truy cập...</p>
+                <p>Dang kiem tra quyen truy cap...</p>
             </div>
             <div v-else class="permission-denied">
                 <i class="fas fa-shield-alt"></i>
-                <h3>Không thể truy cập Cài đặt chung</h3>
-                <p>Chỉ Superadmin và Admin mới có thể cập nhật cài đặt hệ thống.</p>
+                <h3>Khong the truy cap Cai dat</h3>
+                <p>Chi Superadmin va Admin moi co the cap nhat cai dat he thong.</p>
                 <NuxtLink to="/admin" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i>
-                    Quay lại Dashboard
+                    Quay lai Dashboard
                 </NuxtLink>
             </div>
         </div>
@@ -21,171 +21,219 @@
                 <div class="header-content">
                     <h1>
                         <i class="fas fa-cogs"></i>
-                        Cài đặt chung
+                        Cai dat chung
                     </h1>
-                    <p>Quản lý thông tin cơ bản của website.</p>
+                    <p>Quan ly thong tin website va lien he theo tung nhom.</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-secondary" :disabled="loading || saving" @click="fetchSettings">
-                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-                        Làm mới
+                    <button class="btn btn-secondary" :disabled="isLoading || saving" @click="fetchSettings">
+                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': isLoading }"></i>
+                        Lam moi
                     </button>
-                    <button class="btn btn-primary" :disabled="saving || loading" @click="saveSettings">
+                    <button class="btn btn-primary" :disabled="saving || isLoading" @click="saveCurrentTab">
                         <i class="fas" :class="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-                        {{ saving ? 'Đang lưu...' : 'Lưu cài đặt' }}
+                        {{ saving ? 'Dang luu...' : 'Luu cai dat' }}
                     </button>
                 </div>
             </div>
 
-            <div v-if="loading" class="loading-state">
+            <div class="tabs">
+                <button
+                    class="tab-btn"
+                    :class="{ active: activeTab === 'general' }"
+                    @click="activeTab = 'general'"
+                >
+                    Thong tin website
+                </button>
+                <button
+                    class="tab-btn"
+                    :class="{ active: activeTab === 'contact' }"
+                    @click="activeTab = 'contact'"
+                >
+                    Thong tin lien he
+                </button>
+            </div>
+
+            <div v-if="isLoading" class="loading-state">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Đang tải cài đặt...</p>
+                <p>Dang tai cai dat...</p>
             </div>
 
             <div v-else-if="error" class="error-state">
                 <i class="fas fa-exclamation-triangle"></i>
-                <p>Lỗi: {{ error }}</p>
-                <button @click="fetchSettings" class="btn btn-primary">Thử lại</button>
+                <p>Loi: {{ error }}</p>
+                <button @click="fetchSettings" class="btn btn-primary">Thu lai</button>
             </div>
 
             <div v-else class="settings-form">
-                <div class="form-group">
-                    <label>Tên website <span class="required">*</span></label>
-                    <input
-                        v-model.trim="settings.siteName"
-                        @input="clearFieldError('siteName')"
-                        type="text"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.siteName }"
-                        placeholder="Nhập tên website"
-                    >
-                    <p v-if="formErrors.siteName" class="field-error">{{ formErrors.siteName }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Logo URL</label>
-                    <input
-                        v-model.trim="settings.siteLogoUrl"
-                        @input="clearFieldError('siteLogoUrl')"
-                        type="url"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.siteLogoUrl }"
-                        placeholder="https://example.com/logo.png"
-                    >
-                    <p v-if="formErrors.siteLogoUrl" class="field-error">{{ formErrors.siteLogoUrl }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Favicon URL</label>
-                    <input
-                        v-model.trim="settings.siteFaviconUrl"
-                        @input="clearFieldError('siteFaviconUrl')"
-                        type="url"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.siteFaviconUrl }"
-                        placeholder="https://example.com/favicon.png"
-                    >
-                    <p v-if="formErrors.siteFaviconUrl" class="field-error">{{ formErrors.siteFaviconUrl }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Mô tả website</label>
-                    <textarea
-                        v-model="settings.siteDescription"
-                        @input="clearFieldError('siteDescription')"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.siteDescription }"
-                        rows="3"
-                        placeholder="Mô tả ngắn về website"
-                    ></textarea>
-                    <p v-if="formErrors.siteDescription" class="field-error">{{ formErrors.siteDescription }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Email liên hệ</label>
-                    <input
-                        v-model.trim="settings.contactEmail"
-                        @input="clearFieldError('contactEmail')"
-                        type="email"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.contactEmail }"
-                        placeholder="email@example.com"
-                    >
-                    <p v-if="formErrors.contactEmail" class="field-error">{{ formErrors.contactEmail }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Số điện thoại</label>
-                    <input
-                        v-model.trim="settings.phone"
-                        @input="clearFieldError('phone')"
-                        type="text"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.phone }"
-                        placeholder="0123456789"
-                    >
-                    <p v-if="formErrors.phone" class="field-error">{{ formErrors.phone }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Hotline</label>
-                    <input
-                        v-model.trim="settings.hotline"
-                        @input="clearFieldError('hotline')"
-                        type="text"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.hotline }"
-                        placeholder="1900xxxx"
-                    >
-                    <p v-if="formErrors.hotline" class="field-error">{{ formErrors.hotline }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>Địa chỉ</label>
-                    <textarea
-                        v-model="settings.address"
-                        @input="clearFieldError('address')"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.address }"
-                        rows="2"
-                        placeholder="Nhập địa chỉ"
-                    ></textarea>
-                    <p v-if="formErrors.address" class="field-error">{{ formErrors.address }}</p>
-                </div>
-
-                <div class="form-group">
-                    <label>iframe google map</label>
-                    <input
-                        v-model="settings.googleMapIframe"
-                        @input="clearFieldError('googleMapIframe')"
-                        type="text"
-                        class="form-control"
-                        :class="{ 'is-invalid': !!formErrors.googleMapIframe }"
-                        placeholder="Nhập iframe Google Map"
-                    >
-                    <p v-if="formErrors.googleMapIframe" class="field-error">{{ formErrors.googleMapIframe }}</p>
-                </div>
-
-                <div class="form-group maintenance-group">
-                    <label class="checkbox-label">
+                <template v-if="activeTab === 'general'">
+                    <div class="form-group">
+                        <label>Ten website <span class="required">*</span></label>
                         <input
-                            v-model="settings.maintenanceMode"
-                            @change="clearFieldError('maintenanceMode')"
-                            type="checkbox"
+                            v-model.trim="generalSettings.siteName"
+                            @input="clearGeneralError('siteName')"
+                            type="text"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!generalErrors.siteName }"
+                            placeholder="Nhap ten website"
                         >
-                        <span>Bật chế độ bảo trì</span>
-                    </label>
-                    <p class="help-text">Khi bật, website có thể hiển thị thông báo bảo trì cho người dùng.</p>
-                </div>
+                        <p v-if="generalErrors.siteName" class="field-error">{{ generalErrors.siteName }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Website link</label>
+                        <input
+                            v-model.trim="generalSettings.siteUrl"
+                            @input="clearGeneralError('siteUrl')"
+                            type="url"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!generalErrors.siteUrl }"
+                            placeholder="https://example.com"
+                        >
+                        <p v-if="generalErrors.siteUrl" class="field-error">{{ generalErrors.siteUrl }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Logo URL</label>
+                        <input
+                            v-model.trim="generalSettings.siteLogoUrl"
+                            @input="clearGeneralError('siteLogoUrl')"
+                            type="url"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!generalErrors.siteLogoUrl }"
+                            placeholder="https://example.com/logo.png"
+                        >
+                        <p v-if="generalErrors.siteLogoUrl" class="field-error">{{ generalErrors.siteLogoUrl }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Favicon URL</label>
+                        <input
+                            v-model.trim="generalSettings.siteFaviconUrl"
+                            @input="clearGeneralError('siteFaviconUrl')"
+                            type="url"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!generalErrors.siteFaviconUrl }"
+                            placeholder="https://example.com/favicon.png"
+                        >
+                        <p v-if="generalErrors.siteFaviconUrl" class="field-error">{{ generalErrors.siteFaviconUrl }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mo ta website</label>
+                        <textarea
+                            v-model="generalSettings.siteDescription"
+                            @input="clearGeneralError('siteDescription')"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!generalErrors.siteDescription }"
+                            rows="3"
+                            placeholder="Mo ta ngan ve website"
+                        ></textarea>
+                        <p v-if="generalErrors.siteDescription" class="field-error">{{ generalErrors.siteDescription }}</p>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <div class="form-group">
+                        <label>Ten cong ty day du</label>
+                        <input
+                            v-model.trim="contactSettings.companyFullName"
+                            @input="clearContactError('companyFullName')"
+                            type="text"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.companyFullName }"
+                            placeholder="Cong ty Co phan ..."
+                        >
+                        <p v-if="contactErrors.companyFullName" class="field-error">{{ contactErrors.companyFullName }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ten cong ty ngan</label>
+                        <input
+                            v-model.trim="contactSettings.companyShortName"
+                            @input="clearContactError('companyShortName')"
+                            type="text"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.companyShortName }"
+                            placeholder="DuhocNB"
+                        >
+                        <p v-if="contactErrors.companyShortName" class="field-error">{{ contactErrors.companyShortName }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email lien he</label>
+                        <input
+                            v-model.trim="contactSettings.contactEmail"
+                            @input="clearContactError('contactEmail')"
+                            type="email"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.contactEmail }"
+                            placeholder="email@example.com"
+                        >
+                        <p v-if="contactErrors.contactEmail" class="field-error">{{ contactErrors.contactEmail }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>So dien thoai</label>
+                        <input
+                            v-model.trim="contactSettings.phone"
+                            @input="clearContactError('phone')"
+                            type="text"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.phone }"
+                            placeholder="0123456789"
+                        >
+                        <p v-if="contactErrors.phone" class="field-error">{{ contactErrors.phone }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hotline</label>
+                        <input
+                            v-model.trim="contactSettings.hotline"
+                            @input="clearContactError('hotline')"
+                            type="text"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.hotline }"
+                            placeholder="1900xxxx"
+                        >
+                        <p v-if="contactErrors.hotline" class="field-error">{{ contactErrors.hotline }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dia chi</label>
+                        <textarea
+                            v-model="contactSettings.address"
+                            @input="clearContactError('address')"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.address }"
+                            rows="2"
+                            placeholder="Nhap dia chi"
+                        ></textarea>
+                        <p v-if="contactErrors.address" class="field-error">{{ contactErrors.address }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Google Maps embed URL</label>
+                        <input
+                            v-model.trim="contactSettings.googleMapEmbedUrl"
+                            @input="clearContactError('googleMapEmbedUrl')"
+                            type="url"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!contactErrors.googleMapEmbedUrl }"
+                            placeholder="https://www.google.com/maps/embed?..."
+                        >
+                        <p v-if="contactErrors.googleMapEmbedUrl" class="field-error">{{ contactErrors.googleMapEmbedUrl }}</p>
+                    </div>
+                </template>
 
                 <div class="form-actions">
-                    <button class="btn btn-secondary" :disabled="saving || loading" @click="resetForm">
+                    <button class="btn btn-secondary" :disabled="saving || isLoading" @click="resetCurrentTab">
                         <i class="fas fa-undo"></i>
-                        Khôi phục
+                        Khoi phuc
                     </button>
-                    <button class="btn btn-primary" :disabled="saving || loading" @click="saveSettings">
+                    <button class="btn btn-primary" :disabled="saving || isLoading" @click="saveCurrentTab">
                         <i class="fas" :class="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-                        {{ saving ? 'Đang lưu...' : 'Lưu cài đặt' }}
+                        {{ saving ? 'Dang luu...' : 'Luu cai dat' }}
                     </button>
                 </div>
             </div>
@@ -208,7 +256,7 @@ definePageMeta({
 })
 
 useHead({
-    title: 'Cài đặt chung - Admin'
+    title: 'Cai dat chung - Admin'
 })
 
 const config = useRuntimeConfig()
@@ -219,36 +267,52 @@ const { showSuccess, showError, showInfo } = useNotifications()
 
 const hasPermission = computed(() => !loadingUser.value && hasAnyRole([1, 2]))
 
-const loading = ref(false)
+const activeTab = ref('general')
+const loadingGeneral = ref(false)
+const loadingContact = ref(false)
 const saving = ref(false)
 const error = ref('')
-const lastSavedData = ref(null)
 
-const settings = reactive({
+const generalSettings = reactive({
     siteName: '',
+    siteUrl: '',
     siteLogoUrl: '',
     siteFaviconUrl: '',
-    siteDescription: '',
+    siteDescription: ''
+})
+
+const contactSettings = reactive({
+    companyFullName: '',
+    companyShortName: '',
     contactEmail: '',
     phone: '',
     hotline: '',
     address: '',
-    googleMapIframe: '',
-    maintenanceMode: false
+    googleMapEmbedUrl: ''
 })
 
-const formErrors = reactive({
+const generalErrors = reactive({
     siteName: '',
+    siteUrl: '',
     siteLogoUrl: '',
     siteFaviconUrl: '',
-    siteDescription: '',
+    siteDescription: ''
+})
+
+const contactErrors = reactive({
+    companyFullName: '',
+    companyShortName: '',
     contactEmail: '',
     phone: '',
     hotline: '',
     address: '',
-    googleMapIframe: '',
-    maintenanceMode: ''
+    googleMapEmbedUrl: ''
 })
+
+const lastSavedGeneral = ref(null)
+const lastSavedContact = ref(null)
+
+const isLoading = computed(() => loadingGeneral.value || loadingContact.value)
 
 const isValidUrl = (value) => {
     if (!value) return true
@@ -260,78 +324,104 @@ const isValidUrl = (value) => {
     }
 }
 
-const clearFieldError = (field) => {
-    if (formErrors[field]) formErrors[field] = ''
+const clearGeneralError = (field) => {
+    if (generalErrors[field]) generalErrors[field] = ''
 }
 
-const setSettings = (data = {}) => {
-    settings.siteName = data.siteName || ''
-    settings.siteLogoUrl = data.siteLogoUrl || ''
-    settings.siteFaviconUrl = data.siteFaviconUrl || ''
-    settings.siteDescription = data.siteDescription || ''
-    settings.contactEmail = data.contactEmail || ''
-    settings.phone = data.phone || ''
-    settings.hotline = data.hotline || ''
-    settings.address = data.address || ''
-    settings.googleMapIframe = data.googleMapIframe || ''
-    settings.maintenanceMode = Boolean(data.maintenanceMode)
+const clearContactError = (field) => {
+    if (contactErrors[field]) contactErrors[field] = ''
 }
 
-const clearAllErrors = () => {
-    formErrors.siteName = ''
-    formErrors.siteLogoUrl = ''
-    formErrors.siteFaviconUrl = ''
-    formErrors.siteDescription = ''
-    formErrors.contactEmail = ''
-    formErrors.phone = ''
-    formErrors.hotline = ''
-    formErrors.address = ''
-    formErrors.googleMapIframe = ''
-    formErrors.maintenanceMode = ''
+const setGeneralSettings = (data = {}) => {
+    generalSettings.siteName = data.siteName || ''
+    generalSettings.siteUrl = data.siteUrl || ''
+    generalSettings.siteLogoUrl = data.siteLogoUrl || ''
+    generalSettings.siteFaviconUrl = data.siteFaviconUrl || ''
+    generalSettings.siteDescription = data.siteDescription || ''
 }
 
-const validateForm = () => {
-    clearAllErrors()
-
-    if (!settings.siteName.trim()) {
-        formErrors.siteName = 'Tên website là bắt buộc'
-    }
-
-    if (settings.siteDescription.length > 2000) {
-        formErrors.siteDescription = 'Mô tả website tối đa 2000 ký tự'
-    }
-
-    if (settings.siteLogoUrl && !isValidUrl(settings.siteLogoUrl)) {
-        formErrors.siteLogoUrl = 'Logo URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
-    if (settings.siteFaviconUrl && !isValidUrl(settings.siteFaviconUrl)) {
-        formErrors.siteFaviconUrl = 'Favicon URL không hợp lệ (cần bắt đầu bằng http/https)'
-    }
-
-    if (settings.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.contactEmail)) {
-        formErrors.contactEmail = 'Email không hợp lệ'
-    }
-
-    if (settings.phone && !/^[0-9+()\-\s]{8,20}$/.test(settings.phone)) {
-        formErrors.phone = 'Số điện thoại không hợp lệ'
-    }
-
-    if (settings.hotline && !/^[0-9+()\-\s]{8,20}$/.test(settings.hotline)) {
-        formErrors.hotline = 'Hotline không hợp lệ'
-    }
-
-    if (settings.address.length > 1000) {
-        formErrors.address = 'Địa chỉ tối đa 1000 ký tự'
-    }
-
-    return !Object.values(formErrors).some(Boolean)
+const setContactSettings = (data = {}) => {
+    contactSettings.companyFullName = data.companyFullName || ''
+    contactSettings.companyShortName = data.companyShortName || ''
+    contactSettings.contactEmail = data.contactEmail || ''
+    contactSettings.phone = data.phone || ''
+    contactSettings.hotline = data.hotline || ''
+    contactSettings.address = data.address || ''
+    contactSettings.googleMapEmbedUrl = data.googleMapEmbedUrl || ''
 }
 
-const fetchSettings = async () => {
-    loading.value = true
-    error.value = ''
+const clearGeneralErrors = () => {
+    generalErrors.siteName = ''
+    generalErrors.siteUrl = ''
+    generalErrors.siteLogoUrl = ''
+    generalErrors.siteFaviconUrl = ''
+    generalErrors.siteDescription = ''
+}
 
+const clearContactErrors = () => {
+    contactErrors.companyFullName = ''
+    contactErrors.companyShortName = ''
+    contactErrors.contactEmail = ''
+    contactErrors.phone = ''
+    contactErrors.hotline = ''
+    contactErrors.address = ''
+    contactErrors.googleMapEmbedUrl = ''
+}
+
+const validateGeneral = () => {
+    clearGeneralErrors()
+
+    if (!generalSettings.siteName.trim()) {
+        generalErrors.siteName = 'Ten website la bat buoc'
+    }
+
+    if (generalSettings.siteDescription.length > 2000) {
+        generalErrors.siteDescription = 'Mo ta website toi da 2000 ky tu'
+    }
+
+    if (generalSettings.siteUrl && !isValidUrl(generalSettings.siteUrl)) {
+        generalErrors.siteUrl = 'Website link khong hop le (can bat dau bang http/https)'
+    }
+
+    if (generalSettings.siteLogoUrl && !isValidUrl(generalSettings.siteLogoUrl)) {
+        generalErrors.siteLogoUrl = 'Logo URL khong hop le (can bat dau bang http/https)'
+    }
+
+    if (generalSettings.siteFaviconUrl && !isValidUrl(generalSettings.siteFaviconUrl)) {
+        generalErrors.siteFaviconUrl = 'Favicon URL khong hop le (can bat dau bang http/https)'
+    }
+
+    return !Object.values(generalErrors).some(Boolean)
+}
+
+const validateContact = () => {
+    clearContactErrors()
+
+    if (contactSettings.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactSettings.contactEmail)) {
+        contactErrors.contactEmail = 'Email khong hop le'
+    }
+
+    if (contactSettings.phone && !/^[0-9+()\-\s]{8,20}$/.test(contactSettings.phone)) {
+        contactErrors.phone = 'So dien thoai khong hop le'
+    }
+
+    if (contactSettings.hotline && !/^[0-9+()\-\s]{8,20}$/.test(contactSettings.hotline)) {
+        contactErrors.hotline = 'Hotline khong hop le'
+    }
+
+    if (contactSettings.address.length > 1000) {
+        contactErrors.address = 'Dia chi toi da 1000 ky tu'
+    }
+
+    if (contactSettings.googleMapEmbedUrl && !isValidUrl(contactSettings.googleMapEmbedUrl)) {
+        contactErrors.googleMapEmbedUrl = 'Google Maps URL khong hop le (can bat dau bang http/https)'
+    }
+
+    return !Object.values(contactErrors).some(Boolean)
+}
+
+const fetchGeneralSettings = async () => {
+    loadingGeneral.value = true
     try {
         const response = await fetch(`${API_BASE}/settings/general`, {
             method: 'GET',
@@ -339,98 +429,184 @@ const fetchSettings = async () => {
             headers: { 'Content-Type': 'application/json' }
         })
         const data = await response.json()
-
         if (!response.ok) {
             throw new Error(data?.message || `HTTP ${response.status}`)
         }
 
         const payload = data?.data || {}
-        setSettings(payload)
-        lastSavedData.value = { ...payload }
-    } catch (err) {
-        error.value = err.message || 'Không thể tải cài đặt chung'
+        setGeneralSettings(payload)
+        lastSavedGeneral.value = { ...payload }
     } finally {
-        loading.value = false
+        loadingGeneral.value = false
     }
 }
 
-const saveSettings = async () => {
-    if (!validateForm()) {
-        showError('Vui lòng kiểm tra lại thông tin trước khi lưu')
+const fetchContactSettings = async () => {
+    loadingContact.value = true
+    try {
+        const response = await fetch(`${API_BASE}/settings/contact`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        const data = await response.json()
+        if (!response.ok) {
+            throw new Error(data?.message || `HTTP ${response.status}`)
+        }
+
+        const payload = data?.data || {}
+        setContactSettings(payload)
+        lastSavedContact.value = { ...payload }
+    } finally {
+        loadingContact.value = false
+    }
+}
+
+const fetchSettings = async () => {
+    error.value = ''
+    try {
+        await Promise.all([fetchGeneralSettings(), fetchContactSettings()])
+    } catch (err) {
+        error.value = err.message || 'Khong the tai cai dat'
+    }
+}
+
+const saveGeneralSettings = async () => {
+    if (!validateGeneral()) {
+        showError('Vui long kiem tra lai thong tin tab website')
         return
     }
 
+    const payload = {
+        siteName: generalSettings.siteName.trim(),
+        siteUrl: generalSettings.siteUrl.trim(),
+        siteLogoUrl: generalSettings.siteLogoUrl.trim(),
+        siteFaviconUrl: generalSettings.siteFaviconUrl.trim(),
+        siteDescription: generalSettings.siteDescription || ''
+    }
+
+    const response = await fetch(`${API_BASE}/settings/general`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    const data = await response.json()
+
+    if (!response.ok) {
+        if (data?.errors) {
+            generalErrors.siteName = data.errors.siteName || ''
+            generalErrors.siteUrl = data.errors.siteUrl || ''
+            generalErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
+            generalErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
+            generalErrors.siteDescription = data.errors.siteDescription || ''
+        }
+        throw new Error(data?.message || 'Khong the luu cai dat website')
+    }
+
+    const savedData = data?.data || payload
+    setGeneralSettings(savedData)
+    lastSavedGeneral.value = { ...savedData }
+    showSuccess(data?.message || 'Da luu cai dat website thanh cong')
+}
+
+const saveContactSettings = async () => {
+    if (!validateContact()) {
+        showError('Vui long kiem tra lai thong tin tab lien he')
+        return
+    }
+
+    const payload = {
+        companyFullName: contactSettings.companyFullName.trim(),
+        companyShortName: contactSettings.companyShortName.trim(),
+        contactEmail: contactSettings.contactEmail.trim(),
+        phone: contactSettings.phone.trim(),
+        hotline: contactSettings.hotline.trim(),
+        address: contactSettings.address || '',
+        googleMapEmbedUrl: contactSettings.googleMapEmbedUrl.trim()
+    }
+
+    const response = await fetch(`${API_BASE}/settings/contact`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    const data = await response.json()
+
+    if (!response.ok) {
+        if (data?.errors) {
+            contactErrors.companyFullName = data.errors.companyFullName || ''
+            contactErrors.companyShortName = data.errors.companyShortName || ''
+            contactErrors.contactEmail = data.errors.contactEmail || ''
+            contactErrors.phone = data.errors.phone || ''
+            contactErrors.hotline = data.errors.hotline || ''
+            contactErrors.address = data.errors.address || ''
+            contactErrors.googleMapEmbedUrl = data.errors.googleMapEmbedUrl || ''
+        }
+        throw new Error(data?.message || 'Khong the luu cai dat lien he')
+    }
+
+    const savedData = data?.data || payload
+    setContactSettings(savedData)
+    lastSavedContact.value = { ...savedData }
+    showSuccess(data?.message || 'Da luu cai dat lien he thanh cong')
+}
+
+const saveCurrentTab = async () => {
     saving.value = true
     try {
-        const payload = {
-            siteName: settings.siteName.trim(),
-            siteLogoUrl: settings.siteLogoUrl.trim(),
-            siteFaviconUrl: settings.siteFaviconUrl.trim(),
-            siteDescription: settings.siteDescription || '',
-            contactEmail: settings.contactEmail.trim(),
-            phone: settings.phone.trim(),
-            hotline: settings.hotline.trim(),
-            address: settings.address || '',
-            googleMapIframe: settings.googleMapIframe || '',
-            maintenanceMode: Boolean(settings.maintenanceMode)
+        if (activeTab.value === 'general') {
+            await saveGeneralSettings()
+        } else {
+            await saveContactSettings()
         }
-
-        const response = await fetch(`${API_BASE}/settings/general`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        const data = await response.json()
-
-        if (!response.ok) {
-            if (data?.errors) {
-                formErrors.siteName = data.errors.siteName || ''
-                formErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
-                formErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
-                formErrors.contactEmail = data.errors.contactEmail || ''
-                formErrors.phone = data.errors.phone || ''
-                formErrors.hotline = data.errors.hotline || ''
-                formErrors.address = data.errors.address || ''
-                formErrors.googleMapIframe = data.errors.googleMapIframe || ''
-            }
-            throw new Error(data?.message || 'Không thể lưu cài đặt')
-        }
-
-        const savedData = data?.data || payload
-        setSettings(savedData)
-        lastSavedData.value = { ...savedData }
-
-        showSuccess(data?.message || 'Đã lưu cài đặt chung thành công')
     } catch (err) {
-        showError(err.message || 'Không thể lưu cài đặt chung')
+        showError(err.message || 'Khong the luu cai dat')
     } finally {
         saving.value = false
     }
 }
 
-const resetForm = () => {
-    if (lastSavedData.value) {
-        setSettings(lastSavedData.value)
-        clearAllErrors()
-        showInfo('Đã khôi phục dữ liệu gần nhất')
+const resetCurrentTab = () => {
+    if (activeTab.value === 'general') {
+        if (lastSavedGeneral.value) {
+            setGeneralSettings(lastSavedGeneral.value)
+            clearGeneralErrors()
+            showInfo('Da khoi phuc du lieu tab website')
+            return
+        }
+
+        setGeneralSettings({
+            siteName: '',
+            siteUrl: '',
+            siteLogoUrl: '',
+            siteFaviconUrl: '',
+            siteDescription: ''
+        })
+        clearGeneralErrors()
+        showInfo('Da dat lai tab website')
         return
     }
 
-    setSettings({
-        siteName: '',
-        siteLogoUrl: '',
-        siteFaviconUrl: '',
-        siteDescription: '',
+    if (lastSavedContact.value) {
+        setContactSettings(lastSavedContact.value)
+        clearContactErrors()
+        showInfo('Da khoi phuc du lieu tab lien he')
+        return
+    }
+
+    setContactSettings({
+        companyFullName: '',
+        companyShortName: '',
         contactEmail: '',
         phone: '',
         hotline: '',
         address: '',
-        googleMapIframe: '',
-        maintenanceMode: false
+        googleMapEmbedUrl: ''
     })
-    clearAllErrors()
-    showInfo('Đã đặt lại form')
+    clearContactErrors()
+    showInfo('Da dat lai tab lien he')
 }
 
 onMounted(async () => {
@@ -523,6 +699,28 @@ onMounted(async () => {
     flex-wrap: wrap;
 }
 
+.tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #334155;
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background: #1976d2;
+    border-color: #1976d2;
+    color: #fff;
+}
+
 .settings-form {
     background: white;
     padding: 1.5rem;
@@ -567,27 +765,6 @@ onMounted(async () => {
     font-size: 0.85rem;
 }
 
-.maintenance-group {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
-    background: #f8fafc;
-}
-
-.checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    font-weight: 600;
-    color: #1f2937;
-}
-
-.help-text {
-    margin: 0.4rem 0 0;
-    color: #64748b;
-    font-size: 0.9rem;
-}
-
 .required {
     color: #dc3545;
 }
@@ -619,40 +796,6 @@ onMounted(async () => {
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
-}
-
-.settings-links {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 2px solid #eee;
-}
-
-.section-label {
-    color: #555;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: block;
-}
-
-.settings-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.2rem;
-    margin-right: 0.75rem;
-    margin-bottom: 0.75rem;
-    background: #f0f7ff;
-    color: #1976d2;
-    text-decoration: none;
-    border-radius: 6px;
-    border: 1px solid #1976d2;
-    transition: all 0.2s ease;
-    font-weight: 500;
-}
-
-.settings-link:hover {
-    background: #1976d2;
-    color: white;
 }
 
 .btn {
@@ -708,6 +851,10 @@ onMounted(async () => {
         padding: 1rem;
     }
 
+    .tabs {
+        flex-direction: column;
+    }
+
     .header-actions,
     .form-actions {
         width: 100%;
@@ -718,15 +865,6 @@ onMounted(async () => {
     .form-actions .btn {
         flex: 1;
         justify-content: center;
-    }
-
-    .settings-links {
-        flex-direction: column;
-    }
-
-    .settings-link {
-        width: 100%;
-        text-align: center;
     }
 }
 </style>

@@ -168,14 +168,14 @@ const saveBackupConfig = async (payload = {}) => {
         [BACKUP_SETTINGS_KEYS.retentionCount, String(config.retentionCount), 'Backup config: retention count']
     ];
 
-    const placeholders = settingsEntries.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(',');
-    const values = settingsEntries.flat();
+    const placeholders = settingsEntries.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`).join(',');
+    const values = settingsEntries.flatMap(([key, value, description]) => [key, value, description, 'general']);
 
     await db.query(
-        `INSERT INTO settings (key, value, description)
+        `INSERT INTO settings (key, value, description, group_name)
          VALUES ${placeholders}
          ON CONFLICT (key)
-         DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description`,
+         DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description, group_name = EXCLUDED.group_name`,
         values
     );
 

@@ -1,85 +1,124 @@
 // backend/scripts/seeds/seedSettings.js
-// Seed script for settings table (standardized)
+// Seed script for settings table (group_name schema)
 
 import db from "../../src/config/db.js";
 
 const settings = [
   {
-    key: 'site_name',
-    value: 'DuhocNB',
-    description: 'Tên website hiển thị ở tiêu đề và các vị trí chính.'
+    key: "general.site_name",
+    value: "DuhocNB",
+    description: "General setting: website name",
+    group_name: "general"
   },
   {
-    key: 'site_logo_url',
-    value: 'https://duhocnb.vn/logo.png',
-    description: 'URL logo chính của website.'
+    key: "general.site_url",
+    value: "https://duhocnb.vn",
+    description: "General setting: website url",
+    group_name: "general"
   },
   {
-    key: 'site_description',
-    value: 'Nền tảng thông tin du học Nhật Bản toàn diện, cập nhật tin tức, trường học, điều kiện và hỗ trợ.',
-    description: 'Mô tả website.'
+    key: "general.site_logo_url",
+    value: "https://duhocnb.vn/logo.png",
+    description: "General setting: website logo URL",
+    group_name: "general"
   },
   {
-    key: 'contact_email',
-    value: 'support@duhocnb.vn',
-    description: 'Email liên hệ chính.'
+    key: "general.site_favicon_url",
+    value: "https://duhocnb.vn/favicon.ico",
+    description: "General setting: website favicon URL",
+    group_name: "general"
   },
   {
-    key: 'contact_phone',
-    value: '+84-123-456-789',
-    description: 'Số điện thoại liên hệ chính.'
+    key: "general.site_description",
+    value: "Nen tang thong tin du hoc Nhat Ban toan dien, cap nhat tin tuc, truong hoc, dieu kien va ho tro.",
+    description: "General setting: website description",
+    group_name: "general"
   },
   {
-    key: 'hotline',
-    value: '+84-123-123-123',
-    description: 'Số điện thoại liên hệ hotline.'
+    key: "contact.company_full_name",
+    value: "Cong ty Co phan DuhocNB",
+    description: "Contact setting: full company name",
+    group_name: "contact"
   },
   {
-    key: 'facebook_url',
-    value: 'https://facebook.com/duhocnb',
-    description: 'Fanpage Facebook.'
+    key: "contact.company_short_name",
+    value: "DuhocNB",
+    description: "Contact setting: short company name",
+    group_name: "contact"
   },
   {
-    key: 'zalo_url',
-    value: 'https://zalo.me/duhocnb',
-    description: 'Zalo Official.'
+    key: "contact.contact_email",
+    value: "support@duhocnb.vn",
+    description: "Contact setting: contact email",
+    group_name: "contact"
   },
   {
-    key: 'address',
-    value: 'Số 1, Đường ABC, Quận XYZ, Hà Nội',
-    description: 'Địa chỉ văn phòng chính.'
+    key: "contact.phone",
+    value: "+84-123-456-789",
+    description: "Contact setting: phone",
+    group_name: "contact"
   },
   {
-    key: 'seo_default_title',
-    value: 'Du học Nhật Bản - DuhocNB',
-    description: 'Tiêu đề SEO mặc định.'
+    key: "contact.hotline",
+    value: "+84-123-123-123",
+    description: "Contact setting: hotline",
+    group_name: "contact"
   },
   {
-    key: 'seo_default_description',
-    value: 'Nền tảng thông tin du học Nhật Bản toàn diện, cập nhật tin tức, trường học, điều kiện và hỗ trợ.',
-    description: 'Mô tả SEO mặc định.'
+    key: "contact.address",
+    value: "So 1, Duong ABC, Quan XYZ, Ha Noi",
+    description: "Contact setting: office address",
+    group_name: "contact"
   },
   {
-    key: 'maintenance_mode',
-    value: 'off',
-    description: 'Bật/tắt chế độ bảo trì (on/off).'
+    key: "contact.google_map_embed_url",
+    value: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4326043693744!2d106.69385131533472!3d10.77536259230029!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f38f9ed887b%3A0x14aded5703768989!2zUXXhuq1uIDEsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCwgVmnhu4d0IE5hbQ!5e0!3m2!1svi!2s!4v1649832458422!5m2!1svi!2s",
+    description: "Contact setting: Google Map embed URL",
+    group_name: "contact"
+  },
+  {
+    key: "seo.default_title",
+    value: "Du hoc Nhat Ban - DuhocNB",
+    description: "SEO setting: default page title",
+    group_name: "seo"
+  },
+  {
+    key: "seo.default_description",
+    value: "Nen tang thong tin du hoc Nhat Ban toan dien, cap nhat tin tuc, truong hoc, dieu kien va ho tro.",
+    description: "SEO setting: default meta description",
+    group_name: "seo"
+  },
+  {
+    key: "seo.default_og_image",
+    value: "https://duhocnb.vn/og-image.jpg",
+    description: "SEO setting: default Open Graph image URL",
+    group_name: "seo"
+  },
+  {
+    key: "seo.facebook_app_id",
+    value: "",
+    description: "SEO setting: Facebook App ID",
+    group_name: "seo"
   }
 ];
-
 
 const run = async () => {
   try {
     for (const setting of settings) {
       await db.query(
-        `INSERT INTO settings (key, value, description)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (key) DO NOTHING`,
-        [setting.key, setting.value, setting.description]
+        `INSERT INTO settings (key, value, description, group_name)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (key)
+         DO UPDATE SET
+           value = EXCLUDED.value,
+           description = EXCLUDED.description,
+           group_name = EXCLUDED.group_name`,
+        [setting.key, setting.value, setting.description, setting.group_name]
       );
     }
-    console.log('✅ Seeded settings successfully!');
+    console.log("Seeded settings successfully!");
   } catch (err) {
-    console.error('❌ Error seeding settings:', err.message);
+    console.error("Error seeding settings:", err.message);
   }
 };
 

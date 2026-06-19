@@ -35,6 +35,7 @@ import notificationsRoutes from "./routes/notifications.routes.js";
 // import auditLogsRoutes from "./routes/auditLogs.routes.js";
 // import activityLogsRoutes from "./routes/activityLogs.routes.js";
 import { getPublicStaticPageBySlug } from "./controllers/publicStaticPages.controller.js";
+import { ensureSettingsKeysExist } from "./services/settings.service.js";
 
 
 // RBAC/permission middleware mẫu
@@ -187,7 +188,10 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+    // Initialize settings keys in database
+    await ensureSettingsKeysExist();
+    
     backupService.startBackupScheduler();
 
     logInfo('Server started successfully', {

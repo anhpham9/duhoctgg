@@ -76,6 +76,32 @@
                     <p v-if="formErrors.seoDefaultDescription" class="field-error">{{ formErrors.seoDefaultDescription }}</p>
                 </div>
 
+                <div class="form-group">
+                    <label>Default OG Image URL</label>
+                    <input
+                        v-model.trim="settings.seoDefaultOgImage"
+                        @input="clearFieldError('seoDefaultOgImage')"
+                        type="url"
+                        class="form-control"
+                        :class="{ 'is-invalid': !!formErrors.seoDefaultOgImage }"
+                        placeholder="https://example.com/og-image.jpg"
+                    >
+                    <p v-if="formErrors.seoDefaultOgImage" class="field-error">{{ formErrors.seoDefaultOgImage }}</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Facebook App ID</label>
+                    <input
+                        v-model.trim="settings.seoFacebookAppId"
+                        @input="clearFieldError('seoFacebookAppId')"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'is-invalid': !!formErrors.seoFacebookAppId }"
+                        placeholder="123456789"
+                    >
+                    <p v-if="formErrors.seoFacebookAppId" class="field-error">{{ formErrors.seoFacebookAppId }}</p>
+                </div>
+
                 <div class="form-actions">
                     <button class="btn btn-secondary" :disabled="saving || loading" @click="resetForm">
                         <i class="fas fa-undo"></i>
@@ -124,12 +150,16 @@ const lastSavedData = ref(null)
 
 const settings = reactive({
     seoDefaultTitle: '',
-    seoDefaultDescription: ''
+    seoDefaultDescription: '',
+    seoDefaultOgImage: '',
+    seoFacebookAppId: ''
 })
 
 const formErrors = reactive({
     seoDefaultTitle: '',
-    seoDefaultDescription: ''
+    seoDefaultDescription: '',
+    seoDefaultOgImage: '',
+    seoFacebookAppId: ''
 })
 
 const isValidUrl = (value) => {
@@ -149,11 +179,15 @@ const clearFieldError = (field) => {
 const setSettings = (data = {}) => {
     settings.seoDefaultTitle = data.seoDefaultTitle || ''
     settings.seoDefaultDescription = data.seoDefaultDescription || ''
+    settings.seoDefaultOgImage = data.seoDefaultOgImage || ''
+    settings.seoFacebookAppId = data.seoFacebookAppId || ''
 }
 
 const clearAllErrors = () => {
     formErrors.seoDefaultTitle = ''
     formErrors.seoDefaultDescription = ''
+    formErrors.seoDefaultOgImage = ''
+    formErrors.seoFacebookAppId = ''
 }
 
 const validateForm = () => {
@@ -165,6 +199,14 @@ const validateForm = () => {
 
     if (settings.seoDefaultDescription.length > 2000) {
         formErrors.seoDefaultDescription = 'SEO Description tối đa 2000 ký tự'
+    }
+
+    if (settings.seoDefaultOgImage && !isValidUrl(settings.seoDefaultOgImage)) {
+        formErrors.seoDefaultOgImage = 'OG Image URL không hợp lệ (http/https)'
+    }
+
+    if (settings.seoFacebookAppId.length > 100) {
+        formErrors.seoFacebookAppId = 'Facebook App ID tối đa 100 ký tự'
     }
 
     return !Object.values(formErrors).some(Boolean)
@@ -206,7 +248,9 @@ const saveSettings = async () => {
     try {
         const payload = {
             seoDefaultTitle: settings.seoDefaultTitle || '',
-            seoDefaultDescription: settings.seoDefaultDescription || ''
+            seoDefaultDescription: settings.seoDefaultDescription || '',
+            seoDefaultOgImage: settings.seoDefaultOgImage || '',
+            seoFacebookAppId: settings.seoFacebookAppId || ''
         }
 
         const response = await fetch(`${API_BASE}/settings/seo`, {
@@ -221,6 +265,8 @@ const saveSettings = async () => {
             if (data?.errors) {
                 formErrors.seoDefaultTitle = data.errors.seoDefaultTitle || ''
                 formErrors.seoDefaultDescription = data.errors.seoDefaultDescription || ''
+                formErrors.seoDefaultOgImage = data.errors.seoDefaultOgImage || ''
+                formErrors.seoFacebookAppId = data.errors.seoFacebookAppId || ''
             }
             throw new Error(data?.message || 'Không thể lưu cài đặt')
         }
@@ -247,7 +293,9 @@ const resetForm = () => {
 
     setSettings({
         seoDefaultTitle: '',
-        seoDefaultDescription: ''
+        seoDefaultDescription: '',
+        seoDefaultOgImage: '',
+        seoFacebookAppId: ''
     })
     clearAllErrors()
     showInfo('Đã đặt lại form')

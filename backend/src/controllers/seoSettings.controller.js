@@ -10,24 +10,21 @@ const SEO_SETTINGS_KEYS = {
     seoDefaultTitle: `${SEO_SETTINGS_PREFIX}default_title`,
     seoDefaultDescription: `${SEO_SETTINGS_PREFIX}default_description`,
     seoDefaultOgImage: `${SEO_SETTINGS_PREFIX}default_og_image`,
-    seoFacebookAppId: `${SEO_SETTINGS_PREFIX}facebook_app_id`,
-    seoTwitterHandle: `${SEO_SETTINGS_PREFIX}twitter_handle`
+    seoFacebookAppId: `${SEO_SETTINGS_PREFIX}facebook_app_id`
 };
 
 const SEO_SETTINGS_DESCRIPTIONS = {
     [SEO_SETTINGS_KEYS.seoDefaultTitle]: "SEO setting: default page title",
     [SEO_SETTINGS_KEYS.seoDefaultDescription]: "SEO setting: default meta description",
     [SEO_SETTINGS_KEYS.seoDefaultOgImage]: "SEO setting: default Open Graph image URL",
-    [SEO_SETTINGS_KEYS.seoFacebookAppId]: "SEO setting: Facebook App ID",
-    [SEO_SETTINGS_KEYS.seoTwitterHandle]: "SEO setting: Twitter handle"
+    [SEO_SETTINGS_KEYS.seoFacebookAppId]: "SEO setting: Facebook App ID"
 };
 
 const getDefaultSeoSettings = () => ({
     seoDefaultTitle: "",
     seoDefaultDescription: "",
     seoDefaultOgImage: "",
-    seoFacebookAppId: "",
-    seoTwitterHandle: ""
+    seoFacebookAppId: ""
 });
 
 const mapRowsToSeoSettings = (rows = []) => {
@@ -37,7 +34,6 @@ const mapRowsToSeoSettings = (rows = []) => {
         if (row.key === SEO_SETTINGS_KEYS.seoDefaultDescription) data.seoDefaultDescription = row.value || "";
         if (row.key === SEO_SETTINGS_KEYS.seoDefaultOgImage) data.seoDefaultOgImage = row.value || "";
         if (row.key === SEO_SETTINGS_KEYS.seoFacebookAppId) data.seoFacebookAppId = row.value || "";
-        if (row.key === SEO_SETTINGS_KEYS.seoTwitterHandle) data.seoTwitterHandle = row.value || "";
     }
     return data;
 };
@@ -73,8 +69,7 @@ export const updateSeoSettings = async (req, res) => {
             seoDefaultTitle: InputSanitizer.sanitizeText(req.body?.seoDefaultTitle || "", { maxLength: 255, escapeHtml: false }),
             seoDefaultDescription: InputSanitizer.sanitizeText(req.body?.seoDefaultDescription || "", { maxLength: 2000, escapeHtml: false }),
             seoDefaultOgImage: InputSanitizer.sanitizeUrl(req.body?.seoDefaultOgImage || ""),
-            seoFacebookAppId: InputSanitizer.sanitizeText(req.body?.seoFacebookAppId || "", { maxLength: 100, escapeHtml: true }),
-            seoTwitterHandle: InputSanitizer.sanitizeText(req.body?.seoTwitterHandle || "", { maxLength: 100, escapeHtml: true })
+            seoFacebookAppId: InputSanitizer.sanitizeText(req.body?.seoFacebookAppId || "", { maxLength: 100, escapeHtml: true })
         };
 
         await db.query("BEGIN");
@@ -83,16 +78,15 @@ export const updateSeoSettings = async (req, res) => {
             [SEO_SETTINGS_KEYS.seoDefaultTitle, String(payload.seoDefaultTitle)],
             [SEO_SETTINGS_KEYS.seoDefaultDescription, String(payload.seoDefaultDescription)],
             [SEO_SETTINGS_KEYS.seoDefaultOgImage, String(payload.seoDefaultOgImage)],
-            [SEO_SETTINGS_KEYS.seoFacebookAppId, String(payload.seoFacebookAppId)],
-            [SEO_SETTINGS_KEYS.seoTwitterHandle, String(payload.seoTwitterHandle)]
+            [SEO_SETTINGS_KEYS.seoFacebookAppId, String(payload.seoFacebookAppId)]
         ];
 
-        const placeholders = settingsEntries.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(",");
-        const values = settingsEntries.flatMap(([key, value]) => [key, value, SEO_SETTINGS_DESCRIPTIONS[key] || ""]);
+        const placeholders = settingsEntries.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`).join(",");
+        const values = settingsEntries.flatMap(([key, value]) => [key, value, SEO_SETTINGS_DESCRIPTIONS[key] || "", "seo"]);
 
         await db.query(
-            `INSERT INTO settings (key, value, description) VALUES ${placeholders}
-             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description`,
+            `INSERT INTO settings (key, value, description, group_name) VALUES ${placeholders}
+             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description, group_name = EXCLUDED.group_name`,
             values
         );
 

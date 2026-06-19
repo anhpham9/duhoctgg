@@ -134,18 +134,13 @@ const contactDescription = computed(() => {
 })
 
 const mapSrc = computed(() => {
-    const value = String(contactInfo.value.googleMapIframe || '').trim()
+    const value = String(contactInfo.value.googleMapEmbedUrl || contactInfo.value.googleMapIframe || '').trim()
 
     if (!value) {
         return 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4326043693744!2d106.69385131533472!3d10.77536259230029!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f38f9ed887b%3A0x14aded5703768989!2zUXXhuq1uIDEsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCwgVmnhu4d0IE5hbQ!5e0!3m2!1svi!2s!4v1649832458422!5m2!1svi!2s'
     }
 
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-        return value
-    }
-
-    const match = value.match(/src=["']([^"']+)["']/i)
-    return match?.[1] || value
+    return value
 })
 </script>
 <style scoped>

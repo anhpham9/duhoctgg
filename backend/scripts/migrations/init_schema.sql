@@ -208,7 +208,8 @@ CREATE TABLE IF NOT EXISTS page_contents (
 CREATE TABLE IF NOT EXISTS settings (
     key VARCHAR(100) PRIMARY KEY,
     value TEXT,
-    description TEXT
+    description TEXT,
+    group_name VARCHAR(50) CHECK (group_name IN ('general', 'contact', 'seo')) NOT NULL
 );
 
 -- ======================== NOTIFICATIONS ========================

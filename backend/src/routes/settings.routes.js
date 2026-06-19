@@ -3,6 +3,7 @@ import multer from "multer";
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.js";
 import { getGeneralSettings, updateGeneralSettings } from "../controllers/settings.controller.js";
+import { getContactSettings, updateContactSettings } from "../controllers/settings.controller.js";
 import {
 	getBackupHistory,
 	createManualBackup,
@@ -27,6 +28,8 @@ router.use(rateLimiter.settingsLimiter);
 
 router.get("/general", getGeneralSettings);
 router.put("/general", updateGeneralSettings);
+router.get("/contact", getContactSettings);
+router.put("/contact", updateContactSettings);
 
 router.get("/backups/history", getBackupHistory);
 router.post("/backups/create", createManualBackup);

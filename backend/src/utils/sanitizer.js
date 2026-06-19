@@ -795,10 +795,35 @@ export class InputSanitizer {
             escapeHtml: false
         });
 
+        sanitized.siteUrl = this.sanitizeUrl(payload.siteUrl || '');
+
         sanitized.siteLogoUrl = this.sanitizeUrl(payload.siteLogoUrl || '');
+        sanitized.siteFaviconUrl = this.sanitizeUrl(payload.siteFaviconUrl || '');
 
         sanitized.siteDescription = this.sanitizeText(payload.siteDescription || '', {
             maxLength: 2000,
+            escapeHtml: false
+        });
+
+        logger.debug('General settings data sanitized', {
+            originalFields: Object.keys(payload),
+            sanitizedFields: Object.keys(sanitized)
+        });
+
+        return sanitized;
+    }
+
+    static sanitizeContactSettingsData(settingsData) {
+        const payload = settingsData || {};
+        const sanitized = {};
+
+        sanitized.companyFullName = this.sanitizeText(payload.companyFullName || '', {
+            maxLength: 255,
+            escapeHtml: false
+        });
+
+        sanitized.companyShortName = this.sanitizeText(payload.companyShortName || '', {
+            maxLength: 100,
             escapeHtml: false
         });
 
@@ -816,19 +841,17 @@ export class InputSanitizer {
             escapeHtml: false
         });
 
-        sanitized.seoDefaultTitle = this.sanitizeText(payload.seoDefaultTitle || '', {
-            maxLength: 255,
-            escapeHtml: false
-        });
+        const mapRaw = String(payload.googleMapEmbedUrl || '').trim();
+        let mapUrl = mapRaw;
 
-        sanitized.seoDefaultDescription = this.sanitizeText(payload.seoDefaultDescription || '', {
-            maxLength: 2000,
-            escapeHtml: false
-        });
+        if (mapRaw && !/^https?:\/\//i.test(mapRaw)) {
+            const match = mapRaw.match(/src=["']([^"']+)["']/i);
+            mapUrl = match?.[1] || '';
+        }
 
-        sanitized.maintenanceMode = this.sanitizeBoolean(payload.maintenanceMode, false);
+        sanitized.googleMapEmbedUrl = this.sanitizeUrl(mapUrl || '');
 
-        logger.debug('General settings data sanitized', {
+        logger.debug('Contact settings data sanitized', {
             originalFields: Object.keys(payload),
             sanitizedFields: Object.keys(sanitized)
         });
