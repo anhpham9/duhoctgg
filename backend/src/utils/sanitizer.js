@@ -719,6 +719,18 @@ export class InputSanitizer {
             });
         }
 
+        if (faqData.sort_order !== undefined) {
+            sanitized.sort_order = this.sanitizeNumber(faqData.sort_order, {
+                min: 0,
+                max: 999999,
+                default: 0
+            });
+        }
+
+        if (faqData.is_active !== undefined) {
+            sanitized.is_active = this.sanitizeBoolean(faqData.is_active, true);
+        }
+
         logger.debug('FAQ data sanitized', {
             originalFields: Object.keys(faqData),
             sanitizedFields: Object.keys(sanitized)

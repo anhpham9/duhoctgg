@@ -11,6 +11,8 @@ const run = async () => {
             faqs.push([
                 `Câu hỏi chung số ${i}?`,
                 `Đây là câu trả lời cho câu hỏi chung số ${i}.`,
+                i,
+                true,
                 'general',
                 null
             ]);
@@ -20,14 +22,16 @@ const run = async () => {
             faqs.push([
                 `Câu hỏi về trường số ${i}?`,
                 `Đây là câu trả lời cho câu hỏi về trường số ${i}.`,
+                i,
+                true,
                 'school',
                 schoolIds[i % schoolIds.length] || null
             ]);
         }
         for (const f of faqs) {
             await db.query(
-                `INSERT INTO faqs (question, answer, type, school_id)
-                 VALUES ($1, $2, $3, $4)
+                `INSERT INTO faqs (question, answer, sort_order, is_active, type, school_id)
+                 VALUES ($1, $2, $3, $4, $5, $6)
                  ON CONFLICT DO NOTHING`,
                 f
             );

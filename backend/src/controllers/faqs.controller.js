@@ -28,7 +28,7 @@ export const getFaqs = async (req, res) => {
             });
         }
 
-        const { type, school_id } = req.query;
+        const { type, school_id, is_active } = req.query;
         let query = `
             SELECT 
                 f.*,
@@ -55,11 +55,17 @@ export const getFaqs = async (req, res) => {
             paramCount++;
         }
 
+        if (is_active !== undefined && is_active !== '') {
+            conditions.push(`f.is_active = $${paramCount}`);
+            values.push(String(is_active) === 'true');
+            paramCount++;
+        }
+
         if (conditions.length > 0) {
             query += ` WHERE ${conditions.join(' AND ')}`;
         }
 
-        query += ` ORDER BY f.created_at DESC`;
+        query += ` ORDER BY f.sort_order ASC, f.created_at DESC`;
 
         const result = await db.query(query, values);
 
@@ -142,7 +148,7 @@ export const createFaq = async (req, res) => {
     try {
         // Sanitize input data
         const sanitizedData = InputSanitizer.sanitizeFaqData(req.body);
-        const { question, answer, type, school_id } = sanitizedData;
+        const { question, answer, type, school_id, sort_order = 0, is_active = true } = sanitizedData;
         
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
@@ -150,7 +156,7 @@ export const createFaq = async (req, res) => {
         logInfo('FAQ creation attempt', {
             createdBy: currentUserId,
             creatorRole: currentUserRole,
-            data: { question, type, school_id }
+            data: { question, type, school_id, sort_order, is_active }
         });
 
         // Check if user has permission to create FAQs
@@ -211,10 +217,10 @@ export const createFaq = async (req, res) => {
 
         // Create FAQ
         const result = await db.query(`
-            INSERT INTO faqs (question, answer, type, school_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO faqs (question, answer, sort_order, is_active, type, school_id)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
-        `, [question, answer, type, school_id || null]);
+        `, [question, answer, sort_order, is_active, type, school_id || null]);
 
         const newFaq = result.rows[0];
 
@@ -255,7 +261,7 @@ export const updateFaq = async (req, res) => {
     try {
         const { id } = req.params;
         const sanitizedData = InputSanitizer.sanitizeFaqData(req.body);
-        const { question, answer, type, school_id } = sanitizedData;
+        const { question, answer, type, school_id, sort_order, is_active } = sanitizedData;
         
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
@@ -341,6 +347,20 @@ export const updateFaq = async (req, res) => {
             updateData.school_id = school_id;
             updates.push(`school_id = $${paramCount}`);
             values.push(school_id || null);
+            paramCount++;
+        }
+
+        if (sort_order !== undefined) {
+            updateData.sort_order = sort_order;
+            updates.push(`sort_order = $${paramCount}`);
+            values.push(sort_order);
+            paramCount++;
+        }
+
+        if (is_active !== undefined) {
+            updateData.is_active = is_active;
+            updates.push(`is_active = $${paramCount}`);
+            values.push(is_active);
             paramCount++;
         }
 

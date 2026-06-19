@@ -64,6 +64,12 @@
                             <li><NuxtLink to="/admin/news/categories" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/news/categories') }">Danh mục</NuxtLink></li>
                         </ul>
                     </li>
+                    <li class="nav-item" :class="{ active: isActivePage('/admin/faqs') }">
+                        <NuxtLink to="/admin/faqs" class="nav-link" @click="handleNavLinkClick">
+                            <i class="fas fa-question-circle"></i>
+                            <span>FAQ</span>
+                        </NuxtLink>
+                    </li>
                     <li v-if="canAccessContent" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('content') }">
                         <a href="#" class="nav-link" @click="toggleSubmenu('content')">
                             <i class="fas fa-file-alt"></i>
@@ -77,7 +83,6 @@
                             <li><NuxtLink to="/admin/content/conditions" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/conditions') }">Điều kiện</NuxtLink></li>
                             <li><NuxtLink to="/admin/content/news" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/news') }">Tin tức</NuxtLink></li>
                             <li><NuxtLink to="/admin/content/contact" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/contact') }">Liên hệ</NuxtLink></li>
-                            <li><NuxtLink to="/admin/content/faq" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/faq') }">FAQ</NuxtLink></li>
                         </ul>
                     </li>
                     <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
