@@ -2,6 +2,11 @@ import db from "../config/db.js";
 import { logError, logInfo, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
+import {
+    getNewsByIdData,
+    getNewsListData,
+    setNewsFeaturedState
+} from "../services/news.service.js";
 
 // Roles that can access news: superadmin, admin, manager, editor
 const ALLOWED_NEWS_ROLES = [1, 2, 3, 4];
@@ -111,6 +116,12 @@ const validateNewsPayload = (payload = {}, { isUpdate = false } = {}) => {
         }
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, 'is_featured') && payload.is_featured !== undefined && payload.is_featured !== null) {
+        if (typeof payload.is_featured !== 'boolean') {
+            errors.is_featured = 'Featured phải là kiểu boolean';
+        }
+    }
+
     if (Object.prototype.hasOwnProperty.call(payload, 'published_at') && payload.published_at !== undefined && payload.published_at !== null && String(payload.published_at).trim() !== '') {
         const publishedAt = new Date(payload.published_at);
         if (isNaN(publishedAt.getTime())) {
@@ -157,93 +168,33 @@ export const getNews = async (req, res) => {
             });
         }
 
-        // Build query with filters
-        let query = `
-            SELECT 
-                n.id,
-                n.title,
-                n.slug,
-                n.content,
-                n.excerpt,
-                n.thumbnail_url,
-                n.status,
-                n.published_at,
-                n.meta_title,
-                n.meta_description,
-                n.created_at,
-                n.updated_at,
-                c.name as category_name,
-                c.slug as category_slug,
-                u.name as author_name,
-                u.username as author_username,
-                nvs.view_count
-            FROM news n
-            LEFT JOIN categories c ON n.category_id = c.id
-            LEFT JOIN users u ON n.author_id = u.id
-            LEFT JOIN news_view_stats nvs ON n.id = nvs.news_id
-        `;
-
-        const { status, category_id, author_id, search } = req.query;
-        const conditions = [];
-        const values = [];
-        let paramCount = 1;
-
-        // Filter by status
-        if (status) {
-            conditions.push(`n.status = $${paramCount}`);
-            values.push(status);
-            paramCount++;
-        }
-
-        // Filter by category
-        if (category_id) {
-            conditions.push(`n.category_id = $${paramCount}`);
-            values.push(parseInt(category_id));
-            paramCount++;
-        }
-
-        // Filter by author
-        if (author_id) {
-            conditions.push(`n.author_id = $${paramCount}`);
-            values.push(parseInt(author_id));
-            paramCount++;
-        }
-
-        // Search in title and content
-        if (search) {
-            conditions.push(`(n.title ILIKE $${paramCount} OR n.content ILIKE $${paramCount})`);
-            values.push(`%${search}%`);
-            paramCount++;
-        }
-
-        if (conditions.length > 0) {
-            query += ` WHERE ${conditions.join(' AND ')}`;
-        }
-
-        query += ` ORDER BY n.created_at DESC`;
-
-        const result = await db.query(query, values);
+        const resultRows = await getNewsListData({
+            status: req.query.status,
+            categoryId: req.query.category_id,
+            authorId: req.query.author_id,
+            search: req.query.search
+        });
 
         // Log data access for audit
         SecurityLogger.logDataAccess(
             currentUserId,
             'news',
             'read',
-            result.rows.length,
+            resultRows.length,
             { role: currentUserRole, filters: req.query }
         );
 
         logInfo('News retrieved successfully', {
             userId: currentUserId,
             userRole: currentUserRole,
-            newsCount: result.rows.length,
+            newsCount: resultRows.length,
             filters: req.query
         });
 
         res.json({
             success: true,
-            data: result.rows,
-            total: result.rows.length
+            data: resultRows,
+            total: resultRows.length
         });
 
     } catch (error) {
@@ -283,42 +234,14 @@ export const getNewsById = async (req, res) => {
             });
         }
 
-        const result = await db.query(`
-            SELECT 
-                n.id,
-                n.title,
-                n.slug,
-                n.content,
-                n.excerpt,
-                n.thumbnail_url,
-                n.category_id,
-                n.author_id,
-                n.status,
-                n.published_at,
-                n.meta_title,
-                n.meta_description,
-                n.created_at,
-                n.updated_at,
-                c.name as category_name,
-                c.slug as category_slug,
-                u.name as author_name,
-                u.username as author_username,
-                nvs.view_count
-            FROM news n
-            LEFT JOIN categories c ON n.category_id = c.id
-            LEFT JOIN users u ON n.author_id = u.id
-            LEFT JOIN news_view_stats nvs ON n.id = nvs.news_id
-            WHERE n.id = $1
-        `, [id]);
+        const news = await getNewsByIdData(id);
 
-        if (result.rows.length === 0) {
+        if (!news) {
             return res.status(404).json({ 
                 success: false, 
                 message: "News not found" 
             });
         }
-
-        const news = result.rows[0];
 
         res.json({
             success: true,
@@ -360,6 +283,7 @@ export const createNews = async (req, res) => {
             thumbnail_url,
             category_id,
             published_at,
+            is_featured,
             meta_title,
             meta_description
         } = sanitizedData;
@@ -469,6 +393,25 @@ export const createNews = async (req, res) => {
             }
         }
 
+        if (is_featured === true && !STATUS_CHANGE_ROLES.includes(currentUserRole)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You cannot set featured news.'
+            });
+        }
+
+        if (is_featured === true && status !== 'published') {
+            return res.status(400).json({
+                success: false,
+                message: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản',
+                errors: {
+                    is_featured: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản'
+                }
+            });
+        }
+
+        const resolvedIsFeatured = STATUS_CHANGE_ROLES.includes(currentUserRole) && is_featured === true;
+
         // Resolve published_at based on payload/status
         const resolvedPublishedAt = published_at || new Date().toISOString();
         const resolvedMetaTitle = meta_title || title;
@@ -478,9 +421,9 @@ export const createNews = async (req, res) => {
         const result = await db.query(`
             INSERT INTO news (
                 title, slug, content, excerpt, thumbnail_url,
-                category_id, author_id, status, published_at, meta_title, meta_description
+                category_id, author_id, status, is_featured, published_at, meta_title, meta_description
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
         `, [
             title,
@@ -491,12 +434,17 @@ export const createNews = async (req, res) => {
             category_id || null,
             currentUserId, // author_id
             status,
+            resolvedIsFeatured,
             resolvedPublishedAt,
             resolvedMetaTitle,
             resolvedMetaDescription
         ]);
 
         const newNews = result.rows[0];
+
+        if (resolvedIsFeatured) {
+            await setNewsFeaturedState({ newsId: newNews.id, isFeatured: true });
+        }
 
         // Initialize view stats
         await db.query(
@@ -562,6 +510,7 @@ export const updateNews = async (req, res) => {
             category_id,
             status,
             published_at,
+            is_featured,
             meta_title,
             meta_description
         } = sanitizedData;
@@ -581,7 +530,7 @@ export const updateNews = async (req, res) => {
             
             return res.status(403).json({ 
                 success: false,
-                message: "Access denied. You cannot update news." 
+                message: "Bạn không có quyền cập nhật bài viết này." 
             });
         }
 
@@ -594,11 +543,29 @@ export const updateNews = async (req, res) => {
         if (newsResult.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "News not found"
+                message: "Bài viết không tồn tại"
             });
         }
 
         const existingNews = newsResult.rows[0];
+
+        if (is_featured !== undefined && !STATUS_CHANGE_ROLES.includes(currentUserRole)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You cannot set featured news.'
+            });
+        }
+
+        const nextStatus = status !== undefined ? status : existingNews.status;
+        if (is_featured === true && nextStatus !== 'published') {
+            return res.status(400).json({
+                success: false,
+                message: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản',
+                errors: {
+                    is_featured: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản'
+                }
+            });
+        }
 
         // Check if editor is trying to change status
         if (currentUserRole === 4 && status && status !== existingNews.status) {
@@ -612,7 +579,7 @@ export const updateNews = async (req, res) => {
             
             return res.status(403).json({ 
                 success: false,
-                message: "Access denied. Editors cannot change news status." 
+                message: "Bạn không có quyền thay đổi trạng thái bài viết." 
             });
         }
 
@@ -719,12 +686,24 @@ export const updateNews = async (req, res) => {
             if (status === 'published' && existingNews.status !== 'published' && published_at === undefined) {
                 updates.push(`published_at = NOW()`);
             }
+
+            if (status !== 'published' && existingNews.is_featured) {
+                updateData.is_featured = false;
+                updates.push(`is_featured = FALSE`);
+            }
+        }
+
+        if (is_featured !== undefined && STATUS_CHANGE_ROLES.includes(currentUserRole)) {
+            updateData.is_featured = is_featured;
+            updates.push(`is_featured = $${paramCount}`);
+            values.push(Boolean(is_featured));
+            paramCount++;
         }
 
         if (published_at !== undefined && STATUS_CHANGE_ROLES.includes(currentUserRole)) {
             updateData.published_at = published_at;
             updates.push(`published_at = $${paramCount}`);
-            values.push(published_at || null);
+            values.push(published_at || new Date().toISOString());
             paramCount++;
         }
 
@@ -745,7 +724,7 @@ export const updateNews = async (req, res) => {
         if (updates.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "No fields to update"
+                message: "Không có trường nào để cập nhật"
             });
         }
 
@@ -764,6 +743,23 @@ export const updateNews = async (req, res) => {
         const result = await db.query(updateQuery, values);
         const updatedNews = result.rows[0];
 
+        if (updatedNews.is_featured) {
+            const featuredResult = await setNewsFeaturedState({
+                newsId: updatedNews.id,
+                isFeatured: true
+            });
+
+            if (!featuredResult.success && featuredResult.reason === 'invalid_status') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản',
+                    errors: {
+                        is_featured: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản'
+                    }
+                });
+            }
+        }
+
         // Audit log successful news update
         auditLog('UPDATE_NEWS', currentUserId, {
             newsId: id,
@@ -781,7 +777,7 @@ export const updateNews = async (req, res) => {
 
         res.json({
             success: true,
-            message: "News updated successfully",
+            message: "Cập nhật bài viết thành công",
             data: updatedNews
         });
 
@@ -794,7 +790,7 @@ export const updateNews = async (req, res) => {
         
         res.status(500).json({ 
             success: false, 
-            message: "Internal server error" 
+            message: "Lỗi máy chủ nội bộ" 
         });
     }
 };
@@ -818,7 +814,7 @@ export const deleteNews = async (req, res) => {
             
             return res.status(403).json({ 
                 success: false,
-                message: "Access denied. You cannot delete news." 
+                message: "Bạn không có quyền xóa bài viết này." 
             });
         }
 
@@ -831,7 +827,7 @@ export const deleteNews = async (req, res) => {
         if (newsResult.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "News not found"
+                message: "Bài viết không tồn tại"
             });
         }
 
@@ -865,7 +861,7 @@ export const deleteNews = async (req, res) => {
 
         res.json({
             success: true,
-            message: "News deleted successfully"
+            message: "Xóa bài viết thành công"
         });
 
     } catch (error) {
@@ -876,7 +872,7 @@ export const deleteNews = async (req, res) => {
         
         res.status(500).json({ 
             success: false, 
-            message: "Internal server error" 
+            message: "Lỗi máy chủ nội bộ" 
         });
     }
 };
@@ -891,7 +887,7 @@ export const getNewsStats = async (req, res) => {
         if (!ALLOWED_NEWS_ROLES.includes(currentUserRole)) {
             return res.status(403).json({ 
                 success: false,
-                message: "Access denied. You cannot view news statistics." 
+                message: "Bạn không có quyền xem thống kê tin tức." 
             });
         }
 
@@ -937,7 +933,7 @@ export const getNewsStats = async (req, res) => {
         
         res.status(500).json({ 
             success: false, 
-            message: "Internal server error" 
+            message: "Lỗi máy chủ nội bộ" 
         });
     }
 };
@@ -954,7 +950,7 @@ export const trackNewsView = async (req, res) => {
         if (newsCheck.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "News not found"
+                message: "Bài viết không tồn tại"
             });
         }
 
@@ -974,7 +970,7 @@ export const trackNewsView = async (req, res) => {
 
         res.json({
             success: true,
-            message: "View tracked successfully"
+            message: "Theo dõi lượt xem thành công"
         });
 
     } catch (error) {
@@ -985,7 +981,82 @@ export const trackNewsView = async (req, res) => {
         
         res.status(500).json({ 
             success: false, 
-            message: "Internal server error" 
+            message: "Lỗi máy chủ nội bộ" 
+        });
+    }
+};
+
+// Set featured state for a news article (single featured at a time)
+export const setFeaturedNews = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUserRole = req.user.role_id;
+        const currentUserId = req.user.id;
+
+        if (!STATUS_CHANGE_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                `/api/news/${id}/featured`,
+                'PUT',
+                'news.set_featured'
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You cannot set featured news.'
+            });
+        }
+
+        const { is_featured } = req.body || {};
+        if (typeof is_featured !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu không hợp lệ',
+                errors: {
+                    is_featured: 'Featured phải là kiểu boolean'
+                }
+            });
+        }
+
+        const result = await setNewsFeaturedState({
+            newsId: id,
+            isFeatured: is_featured
+        });
+
+        if (!result.success && result.reason === 'not_found') {
+            return res.status(404).json({
+                success: false,
+                message: 'News not found'
+            });
+        }
+
+        if (!result.success && result.reason === 'invalid_status') {
+            return res.status(400).json({
+                success: false,
+                message: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản',
+                errors: {
+                    is_featured: 'Chỉ có thể đánh dấu Featured cho bài đã xuất bản'
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: is_featured
+                ? 'Đã đặt bài viết làm Featured'
+                : 'Đã bỏ trạng thái Featured'
+        });
+    } catch (error) {
+        logError('Set featured news failed', error, {
+            requesterId: req.user?.id,
+            newsId: req.params?.id,
+            payload: req.body
+        });
+
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
         });
     }
 };

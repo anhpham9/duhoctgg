@@ -39,12 +39,8 @@
 
             <div class="news-filters">
                 <div class="filter-row">
-                    <input
-                        v-model="searchTerm"
-                        type="search"
-                        class="form-control"
-                        placeholder="Tìm theo tiêu đề hoặc nội dung..."
-                    >
+                    <input v-model="searchTerm" type="search" class="form-control"
+                        placeholder="Tìm theo tiêu đề hoặc nội dung...">
                     <select v-model="selectedCategory" class="form-control">
                         <option value="">Tất cả danh mục</option>
                         <option v-for="category in categories" :key="category.id" :value="category.slug">
@@ -56,6 +52,11 @@
                         <option value="published">Đã xuất bản</option>
                         <option value="draft">Bản nháp</option>
                         <option value="archived">Lưu trữ</option>
+                    </select>
+                    <select :value="perPage" @change="setItemsPerPage(parseInt($event.target.value))" class="form-control">
+                        <option v-for="option in itemsPerPageOptions" :key="option.value" :value="option.value">
+                            {{ option.label }}
+                        </option>
                     </select>
                 </div>
             </div>
@@ -89,8 +90,11 @@
                             <tr v-for="article in paginatedNews" :key="article.id">
                                 <td>
                                     <div class="article-title">
-                                        <strong>{{ article.title }}</strong>
-                                        <p>{{ article.excerpt || 'Không có mô tả ngắn' }}</p>
+                                        <strong>
+                                            {{ article.title }}
+                                            <span v-if="article.is_featured"
+                                                class="badge-featured-title">Featured</span>
+                                        </strong>
                                     </div>
                                 </td>
                                 <td>{{ article.category_name || 'Chưa phân loại' }}</td>
@@ -103,19 +107,20 @@
                                 </td>
                                 <td>{{ Number(article.view_count || 0) }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" @click="editNews(article.id)">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success" @click="viewNews(article.id)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button
-                                        class="btn btn-sm btn-outline-danger"
-                                        :disabled="deletingId === article.id || !canDelete"
-                                        @click="deleteNews(article.id, article.title)"
-                                    >
-                                        <i class="fas" :class="deletingId === article.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-primary" @click="editNews(article.id)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" @click="viewNews(article.id)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                            :disabled="deletingId === article.id || !canDelete"
+                                            @click="deleteNews(article.id, article.title)">
+                                            <i class="fas"
+                                                :class="deletingId === article.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -129,14 +134,36 @@
                 </div>
             </div>
 
-            <div v-if="!loading && !error && filteredNews.length > 0" class="pagination">
-                <button class="btn btn-outline-secondary" :disabled="currentPage === 1" @click="currentPage--">
-                    Trước
-                </button>
-                <span>Trang {{ currentPage }} / {{ totalPages }}</span>
-                <button class="btn btn-outline-secondary" :disabled="currentPage === totalPages" @click="currentPage++">
-                    Sau
-                </button>
+            <div v-if="!loading && !error && totalPages > 1" class="pagination">
+                <div class="pagination-info">
+                    Hiển thị {{ ((currentPage - 1) * perPage) + 1 }} -
+                    {{ Math.min(currentPage * perPage, filteredNews.length) }}
+                    trong tổng số {{ filteredNews.length }} bài viết
+                </div>
+                <div class="pagination-controls">
+                    <button @click="goToPage(1)" :disabled="currentPage === 1" class="btn-page btn-page-first">
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1" class="btn-page btn-page-prev">
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+
+                    <template v-for="page in visiblePages" :key="page">
+                        <button v-if="page === '...'" class="btn-page btn-page-dots" disabled>
+                            ...
+                        </button>
+                        <button v-else @click="goToPage(page)" :class="['btn-page', { 'btn-page-active': page === currentPage }]">
+                            {{ page }}
+                        </button>
+                    </template>
+
+                    <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages" class="btn-page btn-page-next">
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button @click="goToPage(totalPages)" :disabled="currentPage === totalPages" class="btn-page btn-page-last">
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -157,7 +184,8 @@
                 </div>
                 <div class="modal-footer">
                     <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
-                    <button @click="confirmDeleteNews" type="button" class="btn btn-danger" :disabled="deletingId === newsToDelete.id">
+                    <button @click="confirmDeleteNews" type="button" class="btn btn-danger"
+                        :disabled="deletingId === newsToDelete.id">
                         <i v-if="deletingId === newsToDelete.id" class="fas fa-spinner fa-spin"></i>
                         {{ deletingId === newsToDelete.id ? 'Đang xóa...' : 'Xóa bài viết' }}
                     </button>
@@ -174,6 +202,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
+import { useVisiblePages } from '~/composables/usePaginationHelper'
+import { usePaginationSettings } from '~/composables/usePaginationSettings'
 
 definePageMeta({
     layout: 'admin',
@@ -212,7 +242,7 @@ const searchTerm = ref('')
 const selectedCategory = ref('')
 const selectedStatus = ref('')
 const currentPage = ref(1)
-const perPage = 10
+const { itemsPerPage: perPage, itemsPerPageOptions, setItemsPerPage } = usePaginationSettings()
 const loading = ref(false)
 const error = ref('')
 const deletingId = ref(null)
@@ -285,20 +315,29 @@ const filteredNews = computed(() => {
         filtered = filtered.filter((item) => item.status === selectedStatus.value)
     }
 
-    return filtered
+    // Always prioritize featured articles at the top of the list.
+    return [...filtered].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)))
 })
 
 const totalPages = computed(() => {
-    return Math.max(1, Math.ceil(filteredNews.value.length / perPage))
+    if (perPage.value === -1) return 1
+    return Math.max(1, Math.ceil(filteredNews.value.length / perPage.value))
 })
 
 const paginatedNews = computed(() => {
-    const start = (currentPage.value - 1) * perPage
-    const end = start + perPage
+    if (perPage.value === -1) return filteredNews.value
+    const start = (currentPage.value - 1) * perPage.value
+    const end = start + perPage.value
     return filteredNews.value.slice(start, end)
 })
 
+const visiblePages = useVisiblePages(totalPages, currentPage)
+
 watch([searchTerm, selectedCategory, selectedStatus], () => {
+    currentPage.value = 1
+})
+
+watch(perPage, () => {
     currentPage.value = 1
 })
 
@@ -307,6 +346,12 @@ watch(totalPages, (pages) => {
         currentPage.value = pages
     }
 })
+
+const goToPage = (page) => {
+    if (typeof page !== 'number') return
+    if (page < 1 || page > totalPages.value) return
+    currentPage.value = page
+}
 
 const createNews = () => {
     navigateTo('/admin/news/create')
@@ -483,7 +528,7 @@ onMounted(async () => {
 
 .filter-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 1rem;
     align-items: center;
 }
@@ -526,20 +571,30 @@ onMounted(async () => {
 }
 
 .article-title strong {
-    display: block;
-    margin-bottom: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
 }
 
-.article-title p {
-    margin: 0;
-    color: #666;
-    font-size: 0.875rem;
+.badge-featured-title {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #8a2d0a;
+    background: #ffe6cc;
+    border: 1px solid #ffc38f;
 }
 
 .badge {
     padding: 4px 8px;
     border-radius: 12px;
     font-size: 12px;
+    white-space: nowrap;
 }
 
 .badge-success {
@@ -659,10 +714,50 @@ onMounted(async () => {
 
 .pagination {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem 0;
+    padding: 1.25rem 0;
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.btn-page {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: #f0f0f0;
+    border-color: #1976d2;
+}
+
+.btn-page-active {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2;
+}
+
+.btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .modal-overlay {
@@ -776,6 +871,12 @@ onMounted(async () => {
 
     .filter-row {
         grid-template-columns: 1fr;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
     }
 
     .table th,

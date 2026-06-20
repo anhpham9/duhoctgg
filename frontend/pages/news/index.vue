@@ -1,8 +1,11 @@
 <template>
     <div>
         <!-- Page Hero with simple props -->
-        <PageHero title="Tin Tức Du Học" subtitle="Cập nhật thông tin mới nhất về du học Nhật Bản"
-            breadcrumb-text="Tin tức" />
+        <PageHero
+            :title="heroTitle"
+            :subtitle="heroDescription"
+            :breadcrumb-text="pageTitle"
+        />
 
         <!-- News Content -->
         <section class="news-section">
@@ -28,71 +31,76 @@
                             </div>
                         </div> -->
 
-                        <!-- Featured Article -->
-                        <article class="featured-article" v-if="featuredArticle">
-                            <div class="article-image">
-                                <img :src="featuredArticle.image" :alt="featuredArticle.title">
-                                <div class="article-category">{{ featuredArticle.category }}</div>
-                            </div>
-                            <div class="article-content">
-                                <h2>
-                                    <NuxtLink :to="`/news/${featuredArticle.slug}`">{{ featuredArticle.title }}
-                                    </NuxtLink>
-                                </h2>
-                                <div class="article-meta">
-                                    <span class="article-date"><i class="fas fa-calendar"></i> {{
-                                        formatDate(featuredArticle.date) }}</span>
-                                    <span class="article-author"><i class="fas fa-user"></i> {{ featuredArticle.author
-                                        }}</span>
-                                    <span class="article-views"><i class="fas fa-eye"></i> {{ featuredArticle.views }}
-                                        lượt xem</span>
+                        <div v-if="loading" class="news-state">Đang tải tin tức...</div>
+                        <div v-else-if="error" class="news-state news-state-error">{{ error }}</div>
+                        <template v-else>
+                            <!-- Featured Article -->
+                            <article class="featured-article" v-if="featuredArticle">
+                                <div class="article-image">
+                                    <img :src="featuredArticle.image" :alt="featuredArticle.title">
+                                    <div class="article-category">{{ featuredArticle.category }}</div>
                                 </div>
-                                <p>{{ featuredArticle.excerpt }}</p>
-                                <NuxtLink :to="`/news/${featuredArticle.slug}`" class="read-more">
-                                    Đọc tiếp <i class="fas fa-arrow-right"></i>
-                                </NuxtLink>
-                            </div>
-                        </article>
-
-                        <!-- News Grid -->
-                        <div class="news-grid">
-                            <article class="news-card" v-for="article in filteredNews" :key="article.id">
-                                <div class="news-image">
-                                    <img :src="article.image" :alt="article.title">
-                                    <div class="article-category">{{ article.category }}</div>
-                                </div>
-                                <div class="news-card-content">
-                                    <h3>
-                                        <NuxtLink :to="`/news/${article.slug}`">{{ article.title }}</NuxtLink>
-                                    </h3>
+                                <div class="article-content">
+                                    <h2 class="article-title">
+                                        <NuxtLink :to="`/news/${featuredArticle.slug}`">{{ featuredArticle.title }}
+                                        </NuxtLink>
+                                    </h2>
                                     <div class="article-meta">
-                                        <span><i class="fas fa-calendar"></i> {{ formatDate(article.date) }}</span>
-                                        <span><i class="fas fa-eye"></i> {{ article.views }} lượt xem</span>
+                                        <span class="article-date"><i class="fas fa-calendar"></i> {{
+                                            formatDate(featuredArticle.date) }}</span>
+                                        <span class="article-author"><i class="fas fa-user"></i> {{ featuredArticle.author
+                                            }}</span>
+                                        <span class="article-views"><i class="fas fa-eye"></i> {{ featuredArticle.views }}
+                                            lượt xem</span>
                                     </div>
-                                    <p>{{ article.excerpt }}</p>
-                                    <NuxtLink :to="`/news/${article.slug}`" class="read-more">Đọc tiếp</NuxtLink>
+                                    <p class="article-excerpt">{{ featuredArticle.excerpt }}</p>
+                                    <NuxtLink :to="`/news/${featuredArticle.slug}`" class="read-more">
+                                        Đọc tiếp <i class="fas fa-arrow-right"></i>
+                                    </NuxtLink>
                                 </div>
                             </article>
-                        </div>
 
-                        <!-- Pagination -->
-                        <div class="pagination" v-if="totalPages > 1">
-                            <button @click="changePage(currentPage - 1)" :disabled="currentPage <= 1" class="page-btn">
-                                <i class="fas fa-chevron-left"></i> Trước
-                            </button>
+                            <!-- News Grid -->
+                            <div class="news-grid" v-if="filteredNews.length">
+                                <article class="news-card" v-for="article in filteredNews" :key="article.id">
+                                    <div class="news-image">
+                                        <img :src="article.image" :alt="article.title">
+                                        <div class="article-category">{{ article.category }}</div>
+                                    </div>
+                                    <div class="news-card-content">
+                                        <h3 class="article-title">
+                                            <NuxtLink :to="`/news/${article.slug}`">{{ article.title }}</NuxtLink>
+                                        </h3>
+                                        <div class="article-meta">
+                                            <span><i class="fas fa-calendar"></i> {{ formatDate(article.date) }}</span>
+                                            <span><i class="fas fa-eye"></i> {{ article.views }} lượt xem</span>
+                                        </div>
+                                        <p class="article-excerpt">{{ article.excerpt }}</p>
+                                        <NuxtLink :to="`/news/${article.slug}`" class="read-more">Đọc tiếp <i class="fas fa-arrow-right"></i></NuxtLink>
+                                    </div>
+                                </article>
+                            </div>
+                            <div v-else class="news-state">Không có bài viết phù hợp.</div>
 
-                            <span v-for="page in visiblePages" :key="page">
-                                <button @click="changePage(page)"
-                                    :class="['page-btn', { active: page === currentPage }]">
-                                    {{ page }}
+                            <!-- Pagination -->
+                            <div class="pagination" v-if="totalPages > 1">
+                                <button @click="changePage(currentPage - 1)" :disabled="currentPage <= 1" class="page-btn">
+                                    <i class="fas fa-chevron-left"></i> Trước
                                 </button>
-                            </span>
 
-                            <button @click="changePage(currentPage + 1)" :disabled="currentPage >= totalPages"
-                                class="page-btn">
-                                Sau <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
+                                <span v-for="page in visiblePages" :key="page">
+                                    <button @click="changePage(page)"
+                                        :class="['page-btn', { active: page === currentPage }]">
+                                        {{ page }}
+                                    </button>
+                                </span>
+
+                                <button @click="changePage(currentPage + 1)" :disabled="currentPage >= totalPages"
+                                    class="page-btn">
+                                    Sau <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Sidebar -->
@@ -110,13 +118,21 @@
                         <div class="sidebar-widget">
                             <h3>Danh Mục</h3>
                             <ul class="category-list">
-                                <li><a href="#">Tin Nổi Bật <span>(12)</span></a></li>
-                                <li><a href="#">Học Bổng <span>(28)</span></a></li>
-                                <li><a href="#">Thủ Tục Visa <span>(15)</span></a></li>
-                                <li><a href="#">Kinh Nghiệm <span>(22)</span></a></li>
-                                <li><a href="#">Tuyển Sinh <span>(18)</span></a></li>
-                                <li><a href="#">Cẩm Nang <span>(25)</span></a></li>
-                                <li><a href="#">Chi Phí <span>(10)</span></a></li>
+                                <li>
+                                    <button type="button" class="category-btn"
+                                        :class="{ active: currentCategory === 'all' }" @click="selectCategory('all')">
+                                        Tất cả
+                                        <span>({{ totalPublishedCount }})</span>
+                                    </button>
+                                </li>
+                                <li v-for="category in categories" :key="category.slug">
+                                    <button type="button" class="category-btn"
+                                        :class="{ active: currentCategory === category.slug }"
+                                        @click="selectCategory(category.slug)">
+                                        {{ category.name }}
+                                        <span>({{ category.news_count }})</span>
+                                    </button>
+                                </li>
                             </ul>
                         </div>
 
@@ -124,34 +140,18 @@
                         <div class="sidebar-widget">
                             <h3>Bài Viết Mới</h3>
                             <div class="recent-posts">
-                                <div class="recent-post">
+                                <div class="recent-post" v-for="post in recentPosts" :key="`recent-${post.id}`">
                                     <div class="recent-post-image">
-                                        <img src="/assets/images/recent-1.jpg" alt="Bài viết mới">
+                                        <img :src="post.image" :alt="post.title">
                                     </div>
                                     <div class="recent-post-content">
-                                        <h4><a href="news-detail.html">Học Bổng JASSO 2024 - Hỗ Trợ 80,000
-                                                Yên/Tháng</a></h4>
-                                        <span class="recent-date">15/03/2024</span>
+                                        <h4 class="article-title">
+                                            <NuxtLink :to="`/news/${post.slug}`">{{ post.title }}</NuxtLink>
+                                        </h4>
+                                        <span class="recent-date">{{ formatDate(post.date) }}</span>
                                     </div>
                                 </div>
-                                <div class="recent-post">
-                                    <div class="recent-post-image">
-                                        <img src="/assets/images/recent-2.jpg" alt="Bài viết mới">
-                                    </div>
-                                    <div class="recent-post-content">
-                                        <h4><a href="#">Các Ngành Học Hot Tại Nhật Bản Năm 2024</a></h4>
-                                        <span class="recent-date">14/03/2024</span>
-                                    </div>
-                                </div>
-                                <div class="recent-post">
-                                    <div class="recent-post-image">
-                                        <img src="/assets/images/recent-3.jpg" alt="Bài viết mới">
-                                    </div>
-                                    <div class="recent-post-content">
-                                        <h4><a href="#">Kinh Nghiệm Thi JLPT N3 Từ Cơ Bản</a></h4>
-                                        <span class="recent-date">13/03/2024</span>
-                                    </div>
-                                </div>
+                                <div v-if="!recentPosts.length" class="recent-date">Chưa có bài viết mới.</div>
                             </div>
                         </div>
 
@@ -159,15 +159,15 @@
                         <div class="sidebar-widget">
                             <h3>Từ Khóa Phổ Biến</h3>
                             <div class="tag-cloud">
-                                <a href="#" class="tag">Du học Nhật Bản</a>
-                                <a href="#" class="tag">Học bổng</a>
-                                <a href="#" class="tag">Visa</a>
-                                <a href="#" class="tag">JLPT</a>
-                                <a href="#" class="tag">Tokyo</a>
-                                <a href="#" class="tag">Osaka</a>
-                                <a href="#" class="tag">Trường Nhật ngữ</a>
-                                <a href="#" class="tag">Chi phí</a>
-                                <a href="#" class="tag">Thủ tục</a>
+                                <span href="#" class="tag">Du học Nhật Bản</span>
+                                <span href="#" class="tag">Học bổng</span>
+                                <span href="#" class="tag">Visa</span>
+                                <span href="#" class="tag">JLPT</span>
+                                <span href="#" class="tag">Tokyo</span>
+                                <span href="#" class="tag">Osaka</span>
+                                <span href="#" class="tag">Trường Nhật ngữ</span>
+                                <span href="#" class="tag">Chi phí</span>
+                                <span href="#" class="tag">Thủ tục</span>
                             </div>
                         </div>
                     </aside>
@@ -179,140 +179,90 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
-// Reactive data
+const config = useRuntimeConfig()
+const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/news`, {
+    key: 'public-static-page-news'
+})
+const staticPage = computed(() => staticPageData.value?.data || {})
+
+const pageTitle = computed(() => staticPage.value.title || 'Tin Tức')
+
+const heroTitle = computed(() => staticPage.value.hero_title || 'Tin Tức Mới Nhất')
+
+const heroDescription = computed(() => {
+    return staticPage.value.hero_description || 'Cập nhật những tin tức mới nhất về du học Nhật Bản'
+})
+
+// SEO
+useHead(() => {
+    const metaTitle = staticPage.value.meta_title || pageTitle.value || 'Tin Tức'
+    const metaDescription = staticPage.value.meta_description || heroDescription.value
+
+    return {
+        title: metaTitle,
+        meta: [
+            { name: 'description', content: metaDescription },
+            { property: 'og:title', content: metaTitle },
+            { property: 'og:description', content: metaDescription }
+        ]
+    }
+})
+
+const newsDescription = computed(() => {
+    return newsInfo.value.siteDescription || 'Cập nhật những tin tức mới nhất về du học Nhật Bản'
+})
+
+const API_BASE = config.public.apiBase
+const DEFAULT_NEWS_IMAGE = '/assets/images/news-1.jpg'
+
+const loading = ref(false)
+const error = ref('')
 const searchQuery = ref('')
 const currentCategory = ref('all')
 const currentPage = ref(1)
 const itemsPerPage = 6
 
-// Sample news data
-const newsData = ref([
-    {
-        id: 1,
-        slug: 'hoc-bong-mext-2024',
-        title: 'Học Bổng Toàn Phần Du Học Nhật Bản 2024 - Cơ Hội Vàng Cho Sinh Viên Việt Nam',
-        excerpt: 'Chính phủ Nhật Bản vừa công bố chương trình học bổng MEXT 2024 dành cho sinh viên quốc tế. Đây là cơ hội tuyệt vời để theo đuổi ước mơ du học với chi phí hoàn toàn miễn phí.',
-        image: '/assets/images/news-1.jpg',
-        category: 'Học bổng',
-        categorySlug: 'scholarship',
-        author: 'Admin',
-        date: '2024-03-15',
-        views: 1250,
-        featured: true
-    },
-    {
-        id: 2,
-        slug: 'top-10-truong-dai-hoc-nhat-ban',
-        title: 'Top 10 Trường Đại Học Nhật Bản Dễ Xin Học Bổng Nhất 2024',
-        excerpt: 'Danh sách 10 trường đại học hàng đầu tại Nhật Bản có tỷ lệ cấp học bổng cao nhất cho sinh viên quốc tế với các ngành học phổ biến.',
-        image: '/assets/images/news-2.jpg',
-        category: 'Học bổng',
-        categorySlug: 'scholarship',
-        author: 'Tư vấn viên',
-        date: '2024-03-12',
-        views: 890
-    },
-    {
-        id: 3,
-        slug: 'huong-dan-lam-ho-so-visa',
-        title: 'Hướng Dẫn Làm Hồ Sơ Xin Visa Du Học Nhật Bản 2024',
-        excerpt: 'Quy trình làm visa du học Nhật Bản từ A-Z với những lưu ý quan trọng để tăng tỷ lệ thành công lên 95%.',
-        image: '/assets/images/news-3.jpg',
-        category: 'Thủ tục',
-        categorySlug: 'procedure',
-        author: 'Chuyên gia Visa',
-        date: '2024-03-10',
-        views: 1120
-    },
-    {
-        id: 4,
-        slug: 'cuoc-song-du-hoc-sinh-tokyo',
-        title: 'Cuộc Sống Du Học Sinh Việt Nam Tại Tokyo - Chia Sẻ Thực Tế',
-        excerpt: 'Những trải nghiệm thực tế về cuộc sống, học tập và làm thêm của du học sinh Việt Nam tại Tokyo với chi phí cụ thể.',
-        image: '/assets/images/news-4.jpg',
-        category: 'Kinh nghiệm',
-        categorySlug: 'experience',
-        author: 'Du học sinh',
-        date: '2024-03-08',
-        views: 750
-    },
-    {
-        id: 5,
-        slug: 'truong-nhat-ngu-tokyo-tuyen-sinh',
-        title: 'Các Trường Nhật Ngữ Uy Tín Tại Tokyo - Thông Tin Tuyển Sinh 2024',
-        excerpt: 'Cập nhật thông tin tuyển sinh mới nhất của các trường Nhật ngữ hàng đầu tại Tokyo với học phí và điều kiện nhập học.',
-        image: '/assets/images/news-5.jpg',
-        category: 'Tuyển sinh',
-        categorySlug: 'admission',
-        author: 'Tư vấn viên',
-        date: '2024-03-05',
-        views: 980
-    },
-    {
-        id: 6,
-        slug: 'kinh-nghiem-thi-jlpt-n1',
-        title: 'Bí Quyết Thi JLPT N1 Thành Công Từ Những Du Học Sinh Đạt Điểm Cao',
-        excerpt: 'Chia sẻ phương pháp học và chiến lược thi JLPT N1 từ những du học sinh đạt điểm cao, giúp bạn chuẩn bị hiệu quả.',
-        image: '/assets/images/news-6.jpg',
-        category: 'Kinh nghiệm',
-        categorySlug: 'experience',
-        author: 'Du học sinh',
-        date: '2024-03-03',
-        views: 650
-    }
-])
+const newsData = ref([])
+const featuredArticle = ref(null)
+const categories = ref([])
+const recentPosts = ref([])
+const totalItems = ref(0)
+const totalPages = ref(1)
 
-// Featured article
-const featuredArticle = computed(() => {
-    return newsData.value.find(article => article.featured)
+const normalizeNewsItem = (item = {}) => ({
+    id: item.id,
+    slug: item.slug,
+    title: item.title || 'Bài viết không có tiêu đề',
+    excerpt: item.excerpt || 'Nội dung đang được cập nhật.',
+    image: item.thumbnail_url || DEFAULT_NEWS_IMAGE,
+    category: item.category_name || 'Tin tức',
+    categorySlug: item.category_slug || 'all',
+    author: item.author_name || 'Ban biên tập',
+    date: item.published_at || item.created_at || null,
+    views: Number(item.view_count || 0)
 })
 
-// Filtered and paginated news
 const filteredNews = computed(() => {
-    let filtered = newsData.value.filter(article => !article.featured)
-
-    // Filter by category
-    if (currentCategory.value !== 'all') {
-        filtered = filtered.filter(article => article.categorySlug === currentCategory.value)
-    }
-
-    // Filter by search query
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        filtered = filtered.filter(article =>
-            article.title.toLowerCase().includes(query) ||
-            article.excerpt.toLowerCase().includes(query)
-        )
-    }
-
-    // Paginate
-    const start = (currentPage.value - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return filtered.slice(start, end)
+    if (!featuredArticle.value) return newsData.value
+    return newsData.value.filter((item) => item.id !== featuredArticle.value.id)
 })
 
-// Pagination
-const totalItems = computed(() => {
-    let filtered = newsData.value.filter(article => !article.featured)
-
-    if (currentCategory.value !== 'all') {
-        filtered = filtered.filter(article => article.categorySlug === currentCategory.value)
-    }
-
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        filtered = filtered.filter(article =>
-            article.title.toLowerCase().includes(query) ||
-            article.excerpt.toLowerCase().includes(query)
-        )
-    }
-
-    return filtered.length
+const totalPublishedCount = computed(() => {
+    if (!categories.value.length) return totalItems.value
+    return categories.value.reduce((sum, item) => sum + Number(item.news_count || 0), 0)
 })
 
-const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
+const popularTags = computed(() => {
+    return categories.value
+        .filter((item) => Number(item.news_count || 0) > 0)
+        .slice(0, 9)
+        .map((item) => ({
+            name: item.name,
+            slug: item.slug
+        }))
+})
 
 const visiblePages = computed(() => {
     const pages = []
@@ -331,26 +281,75 @@ const visiblePages = computed(() => {
     return pages
 })
 
-// Methods
-const filterNews = (category) => {
-    currentCategory.value = category
-    currentPage.value = 1
+const fetchNews = async () => {
+    loading.value = true
+    error.value = ''
 
-    // Update active button
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
-    event.target.classList.add('active')
-}
+    try {
+        const params = new URLSearchParams({
+            page: String(currentPage.value),
+            limit: String(itemsPerPage),
+            search: searchQuery.value.trim()
+        })
 
-const changePage = (page) => {
-    if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        // Scroll to top of news section
-        document.querySelector('.news-section').scrollIntoView({ behavior: 'smooth' })
+        if (currentCategory.value !== 'all') {
+            params.set('category', currentCategory.value)
+        }
+
+        const response = await fetch(`${API_BASE}/public/news?${params.toString()}`)
+        const payload = await response.json()
+
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.message || `HTTP ${response.status}`)
+        }
+
+        const mappedData = (payload.data || []).map(normalizeNewsItem)
+        const featured = payload.featured ? normalizeNewsItem(payload.featured) : null
+
+        featuredArticle.value = featured
+        newsData.value = mappedData
+        categories.value = payload.categories || []
+        recentPosts.value = (payload.recent || []).map(normalizeNewsItem)
+        totalItems.value = Number(payload.pagination?.total || mappedData.length)
+        totalPages.value = Math.max(1, Number(payload.pagination?.totalPages || 1))
+    } catch (err) {
+        newsData.value = []
+        featuredArticle.value = null
+        categories.value = []
+        recentPosts.value = []
+        totalItems.value = 0
+        totalPages.value = 1
+        error.value = err.message || 'Không thể tải tin tức lúc này.'
+    } finally {
+        loading.value = false
     }
 }
 
+const searchArticles = async () => {
+    currentPage.value = 1
+    await fetchNews()
+}
+
+const selectCategory = async (slug) => {
+    currentCategory.value = slug
+    currentPage.value = 1
+    await fetchNews()
+}
+
+const changePage = async (page) => {
+    if (page < 1 || page > totalPages.value) return
+
+    currentPage.value = page
+    await fetchNews()
+    document.querySelector('.news-section')?.scrollIntoView({ behavior: 'smooth' })
+}
+
 const formatDate = (dateString) => {
+    if (!dateString) return '--/--/----'
+
     const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '--/--/----'
+
     return date.toLocaleDateString('vi-VN', {
         day: '2-digit',
         month: '2-digit',
@@ -358,21 +357,10 @@ const formatDate = (dateString) => {
     })
 }
 
-// Watch search query and reset page
-watch(searchQuery, () => {
-    currentPage.value = 1
+onMounted(async () => {
+    await fetchNews()
 })
 
-// SEO
-useHead({
-    title: 'Tin Tức Du Học Nhật Bản - Du Học NB',
-    meta: [
-        {
-            name: 'description',
-            content: 'Cập nhật tin tức mới nhất về du học Nhật Bản, học bổng, thủ tục visa, kinh nghiệm du học sinh và thông tin tuyển sinh các trường.'
-        }
-    ]
-})
 </script>
 
 <style scoped>
@@ -391,6 +379,21 @@ news page style
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 40px;
+}
+
+.news-state {
+    padding: 24px;
+    border-radius: 12px;
+    background: #f8f9fa;
+    color: #444;
+    text-align: center;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+.news-state-error {
+    background: #fdecea;
+    color: #b42318;
 }
 
 /* Featured Article */
@@ -426,6 +429,25 @@ news page style
     font-weight: 500;
 }
 
+.article-title > a {
+    display: -webkit-box !important;
+    
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+h2.article-title > a {
+    -webkit-line-clamp: 2;
+}
+
+h3.article-title > a, h4.article-title > a {
+    -webkit-line-clamp: 3;
+}
+
+.featured-article .article-content {
+    padding: 30px;
+}
+
 .featured-article .article-content {
     padding: 30px;
 }
@@ -436,7 +458,6 @@ news page style
     font-size: 1.6rem;
     line-height: 1.4;
     margin-bottom: 15px;
-    display: block;
 }
 
 .featured-article h2 a:hover {
@@ -524,7 +545,6 @@ news page style
     font-size: 1.2rem;
     line-height: 1.4;
     margin-bottom: 12px;
-    display: block;
 }
 
 .news-card-content h3 a:hover {
@@ -536,11 +556,15 @@ news page style
     gap: 15px;
 }
 
-.news-card-content p {
+.news-card-content p.article-excerpt {
     color: #666;
     line-height: 1.6;
     margin-bottom: 15px;
     font-size: 0.95rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 /* Pagination */
@@ -548,6 +572,33 @@ news page style
     display: flex;
     justify-content: center;
     gap: 10px;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    color: #666;
+    background: #fff;
+    padding: 0 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(:disabled),
+.page-btn.active {
+    background: #d32f2f;
+    border-color: #d32f2f;
+    color: #fff;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .page-link {
@@ -649,6 +700,26 @@ news page style
     padding-left: 10px;
 }
 
+.category-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    color: #666;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.3s ease, padding-left 0.3s ease;
+}
+
+.category-btn:hover,
+.category-btn.active {
+    color: #d32f2f;
+    padding-left: 10px;
+}
+
 .category-list span {
     color: #999;
     font-size: 0.9rem;
@@ -686,7 +757,7 @@ news page style
     font-size: 1rem;
     line-height: 1.3;
     display: block;
-    margin-bottom: 8px;
+    /* margin-bottom: 8px; */
 }
 
 .recent-post-content h4 a:hover {
@@ -712,6 +783,8 @@ news page style
     text-decoration: none;
     border-radius: 20px;
     font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
     transition: all 0.3s ease;
 }
 

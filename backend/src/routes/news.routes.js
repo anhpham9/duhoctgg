@@ -6,6 +6,7 @@ import {
     getNewsById,
     createNews,
     updateNews,
+    setFeaturedNews,
     deleteNews,
     getNewsStats,
     trackNewsView
@@ -33,6 +34,9 @@ router.post("/", authenticate, createNews);
 
 // Update news
 router.put("/:id", authenticate, updateNews);
+
+// Set featured state (single featured globally)
+router.put("/:id/featured", authenticate, setFeaturedNews);
 
 // Delete news (superadmin, admin only)
 router.delete("/:id", authenticate, deleteNews);

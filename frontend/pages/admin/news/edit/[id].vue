@@ -86,6 +86,23 @@
                         <p v-if="formErrors.published_at" class="field-error">{{ formErrors.published_at }}</p>
                     </div>
 
+                    <div class="form-group full" v-if="canManageStatus">
+                        <label class="switch-label">
+                            <input  class="switch-button"
+                                v-model="form.is_featured"
+                                type="checkbox"
+                                :disabled="form.status !== 'published'"
+                            >
+                            <span>Dat bai viet nay lam Featured</span>
+                        </label>
+                        <p class="help-text">
+                            Chi co 1 bai Featured tren toan he thong. Khi bat, bai Featured cu se tu dong tat.
+                        </p>
+                        <p v-if="form.status !== 'published'" class="help-text warning-text">
+                            Can chuyen trang thai sang "Da xuat ban" de bat Featured.
+                        </p>
+                    </div>
+
                     <div class="form-group full">
                         <label>Mo ta ngan <span class="required">*</span></label>
                         <textarea v-model.trim="form.excerpt" @input="clearFieldError('excerpt')" @blur="validateField('excerpt')" :class="['form-control', { 'is-invalid': !!formErrors.excerpt }]" rows="3"></textarea>
@@ -172,6 +189,7 @@ const form = reactive({
     thumbnail_url: '',
     category_id: null,
     status: 'draft',
+    is_featured: false,
     published_at: '',
     meta_title: '',
     meta_description: ''
@@ -227,6 +245,7 @@ const handleStatusChange = () => {
     clearFieldError('status')
     if (form.status !== 'published') {
         form.published_at = ''
+        form.is_featured = false
         formErrors.published_at = ''
     }
 }
@@ -396,6 +415,7 @@ const fetchNewsDetail = async () => {
         form.thumbnail_url = item.thumbnail_url || ''
         form.category_id = item.category_id ? Number(item.category_id) : null
         form.status = item.status || 'draft'
+        form.is_featured = Boolean(item.is_featured)
         form.published_at = toDateTimeLocal(item.published_at)
         form.meta_title = item.meta_title || ''
         form.meta_description = item.meta_description || ''
@@ -421,6 +441,7 @@ const buildPayload = () => {
     if (canManageStatus.value) {
         payload.status = form.status
         payload.published_at = form.published_at || null
+        payload.is_featured = form.status === 'published' ? Boolean(form.is_featured) : false
     }
 
     return payload
@@ -487,6 +508,76 @@ onMounted(async () => {
 textarea.form-control { resize: vertical; }
 .field-error { margin: 0.4rem 0 0; color: #dc3545; font-size: 0.85rem; }
 .required { color: #dc3545; }
+.switch-label { display: flex !important; align-items: center; gap: 0.6rem; cursor: pointer; }
+.switch-button {
+
+    appearance: none;
+
+    width: 52px;
+    height: 28px;
+
+    background: #d1d5db;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+
+    position: relative;
+
+    transition: .25s;
+
+}
+
+.switch-button::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 22px;
+    height: 22px;
+
+    top: 3px;
+    left: 3px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.15);
+
+    transition: .25s;
+
+}
+
+.switch-button:checked {
+
+    background: #22c55e;
+
+}
+
+.switch-button:checked::before {
+
+    transform: translateX(24px);
+
+}
+
+.switch-button:hover {
+
+    filter: brightness(0.97);
+
+}
+
+.switch-button:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+
+}
+.help-text { margin: 0.5rem 0 0; color: #666; font-size: 0.9rem; }
+.warning-text { color: #b26a00; }
 .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 .btn { padding: 0.75rem 1.25rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 .btn-primary { background: #1976d2; color: white; }

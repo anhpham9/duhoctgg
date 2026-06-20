@@ -446,6 +446,16 @@ export class InputSanitizer {
             });
         }
 
+        if (Object.prototype.hasOwnProperty.call(newsData, 'is_featured')) {
+            if (typeof newsData.is_featured === 'boolean') {
+                sanitized.is_featured = newsData.is_featured;
+            } else if (typeof newsData.is_featured === 'string') {
+                const normalized = newsData.is_featured.trim().toLowerCase();
+                if (normalized === 'true' || normalized === '1') sanitized.is_featured = true;
+                if (normalized === 'false' || normalized === '0') sanitized.is_featured = false;
+            }
+        }
+
         logger.debug('News data sanitized', {
             originalFields: Object.keys(newsData),
             sanitizedFields: Object.keys(sanitized)

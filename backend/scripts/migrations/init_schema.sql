@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS news (
     category_id INTEGER REFERENCES categories(id),
     author_id BIGINT REFERENCES users(id),
     status VARCHAR(20) CHECK (status IN ('draft', 'published', 'archived')) DEFAULT 'draft',
+    is_featured BOOLEAN DEFAULT FALSE,
     published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     meta_title VARCHAR(255),
     meta_description TEXT,
@@ -72,6 +73,7 @@ CREATE TABLE IF NOT EXISTS news (
 );
 CREATE INDEX IF NOT EXISTS idx_news_slug ON news(slug);
 CREATE INDEX IF NOT EXISTS idx_news_status ON news(status);
+CREATE INDEX IF NOT EXISTS idx_news_featured ON news(is_featured);
 CREATE INDEX IF NOT EXISTS idx_news_category ON news(category_id);
 CREATE INDEX IF NOT EXISTS idx_news_published_at ON news(published_at);
 CREATE INDEX IF NOT EXISTS idx_news_slug_category ON news(slug, category_id);

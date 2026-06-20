@@ -56,6 +56,7 @@
                     <div class="meta-item"><span class="label">Ngay tao:</span><span class="value">{{ formatDate(news.created_at) }}</span></div>
                     <div class="meta-item"><span class="label">Ngay xuat ban:</span><span class="value">{{ formatDate(news.published_at) }}</span></div>
                     <div class="meta-item"><span class="label">Cap nhat:</span><span class="value">{{ formatDate(news.updated_at) }}</span></div>
+                    <div class="meta-item"><span  class="badge badge-primary" v-if="news.is_featured">Featured</span></div>
                     <div class="meta-item full"><span class="label">Excerpt:</span><span class="value">{{ news.excerpt || '-' }}</span></div>
                     <div class="meta-item full"><span class="label">Thumbnail URL:</span><span class="value">{{ news.thumbnail_url || '-' }}</span></div>
                     <div class="meta-item full"><span class="label">Meta title:</span><span class="value">{{ news.meta_title || '-' }}</span></div>
@@ -118,6 +119,7 @@ const fetchNewsDetail = async () => {
         }
 
         news.value = data.data || {}
+        console.log('News Detail is_featured:', news.value.is_featured)
     } catch (err) {
         error.value = err.message || 'Khong the tai chi tiet bai viet'
     } finally {
@@ -179,6 +181,7 @@ onMounted(async () => {
 .badge-success { background: #d4edda; color: #155724; }
 .badge-warning { background: #fff3cd; color: #856404; }
 .badge-secondary { background: #e2e3e5; color: #383d41; }
+.badge-primary { background: #dbeafe; color: #1d4ed8; }
 .btn { padding: 0.75rem 1.25rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 .btn-primary { background: #1976d2; color: white; }
 .btn-secondary { background: #f5f5f5; color: #666; }

@@ -3,15 +3,15 @@
         <div v-if="loadingUser || !hasPermission" class="permission-check">
             <div v-if="loadingUser" class="loading-permission">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Dang kiem tra quyen truy cap...</p>
+                <p>Đang kiểm tra quyền truy cập...</p>
             </div>
             <div v-else class="permission-denied">
                 <i class="fas fa-shield-alt"></i>
-                <h3>Khong the truy cap Tao bai viet</h3>
-                <p>Chi Superadmin, Admin, Manager va Editor moi co the tao tin tuc.</p>
+                <h3>Không thể truy cập Tạo bài viết</h3>
+                <p>Chỉ Superadmin, Admin, Manager và Editor mới có thể tạo tin tức.</p>
                 <NuxtLink to="/admin/news" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i>
-                    Quay lai danh sach
+                    Quay lại danh sách
                 </NuxtLink>
             </div>
         </div>
@@ -19,33 +19,33 @@
         <div v-else class="form-wrapper">
             <div class="page-header">
                 <div>
-                    <h1><i class="fas fa-plus-circle"></i> Tao bai viet</h1>
-                    <p>Nhap thong tin bai viet moi</p>
+                    <h1><i class="fas fa-plus-circle"></i> Tạo bài viết</h1>
+                    <p>Nhập thông tin bài viết mới</p>
                 </div>
                 <NuxtLink to="/admin/news" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i>
-                    Quay lai
+                    Quay lại
                 </NuxtLink>
             </div>
 
             <form class="news-form" @submit.prevent="handleCreateNews">
                 <div class="form-grid">
                     <div class="form-group full">
-                        <label>Tieu de <span class="required">*</span></label>
-                        <input v-model.trim="form.title" @input="clearFieldError('title')" @blur="handleTitleBlur" :class="['form-control', { 'is-invalid': !!formErrors.title }]" type="text" required placeholder="Nhap tieu de bai viet">
+                        <label>Tiêu đề <span class="required">*</span></label>
+                        <input v-model.trim="form.title" @input="clearFieldError('title')" @blur="handleTitleBlur" :class="['form-control', { 'is-invalid': !!formErrors.title }]" type="text" required placeholder="Nhập tiêu đề bài viết">
                         <p v-if="formErrors.title" class="field-error">{{ formErrors.title }}</p>
                     </div>
 
                     <div class="form-group">
                         <label>Slug</label>
-                        <input v-model.trim="form.slug" @input="clearFieldError('slug')" @blur="validateField('slug')" :class="['form-control', { 'is-invalid': !!formErrors.slug }]" type="text" placeholder="de trong de tu tao">
+                        <input v-model.trim="form.slug" @input="clearFieldError('slug')" @blur="validateField('slug')" :class="['form-control', { 'is-invalid': !!formErrors.slug }]" type="text" placeholder="Để trống để tự tạo">
                         <p v-if="formErrors.slug" class="field-error">{{ formErrors.slug }}</p>
                     </div>
 
                     <div class="form-group">
-                        <label>Danh muc <span class="required">*</span></label>
+                        <label>Danh mục <span class="required">*</span></label>
                         <select v-model="form.category_id" @change="clearFieldError('category_id')" :class="['form-control', { 'is-invalid': !!formErrors.category_id }]">
-                            <option :value="null">Chua phan loai</option>
+                            <option :value="null">Chưa phân loại</option>
                             <option v-for="category in categories" :key="category.id" :value="Number(category.id)">
                                 {{ category.name }}
                             </option>
@@ -54,35 +54,52 @@
                     </div>
 
                     <div class="form-group" v-if="canManageStatus">
-                        <label>Trang thai</label>
+                        <label>Trạng thái</label>
                         <select v-model="form.status" @change="handleStatusChange" :class="['form-control', { 'is-invalid': !!formErrors.status }]">
-                            <option value="draft">Ban nhap</option>
-                            <option value="published">Da xuat ban</option>
-                            <option value="archived">Luu tru</option>
+                            <option value="draft">Bản nháp</option>
+                            <option value="published">Đã xuất bản</option>
+                            <option value="archived">Lưu trữ</option>
                         </select>
                         <p v-if="formErrors.status" class="field-error">{{ formErrors.status }}</p>
                     </div>
 
                     <div class="form-group" v-if="!canManageStatus">
-                        <label>Trang thai</label>
-                        <input class="form-control" type="text" value="Ban nhap (Editor)" disabled>
+                        <label>Trạng thái</label>
+                        <input class="form-control" type="text" value="Bản nháp (Editor)" disabled>
                     </div>
 
                     <div class="form-group" v-if="canManageStatus && form.status === 'published'">
-                        <label>Ngay xuat ban</label>
+                        <label>Ngày xuất bản</label>
                         <input v-model="form.published_at" @input="clearFieldError('published_at')" @blur="validateField('published_at')" :class="['form-control', { 'is-invalid': !!formErrors.published_at }]" type="datetime-local">
                         <p v-if="formErrors.published_at" class="field-error">{{ formErrors.published_at }}</p>
                     </div>
 
+                    <div class="form-group full" v-if="canManageStatus">
+                        <label class="switch-label">
+                            <input  class="switch-button"
+                                v-model="form.is_featured"
+                                type="checkbox"
+                                :disabled="form.status !== 'published'"
+                            >
+                            <span>Đặt bài viết này làm Featured</span>
+                        </label>
+                        <p class="help-text">
+                            Chỉ có 1 bài Featured trên toàn hệ thống. Khi bật, bài Featured cũ sẽ tự động tắt.
+                        </p>
+                        <p v-if="form.status !== 'published'" class="help-text warning-text">
+                            Cần chuyển trạng thái sang "Đã xuất bản" để bật Featured.
+                        </p>
+                    </div>
+
                     <div class="form-group full">
-                        <label>Mo ta ngan <span class="required">*</span></label>
-                        <textarea v-model.trim="form.excerpt" @input="clearFieldError('excerpt')" @blur="validateField('excerpt')" :class="['form-control', { 'is-invalid': !!formErrors.excerpt }]" rows="3" placeholder="Tom tat ngan gon ve bai viet"></textarea>
+                        <label>Mô tả ngắn <span class="required">*</span></label>
+                        <textarea v-model.trim="form.excerpt" @input="clearFieldError('excerpt')" @blur="validateField('excerpt')" :class="['form-control', { 'is-invalid': !!formErrors.excerpt }]" rows="3" placeholder="Mô tả ngắn gọn về bài viết"></textarea>
                         <p v-if="formErrors.excerpt" class="field-error">{{ formErrors.excerpt }}</p>
                     </div>
 
                     <div class="form-group full">
-                        <label>Noi dung <span class="required">*</span></label>
-                        <textarea v-model.trim="form.content" @input="clearFieldError('content')" @blur="validateField('content')" :class="['form-control', { 'is-invalid': !!formErrors.content }]" rows="12" required placeholder="Nhap noi dung bai viet"></textarea>
+                        <label>Nội dung <span class="required">*</span></label>
+                        <textarea v-model.trim="form.content" @input="clearFieldError('content')" @blur="validateField('content')" :class="['form-control', { 'is-invalid': !!formErrors.content }]" rows="12" required placeholder="Nhập nội dung bài viết"></textarea>
                         <p v-if="formErrors.content" class="field-error">{{ formErrors.content }}</p>
                     </div>
 
@@ -94,22 +111,22 @@
 
                     <div class="form-group">
                         <label>Meta title</label>
-                        <input v-model.trim="form.meta_title" @input="clearFieldError('meta_title')" @blur="validateField('meta_title')" :class="['form-control', { 'is-invalid': !!formErrors.meta_title }]" type="text" placeholder="Tieu de SEO">
+                        <input v-model.trim="form.meta_title" @input="clearFieldError('meta_title')" @blur="validateField('meta_title')" :class="['form-control', { 'is-invalid': !!formErrors.meta_title }]" type="text" placeholder="Tiêu đề SEO">
                         <p v-if="formErrors.meta_title" class="field-error">{{ formErrors.meta_title }}</p>
                     </div>
 
                     <div class="form-group full">
                         <label>Meta description</label>
-                        <textarea v-model.trim="form.meta_description" @input="clearFieldError('meta_description')" @blur="validateField('meta_description')" :class="['form-control', { 'is-invalid': !!formErrors.meta_description }]" rows="3" placeholder="Mo ta SEO"></textarea>
+                        <textarea v-model.trim="form.meta_description" @input="clearFieldError('meta_description')" @blur="validateField('meta_description')" :class="['form-control', { 'is-invalid': !!formErrors.meta_description }]" rows="3" placeholder="Mô tả SEO"></textarea>
                         <p v-if="formErrors.meta_description" class="field-error">{{ formErrors.meta_description }}</p>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <NuxtLink to="/admin/news" class="btn btn-secondary">Huy</NuxtLink>
+                    <NuxtLink to="/admin/news" class="btn btn-secondary">Hủy</NuxtLink>
                     <button class="btn btn-primary" type="submit" :disabled="saving">
                         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
-                        {{ saving ? 'Dang tao...' : 'Tao bai viet' }}
+                        {{ saving ? 'Đang tạo...' : 'Tạo bài viết' }}
                     </button>
                 </div>
             </form>
@@ -132,7 +149,7 @@ definePageMeta({
 })
 
 useHead({
-    title: 'Tao bai viet - Admin'
+    title: 'Tạo bài viết - Admin'
 })
 
 const config = useRuntimeConfig()
@@ -155,6 +172,7 @@ const form = reactive({
     thumbnail_url: '',
     category_id: null,
     status: 'draft',
+    is_featured: false,
     published_at: '',
     meta_title: '',
     meta_description: ''
@@ -210,6 +228,7 @@ const handleStatusChange = () => {
     clearFieldError('status')
     if (form.status !== 'published') {
         form.published_at = ''
+        form.is_featured = false
         formErrors.published_at = ''
     }
 }
@@ -232,9 +251,9 @@ const validateField = (field) => {
     const metaDescription = form.meta_description.trim()
 
     if (field === 'title') {
-        if (!title) return (formErrors.title = 'Tieu de la bat buoc', false)
-        if (title.length < 3) return (formErrors.title = 'Tieu de phai co it nhat 3 ky tu', false)
-        if (title.length > 255) return (formErrors.title = 'Tieu de khong duoc vuot qua 255 ky tu', false)
+        if (!title) return (formErrors.title = 'Tiêu đề là bắt buộc', false)
+        if (title.length < 3) return (formErrors.title = 'Tiêu đề phải có ít nhất 3 ký tự', false)
+        if (title.length > 255) return (formErrors.title = 'Tiêu đề không được vượt quá 255 ký tự', false)
         formErrors.title = ''
         return true
     }
@@ -244,24 +263,24 @@ const validateField = (field) => {
             formErrors.slug = ''
             return true
         }
-        if (slug.length < 2) return (formErrors.slug = 'Slug phai co it nhat 2 ky tu', false)
-        if (slug.length > 255) return (formErrors.slug = 'Slug khong duoc vuot qua 255 ky tu', false)
-        if (!slugPattern.test(slug)) return (formErrors.slug = 'Slug chi gom chu thuong, so va dau gach ngang', false)
+        if (slug.length < 2) return (formErrors.slug = 'Slug phải có ít nhất 2 ký tự', false)
+        if (slug.length > 255) return (formErrors.slug = 'Slug không được vượt quá 255 ký tự', false)
+        if (!slugPattern.test(slug)) return (formErrors.slug = 'Slug chỉ gồm chữ thường, số và dấu gạch ngang', false)
         formErrors.slug = ''
         return true
     }
 
     if (field === 'content') {
-        if (!content) return (formErrors.content = 'Noi dung la bat buoc', false)
-        if (content.length < 10) return (formErrors.content = 'Noi dung phai co it nhat 10 ky tu', false)
-        if (content.length > 50000) return (formErrors.content = 'Noi dung khong duoc vuot qua 50000 ky tu', false)
+        if (!content) return (formErrors.content = 'Nội dung là bắt buộc', false)
+        if (content.length < 10) return (formErrors.content = 'Nội dung phải có ít nhất 10 ký tự', false)
+        if (content.length > 50000) return (formErrors.content = 'Nội dung không được vượt quá 50000 ký tự', false)
         formErrors.content = ''
         return true
     }
 
     if (field === 'excerpt') {
-        if (!excerpt) return (formErrors.excerpt = 'Mo ta ngan la bat buoc', false)
-        if (excerpt.length > 500) return (formErrors.excerpt = 'Mo ta ngan khong duoc vuot qua 500 ky tu', false)
+        if (!excerpt) return (formErrors.excerpt = 'Mô tả ngắn là bắt buộc', false)
+        if (excerpt.length > 500) return (formErrors.excerpt = 'Mô tả ngắn không được vượt quá 500 ký tự', false)
         formErrors.excerpt = ''
         return true
     }
@@ -271,19 +290,19 @@ const validateField = (field) => {
             formErrors.thumbnail_url = ''
             return true
         }
-        if (!isValidHttpUrl(thumbnail)) return (formErrors.thumbnail_url = 'Thumbnail URL khong hop le (http/https)', false)
+        if (!isValidHttpUrl(thumbnail)) return (formErrors.thumbnail_url = 'Thumbnail URL không hợp lệ (http/https)', false)
         formErrors.thumbnail_url = ''
         return true
     }
 
     if (field === 'meta_title') {
-        if (metaTitle.length > 255) return (formErrors.meta_title = 'Meta title khong duoc vuot qua 255 ky tu', false)
+        if (metaTitle.length > 255) return (formErrors.meta_title = 'Meta title không được vượt quá 255 ký tự', false)
         formErrors.meta_title = ''
         return true
     }
 
     if (field === 'meta_description') {
-        if (metaDescription.length > 500) return (formErrors.meta_description = 'Meta description khong duoc vuot qua 500 ky tu', false)
+        if (metaDescription.length > 500) return (formErrors.meta_description = 'Meta description không được vượt quá 500 ký tự', false)
         formErrors.meta_description = ''
         return true
     }
@@ -294,14 +313,14 @@ const validateField = (field) => {
             return true
         }
         const d = new Date(form.published_at)
-        if (isNaN(d.getTime())) return (formErrors.published_at = 'Ngay xuat ban khong hop le', false)
+        if (isNaN(d.getTime())) return (formErrors.published_at = 'Ngày xuất bản không hợp lệ', false)
         formErrors.published_at = ''
         return true
     }
 
     if (field === 'status') {
         if (!['draft', 'published', 'archived'].includes(form.status)) {
-            formErrors.status = 'Trang thai khong hop le'
+            formErrors.status = 'Trạng thái không hợp lệ'
             return false
         }
         formErrors.status = ''
@@ -310,11 +329,11 @@ const validateField = (field) => {
 
     if (field === 'category_id') {
         if (form.category_id === null || form.category_id === undefined || String(form.category_id).trim() === '') {
-            formErrors.category_id = 'Danh muc la bat buoc'
+            formErrors.category_id = 'Danh mục là bắt buộc'
             return false
         }
         if (!Number.isInteger(Number(form.category_id)) || Number(form.category_id) < 1) {
-            formErrors.category_id = 'Danh muc khong hop le'
+            formErrors.category_id = 'Danh mục không hợp lệ'
             return false
         }
         formErrors.category_id = ''
@@ -361,6 +380,7 @@ const cleanPayload = () => {
     if (canManageStatus.value) {
         payload.status = form.status
         payload.published_at = form.published_at || undefined
+        payload.is_featured = form.status === 'published' ? Boolean(form.is_featured) : false
     }
 
     return payload
@@ -369,7 +389,7 @@ const cleanPayload = () => {
 const handleCreateNews = async () => {
     setBackendFieldErrors({})
     if (!validateForm()) {
-        showError('Vui long kiem tra lai thong tin bai viet')
+        showError('Vui lòng kiểm tra lại thông tin bài viết')
         return
     }
 
@@ -390,10 +410,10 @@ const handleCreateNews = async () => {
             throw new Error(data?.message || `HTTP ${response.status}`)
         }
 
-        showSuccess(data?.message || 'Tao bai viet thanh cong')
+        showSuccess(data?.message || 'Tạo bài viết thành công')
         await navigateTo('/admin/news')
     } catch (err) {
-        showError(err.message || 'Khong the tao bai viet')
+        showError(err.message || 'Không thể tạo bài viết')
     } finally {
         saving.value = false
     }
@@ -423,6 +443,76 @@ onMounted(async () => {
 textarea.form-control { resize: vertical; }
 .field-error { margin: 0.4rem 0 0; color: #dc3545; font-size: 0.85rem; }
 .required { color: #dc3545; }
+.switch-label { display: flex !important; align-items: center; gap: 0.6rem; cursor: pointer; }
+.switch-button {
+
+    appearance: none;
+
+    width: 52px;
+    height: 28px;
+
+    background: #d1d5db;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+
+    position: relative;
+
+    transition: .25s;
+
+}
+
+.switch-button::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 22px;
+    height: 22px;
+
+    top: 3px;
+    left: 3px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.15);
+
+    transition: .25s;
+
+}
+
+.switch-button:checked {
+
+    background: #22c55e;
+
+}
+
+.switch-button:checked::before {
+
+    transform: translateX(24px);
+
+}
+
+.switch-button:hover {
+
+    filter: brightness(0.97);
+
+}
+
+.switch-button:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+
+}
+.help-text { margin: 0.5rem 0 0; color: #666; font-size: 0.9rem; }
+.warning-text { color: #b26a00; }
 .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 .btn { padding: 0.75rem 1.25rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 .btn-primary { background: #1976d2; color: white; }
