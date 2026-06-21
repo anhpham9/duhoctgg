@@ -1,333 +1,136 @@
 <template>
     <div>
-        <!-- Page Hero with simple props -->
-        <!-- <PageHero title="Tin Tức Du Học" subtitle="Cập nhật thông tin mới nhất về du học Nhật Bản"
-            breadcrumb-text="Tin tức" /> -->
-        <PageHero>
-            <nav class="breadcrumb">
-                <NuxtLink to="/">Trang chủ</NuxtLink>
-                <span>/</span>
-                <NuxtLink to="/news">Tin tức</NuxtLink>
-                <span>/</span>
-                <span>Chi tiết</span>
-            </nav>
+        <PageHero 
+            :title="article.category" 
+            :subtitle="heroTitle" 
+            :breadcrumb-text="staticPage.title" />
 
-            <h1>Chi tiết bài viết</h1>
-            <p>Học Bổng Toàn Phần Du Học Nhật Bản 2024</p>
-
-        </PageHero>
-
-        <!-- Article Detail Section -->
         <section class="article-detail-section">
             <div class="container">
-                <div class="article-detail-content">
-                    <!-- Main Article -->
+                <div v-if="newsPending" class="news-state">Đang tải chi tiết bài viết...</div>
+                <div v-else-if="hasLoadError" class="news-state news-state-error">{{ errorMessage }}</div>
+                <div v-else-if="!article" class="news-state">Không tìm thấy bài viết.</div>
+                <div v-else class="article-detail-content">
                     <article class="article-main">
                         <div class="article-header">
-                            <div class="article-category-tag">Tin Nổi Bật</div>
-                            <h1>Học Bổng Toàn Phần Du Học Nhật Bản 2024 - Cơ Hội Vàng Cho Sinh Viên Việt Nam</h1>
+                            <div class="article-category-tag">{{ article.category }}</div>
+                            <h1>{{ article.title }}</h1>
                             <div class="article-meta">
                                 <div class="meta-info">
-                                    <span class="article-date"><i class="fas fa-calendar"></i> 15/03/2024</span>
-                                    <span class="article-author"><i class="fas fa-user"></i> Admin</span>
-                                    <span class="article-views"><i class="fas fa-eye"></i> 1,250 lượt xem</span>
+                                    <span class="article-date"><i class="fas fa-calendar"></i> {{ formatDate(article.date) }}</span>
+                                    <span class="article-author"><i class="fas fa-user"></i> {{ article.author }}</span>
+                                    <span class="article-views"><i class="fas fa-eye"></i> {{ formatViews(article.views) }} lượt xem</span>
                                 </div>
                                 <div class="social-share">
                                     <span>Chia sẻ:</span>
-                                    <a href="#" class="share-btn facebook"><i class="fab fa-facebook-f"></i></a>
-                                    <a href="#" class="share-btn tiktok"><i class="fab fa-tiktok"></i></a>
-                                    <a href="#" class="share-btn twitter"><i class="fab fa-twitter"></i></a>
-                                    <a href="#" class="share-btn copy-link"><i class="fas fa-link"></i></a>
+                                    <a :href="facebookShareUrl" target="_blank" rel="noopener noreferrer" class="share-btn facebook"><i class="fab fa-facebook-f"></i></a>
+                                    <a :href="twitterShareUrl" target="_blank" rel="noopener noreferrer" class="share-btn twitter"><i class="fab fa-twitter"></i></a>
+                                    <button type="button" class="share-btn copy-link" @click="copyCurrentLink"><i class="fas fa-link"></i></button>
                                 </div>
                             </div>
                         </div>
 
                         <div class="article-image">
-                            <img src="/assets/images/news-2.jpg" alt="Học bổng du học Nhật Bản 2024">
+                            <img :src="article.image" :alt="article.title">
                         </div>
 
                         <div class="article-content">
-                            <div class="content-summary">
-                                <p><strong>Chính phủ Nhật Bản vừa công bố chương trình học bổng MEXT 2024 dành cho sinh
-                                        viên
-                                        quốc tế, bao gồm cả sinh viên Việt Nam. Đây là cơ hội tuyệt vời để theo đuổi ước
-                                        mơ
-                                        du học tại đất nước mặt trời mọc với chi phí hoàn toàn miễn phí.</strong></p>
+                            <div v-if="article.excerpt" class="content-summary">
+                                <p><strong>{{ article.excerpt }}</strong></p>
                             </div>
-
-                            <h2>Thông Tin Chung Về Học Bổng MEXT 2024</h2>
-                            <p>Học bổng Chính phủ Nhật Bản (MEXT - Ministry of Education, Culture, Sports, Science and
-                                Technology) là một trong những chương trình học bổng uy tín và được săn đón nhiều nhất
-                                trên
-                                thế giới. Chương trình này được thiết lập từ năm 1954 với mục đích thu hút những sinh
-                                viên
-                                xuất sắc từ các quốc gia trên thế giới đến học tập tại Nhật Bản.</p>
-
-                            <p>Năm 2024, chương trình học bổng MEXT tiếp tục mở rộng quy mô và nâng cao chất lượng, mang
-                                đến
-                                cơ hội học tập tuyệt vời cho các sinh viên quốc tế, đặc biệt là sinh viên Việt Nam.</p>
-
-                            <h2>Các Loại Học Bổng MEXT 2024</h2>
-
-                            <h3>1. Học Bổng Nghiên Cứu Sinh (Research Students)</h3>
-                            <ul>
-                                <li><strong>Thời gian:</strong> 18-24 tháng (bao gồm 6 tháng học tiếng Nhật và 12-18
-                                    tháng
-                                    nghiên cứu)</li>
-                                <li><strong>Đối tượng:</strong> Ứng viên đã tốt nghiệp đại học, muốn theo học thạc sĩ
-                                    hoặc
-                                    tiến sĩ</li>
-                                <li><strong>Hỗ trợ:</strong> 147,000 Yên/tháng + học phí + vé máy bay khứ hồi</li>
-                            </ul>
-
-                            <h3>2. Học Bổng Sinh Viên Đại Học (Undergraduate Students)</h3>
-                            <ul>
-                                <li><strong>Thời gian:</strong> 5 năm (1 năm học tiếng Nhật + 4 năm đại học)</li>
-                                <li><strong>Đối tượng:</strong> Học sinh đã tốt nghiệp THPT</li>
-                                <li><strong>Hỗ trợ:</strong> 117,000 Yên/tháng + học phí + vé máy bay khứ hồi</li>
-                            </ul>
-
-                            <h3>3. Học Bổng Cao Đẳng Kỹ Thuật (College of Technology)</h3>
-                            <ul>
-                                <li><strong>Thời gian:</strong> 4 năm (1 năm học tiếng Nhật + 3 năm cao đẳng kỹ thuật)
-                                </li>
-                                <li><strong>Đối tượng:</strong> Học sinh đã hoàn thành lớp 11</li>
-                                <li><strong>Hỗ trợ:</strong> 117,000 Yên/tháng + học phí + vé máy bay khứ hồi</li>
-                            </ul>
-
-                            <div class="quote-box">
-                                <blockquote>
-                                    "Học bổng MEXT không chỉ hỗ trợ tài chính mà còn mở ra cơ hội tiếp cận với nền giáo
-                                    dục
-                                    tiên tiến, văn hóa độc đáo và môi trường nghiên cứu hàng đầu thế giới tại Nhật Bản."
-                                </blockquote>
-                            </div>
-
-                            <h2>Điều Kiện Xét Tuyển</h2>
-
-                            <h3>Điều Kiện Chung:</h3>
-                            <ul>
-                                <li>Có quốc tịch Việt Nam</li>
-                                <li>Tuổi dưới 35 (đối với nghiên cứu sinh), dưới 25 (đối với sinh viên đại học)</li>
-                                <li>Có sức khỏe tốt</li>
-                                <li>Không được nhận học bổng khác từ chính phủ Nhật Bản</li>
-                                <li>Cam kết trở về Việt Nam sau khi hoàn thành chương trình</li>
-                            </ul>
-
-                            <h3>Điều Kiện Học Vấn:</h3>
-                            <ul>
-                                <li><strong>Nghiên cứu sinh:</strong> Tốt nghiệp đại học với GPA từ 3.0/4.0 trở lên</li>
-                                <li><strong>Sinh viên đại học:</strong> Tốt nghiệp THPT với điểm trung bình từ 8.0/10
-                                    trở
-                                    lên</li>
-                                <li><strong>Cao đẳng kỹ thuật:</strong> Hoàn thành lớp 11 với kết quả học tập tốt</li>
-                            </ul>
-
-                            <h2>Quy Trình Đăng Ký</h2>
-
-                            <div class="process-steps">
-                                <div class="process-step">
-                                    <div class="process-step-number">1</div>
-                                    <div class="process-step-content">
-                                        <h4>Chuẩn Bị Hồ Sơ</h4>
-                                        <p>Thu thập và chuẩn bị đầy đủ các tài liệu theo yêu cầu</p>
-                                    </div>
-                                </div>
-                                <div class="process-step">
-                                    <div class="process-step-number">2</div>
-                                    <div class="process-step-content">
-                                        <h4>Nộp Hồ Sơ</h4>
-                                        <p>Nộp hồ sơ tại Đại sứ quán Nhật Bản tại Việt Nam</p>
-                                    </div>
-                                </div>
-                                <div class="process-step">
-                                    <div class="process-step-number">3</div>
-                                    <div class="process-step-content">
-                                        <h4>Thi Sơ Tuyển</h4>
-                                        <p>Tham gia kỳ thi sơ tuyển tại Việt Nam</p>
-                                    </div>
-                                </div>
-                                <div class="process-step">
-                                    <div class="process-step-number">4</div>
-                                    <div class="process-step-content">
-                                        <h4>Xét Tuyển Cuối</h4>
-                                        <p>Chờ kết quả xét tuyển từ Bộ Giáo dục Nhật Bản</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h2>Hồ Sơ Cần Thiết</h2>
-                            <ul>
-                                <li>Đơn xin học bổng (theo mẫu)</li>
-                                <li>Bản sao học bạ/bảng điểm đại học có công chứng</li>
-                                <li>Bản sao bằng tốt nghiệp có công chứng</li>
-                                <li>Thư giới thiệu từ giáo viên/giảng viên</li>
-                                <li>Kế hoạch học tập và nghiên cứu</li>
-                                <li>Chứng chỉ năng lực tiếng Nhật (nếu có)</li>
-                                <li>Chứng chỉ năng lực tiếng Anh (TOEFL/IELTS)</li>
-                                <li>Giấy khám sức khỏe</li>
-                                <li>Ảnh 4x6 (6 tấm)</li>
-                            </ul>
-
-                            <h2>Lịch Trình Quan Trọng</h2>
-                            <div class="timeline">
-                                <div class="timeline-item">
-                                    <div class="timeline-date">Tháng 4-5/2024</div>
-                                    <div class="timeline-content">Công bố thông tin và Công bố thông tin và mở đăng ký
-                                    </div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-date">Tháng 6/2024</div>
-                                    <div class="timeline-content">Hạn chót nộp hồ sơ</div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-date">Tháng 7-8/2024</div>
-                                    <div class="timeline-content">Thi sơ tuyển tại Việt Nam</div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-date">Tháng 10-11/2024</div>
-                                    <div class="timeline-content">Công bố kết quả</div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-date">Tháng 4/2025</div>
-                                    <div class="timeline-content">Bắt đầu chương trình học</div>
-                                </div>
-                            </div>
-
-                            <h2>Lời Khuyên Cho Ứng Viên</h2>
-                            <div class="tips-box">
-                                <div class="tip-item">
-                                    <i class="fas fa-lightbulb"></i>
-                                    <p><strong>Chuẩn bị sớm:</strong> Bắt đầu chuẩn bị hồ sơ từ 6 tháng trước khi nộp để
-                                        đảm
-                                        bảo chất lượng tốt nhất.</p>
-                                </div>
-                                <div class="tip-item">
-                                    <i class="fas fa-book-open"></i>
-                                    <p><strong>Học tiếng Nhật:</strong> Dù không bắt buộc, việc có kiến thức tiếng Nhật
-                                        cơ
-                                        bản sẽ tăng cơ hội được chọn.</p>
-                                </div>
-                                <div class="tip-item">
-                                    <i class="fas fa-users"></i>
-                                    <p><strong>Tham khảo kinh nghiệm:</strong> Trao đổi với những người đã từng nhận học
-                                        bổng để có thêm kinh nghiệm.</p>
-                                </div>
-                            </div>
-
-                            <p>Học bổng MEXT 2024 là cơ hội không thể bỏ lỡ đối với những sinh viên Việt Nam có ước mơ
-                                du
-                                học tại Nhật Bản. Với sự hỗ trợ toàn diện về tài chính và cơ hội tiếp cận nền giáo dục
-                                hàng
-                                đầu thế giới, chương trình này sẽ mở ra những chân trời mới cho tương lai của bạn.</p>
+                            <div class="article-body" v-html="article.content || '<p>Nội dung đang được cập nhật.</p>'"></div>
                         </div>
 
-                        <!-- Article Tags -->
-                        <div class="article-tags">
+                        <div class="article-tags" v-if="article.category">
                             <h3>Từ khóa:</h3>
                             <div class="tag-list">
-                                <a href="#" class="tag">Học bổng MEXT</a>
-                                <a href="#" class="tag">Du học Nhật Bản</a>
-                                <a href="#" class="tag">Học bổng toàn phần</a>
-                                <a href="#" class="tag">Chính phủ Nhật Bản</a>
-                                <a href="#" class="tag">2024</a>
+                                <NuxtLink :to="`/news?category=${article.categorySlug || ''}`" class="tag">
+                                    {{ article.category }}
+                                </NuxtLink>
                             </div>
                         </div>
 
-                        <!-- Navigation -->
                         <div class="article-navigation">
-                            <a href="news.html" class="nav-btn prev">
+                            <NuxtLink v-if="navigation.prev" :to="`/news/${navigation.prev.slug}`" class="nav-btn prev">
                                 <i class="fas fa-chevron-left"></i>
                                 <div>
                                     <span>Bài trước</span>
-                                    <h4>Top 10 Trường Đại Học Nhật Bản Dễ Xin Học Bổng Nhất</h4>
+                                    <h4 class="article-title">
+                                        <NuxtLink :to="`/news/${navigation.prev.slug}`">{{ navigation.prev.title }}</NuxtLink>
+                                    </h4>
                                 </div>
-                            </a>
-                            <a href="news.html" class="nav-btn next">
+                            </NuxtLink>
+                            <div v-else></div>
+
+                            <NuxtLink v-if="navigation.next" :to="`/news/${navigation.next.slug}`" class="nav-btn next">
                                 <div>
                                     <span>Bài tiếp</span>
-                                    <h4>Hướng Dẫn Làm Hồ Sơ Xin Visa Du Học Nhật Bản</h4>
+                                    <h4 class="article-title">
+                                        <NuxtLink :to="`/news/${navigation.next.slug}`">{{ navigation.next.title }}</NuxtLink>
+                                    </h4>
                                 </div>
                                 <i class="fas fa-chevron-right"></i>
-                            </a>
+                            </NuxtLink>
+                            <div v-else></div>
                         </div>
                     </article>
 
-                    <!-- Sidebar -->
                     <aside class="article-sidebar">
-                        <!-- Quick Info -->
                         <div class="sidebar-widget">
                             <h3>Thông Tin Nhanh</h3>
                             <div class="quick-info">
                                 <div class="info-item">
                                     <i class="fas fa-calendar-alt"></i>
                                     <div>
-                                        <span>Hạn nộp hồ sơ</span>
-                                        <strong>Tháng 6/2024</strong>
+                                        <span>Ngày đăng</span>
+                                        <strong>{{ formatDate(article.date) }}</strong>
                                     </div>
                                 </div>
                                 <div class="info-item">
-                                    <i class="fas fa-money-bill-wave"></i>
+                                    <i class="fas fa-folder-open"></i>
                                     <div>
-                                        <span>Học bổng</span>
-                                        <strong>117,000-147,000 Yên/tháng</strong>
+                                        <span>Danh mục</span>
+                                        <strong>{{ article.category }}</strong>
                                     </div>
                                 </div>
                                 <div class="info-item">
-                                    <i class="fas fa-graduation-cap"></i>
+                                    <i class="fas fa-eye"></i>
                                     <div>
-                                        <span>Bậc học</span>
-                                        <strong>Đại học, Thạc sĩ, Tiến sĩ</strong>
+                                        <span>Lượt xem</span>
+                                        <strong>{{ formatViews(article.views) }}</strong>
                                     </div>
                                 </div>
                             </div>
-                            <a href="contact.html" class="btn btn-primary">Tư Vấn Ngay</a>
+                            <NuxtLink to="/contact" class="btn btn-primary">Tư Vấn Ngay</NuxtLink>
                         </div>
 
-                        <!-- Recent Posts -->
                         <div class="sidebar-widget">
                             <h3>Bài Viết Liên Quan</h3>
                             <div class="related-posts">
-                                <div class="related-post">
+                                <div class="related-post" v-for="post in relatedPosts" :key="`related-${post.id}`">
                                     <div class="related-post-image">
-                                        <img src="/assets/images/news-2.jpg" alt="Bài viết liên quan">
+                                        <img :src="post.image" :alt="post.title">
                                     </div>
                                     <div class="related-post-content">
-                                        <h4><a href="#">Top 10 Trường Đại Học Nhật Bản Dễ Xin Học Bổng Nhất 2024</a>
+                                        <h4 class="article-title">
+                                            <NuxtLink :to="`/news/${post.slug}`">{{ post.title }}</NuxtLink>
                                         </h4>
-                                        <span class="related-date">12/03/2024</span>
+                                        <span class="related-date">{{ formatDate(post.date) }}</span>
                                     </div>
                                 </div>
-                                <div class="related-post">
-                                    <div class="related-post-image">
-                                        <img src="/assets/images/news-2.jpg" alt="Bài viết liên quan">
-                                    </div>
-                                    <div class="related-post-content">
-                                        <h4><a href="#">Hướng Dẫn Làm Hồ Sơ Xin Visa Du Học Nhật Bản 2024</a></h4>
-                                        <span class="related-date">10/03/2024</span>
-                                    </div>
-                                </div>
-                                <div class="related-post">
-                                    <div class="related-post-image">
-                                        <img src="/assets/images/news-2.jpg" alt="Bài viết liên quan">
-                                    </div>
-                                    <div class="related-post-content">
-                                        <h4><a href="#">Chi Phí Du Học Nhật Bản 2024 - Phân Tích Chi Tiết</a></h4>
-                                        <span class="related-date">08/03/2024</span>
-                                    </div>
-                                </div>
+                                <div v-if="!relatedPosts.length" class="related-date">Chưa có bài viết liên quan.</div>
                             </div>
                         </div>
 
-                        <!-- Categories -->
                         <div class="sidebar-widget">
                             <h3>Danh Mục</h3>
                             <ul class="category-list">
-                                <li><a href="#">Học Bổng <span>(28)</span></a></li>
-                                <li><a href="#">Thủ Tục Visa <span>(15)</span></a></li>
-                                <li><a href="#">Kinh Nghiệm <span>(22)</span></a></li>
-                                <li><a href="#">Tuyển Sinh <span>(18)</span></a></li>
-                                <li><a href="#">Chi Phí <span>(10)</span></a></li>
+                                <li v-for="category in categories" :key="category.slug">
+                                    <NuxtLink :to="`/news?category=${category.slug}`">
+                                        {{ category.name }}
+                                        <span>({{ category.news_count }})</span>
+                                    </NuxtLink>
+                                </li>
                             </ul>
                         </div>
                     </aside>
@@ -338,8 +141,169 @@
 </template>
 
 <script setup>
+import { computed, ref, watch } from 'vue'
+
 definePageMeta({
     layout: 'default'
+})
+
+const config = useRuntimeConfig()
+const route = useRoute()
+const API_BASE = config.public.apiBase
+const DEFAULT_NEWS_IMAGE = '/assets/images/news-1.jpg'
+
+const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/news`, {
+    key: 'public-static-page-news'
+})
+
+const { data: newsDetailData, pending: newsPending, error: newsError } = await useFetch(
+    () => `${API_BASE}/public/news/${String(route.params.slug || '')}`,
+    {
+        key: () => `public-news-detail-${String(route.params.slug || '')}`
+    }
+)
+
+const staticPage = computed(() => staticPageData.value?.data || {})
+
+const normalizeNewsItem = (item = {}) => ({
+    id: item.id,
+    slug: item.slug,
+    title: item.title || 'Bài viết không có tiêu đề',
+    excerpt: item.excerpt || '',
+    content: item.content || '',
+    image: item.thumbnail_url || DEFAULT_NEWS_IMAGE,
+    category: item.category_name || 'Tin tức',
+    categorySlug: item.category_slug || '',
+    author: item.author_name || 'Ban biên tập',
+    date: item.published_at || item.created_at || null,
+    views: Number(item.view_count || 0),
+    metaTitle: item.meta_title || '',
+    metaDescription: item.meta_description || ''
+})
+
+const payload = computed(() => {
+    if (!newsDetailData.value || newsDetailData.value.success === false) return null
+    return newsDetailData.value
+})
+
+const trackedArticleId = ref(null)
+const liveViewCount = ref(null)
+
+const article = computed(() => {
+    if (!payload.value?.data) return null
+
+    const normalizedArticle = normalizeNewsItem(payload.value.data)
+
+    if (trackedArticleId.value === normalizedArticle.id && liveViewCount.value !== null) {
+        return {
+            ...normalizedArticle,
+            views: liveViewCount.value
+        }
+    }
+
+    return normalizedArticle
+})
+
+const relatedPosts = computed(() => {
+    return (payload.value?.related || []).map(normalizeNewsItem)
+})
+
+const categories = computed(() => payload.value?.categories || [])
+const navigation = computed(() => payload.value?.navigation || { prev: null, next: null })
+
+const hasLoadError = computed(() => {
+    if (newsError.value) return true
+    return Boolean(newsDetailData.value && newsDetailData.value.success === false)
+})
+
+const errorMessage = computed(() => {
+    return newsDetailData.value?.message || 'Không thể tải chi tiết bài viết'
+})
+
+const pageTitle = computed(() => 'Chi tiết tin tức' + (article.value?.title ? ` : ${article.value.title}` : ''))
+
+const heroTitle = computed(() => {
+    return article.value?.title || 'Chi tiết tin tức'
+})
+
+const heroDescription = computed(() => {
+    return article.value?.excerpt || 'Cập nhật thông tin mới nhất về du học Nhật Bản'
+})
+
+const currentUrl = computed(() => {
+    const base = (config.public.siteUrl || '').replace(/\/$/, '')
+    const path = `/news/${article.value?.slug || String(route.params.slug || '')}`
+    return base ? `${base}${path}` : path
+})
+
+const facebookShareUrl = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl.value)}`)
+const twitterShareUrl = computed(() => `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl.value)}&text=${encodeURIComponent(article.value?.title || '')}`)
+
+const copyCurrentLink = async () => {
+    if (!import.meta.client) return
+
+    try {
+        await navigator.clipboard.writeText(currentUrl.value)
+    } catch {
+        // Silently ignore clipboard errors to avoid interrupting reading flow.
+    }
+}
+
+const formatDate = (value) => {
+    if (!value) return '-'
+
+    try {
+        return new Date(value).toLocaleDateString('vi-VN')
+    } catch {
+        return '-'
+    }
+}
+
+const formatViews = (value) => {
+    return Number(value || 0).toLocaleString('vi-VN')
+}
+
+watch(
+    () => payload.value?.data?.id,
+    async (articleId) => {
+        if (!import.meta.client || !articleId) return
+
+        if (trackedArticleId.value === articleId) return
+
+        const baseViewCount = Number(payload.value?.data?.view_count || 0)
+        trackedArticleId.value = articleId
+        liveViewCount.value = baseViewCount
+
+        try {
+            const response = await fetch(`${API_BASE}/public/news/${articleId}/view`, {
+                method: 'POST'
+            })
+
+            const result = await response.json()
+
+            if (response.ok && result.success) {
+                liveViewCount.value = baseViewCount + 1
+            }
+        } catch {
+            liveViewCount.value = baseViewCount
+        }
+    },
+    { immediate: true }
+)
+
+useHead(() => {
+    const metaTitle = 'Chi tiết tin tức' + (article.value?.metaTitle ? ` : ${article.value?.metaTitle}` : pageTitle.value)
+    const metaDescription = article.value?.metaDescription || heroDescription.value
+
+    return {
+        title: metaTitle,
+        meta: [
+            { name: 'description', content: metaDescription },
+            { property: 'og:title', content: metaTitle },
+            { property: 'og:description', content: metaDescription },
+            { property: 'og:url', content: currentUrl.value }
+        ]
+    }
 })
 </script>
 
@@ -348,6 +312,18 @@ definePageMeta({
 .article-detail-section {
     padding: 80px 0;
     background: #fff;
+}
+
+.news-state {
+    padding: 2rem;
+    text-align: center;
+    color: #666;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.news-state-error {
+    color: #b71c1c;
 }
 
 .article-detail-content {
@@ -432,6 +408,7 @@ definePageMeta({
     text-decoration: none;
     color: white;
     transition: all 0.3s ease;
+    border: none;
 }
 
 .share-btn.facebook {
@@ -471,11 +448,72 @@ definePageMeta({
     padding: 40px;
 }
 
+.article-body :deep(p) {
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.article-body :deep(h2) {
+    color: #333;
+    font-size: 1.5rem;
+    margin: 30px 0 15px;
+    font-weight: 700;
+}
+
+.article-body :deep(h3) {
+    color: #333;
+    font-size: 1.3rem;
+    margin: 25px 0 12px;
+    font-weight: 600;
+}
+
+.article-body :deep(ul),
+.article-body :deep(ol) {
+    margin: 15px 0 15px 20px;
+}
+
+.article-body :deep(li) {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.article-body :deep(blockquote) {
+    margin: 20px 0;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-left: 4px solid #d32f2f;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #333;
+}
+
+.article-body :deep(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 15px 0;
+}
+
 .article-content>p {
     /* color: #fff; */
     line-height: 1.7;
     margin-bottom: 15px;
     font-size: 1rem;
+}
+
+.article-title > a {
+    display: -webkit-box !important;
+    
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+h4.article-title > a {
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
 }
 
 .content-summary {

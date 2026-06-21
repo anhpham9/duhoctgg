@@ -105,7 +105,7 @@ const { data } = await useFetch(`${config.public.apiBase}/public/general-setting
 const staticPage = computed(() => staticPageData.value?.data || {})
 const contactInfo = computed(() => data.value?.data || {})
 
-console.log('Contact Info Data:', contactInfo.value)
+// console.log('Contact Info Data:', contactInfo.value)
 
 const pageTitle = computed(() => staticPage.value.title || 'Liên Hệ')
 

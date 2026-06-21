@@ -264,6 +264,144 @@ export const getPublicNewsListData = async ({ page = 1, limit = 6, search = "", 
     };
 };
 
+export const getPublicNewsDetailData = async (slug) => {
+    const normalizedSlug = String(slug || "").trim();
+
+    if (!normalizedSlug) {
+        return null;
+    }
+
+    const articleResult = await db.query(
+        `
+            SELECT
+                n.id,
+                n.title,
+                n.slug,
+                n.content,
+                n.excerpt,
+                n.thumbnail_url,
+                n.is_featured,
+                n.published_at,
+                n.created_at,
+                n.meta_title,
+                n.meta_description,
+                n.category_id,
+                c.name as category_name,
+                c.slug as category_slug,
+                u.name as author_name,
+                COALESCE(nvs.view_count, 0) as view_count
+            FROM news n
+            LEFT JOIN categories c ON n.category_id = c.id
+            LEFT JOIN users u ON n.author_id = u.id
+            LEFT JOIN news_view_stats nvs ON n.id = nvs.news_id
+            WHERE n.status = 'published' AND n.slug = $1
+            LIMIT 1
+        `,
+        [normalizedSlug]
+    );
+
+    const article = articleResult.rows[0] || null;
+
+    if (!article) {
+        return null;
+    }
+
+    const articleDateExpr = "COALESCE(n.published_at, n.created_at)";
+
+    const [relatedResult, recentResult, categoryResult, prevResult, nextResult] = await Promise.all([
+        db.query(
+            `
+                SELECT
+                    n.id,
+                    n.title,
+                    n.slug,
+                    n.excerpt,
+                    n.thumbnail_url,
+                    n.published_at,
+                    c.name as category_name,
+                    c.slug as category_slug,
+                    COALESCE(nvs.view_count, 0) as view_count
+                FROM news n
+                LEFT JOIN categories c ON n.category_id = c.id
+                LEFT JOIN news_view_stats nvs ON n.id = nvs.news_id
+                WHERE n.status = 'published'
+                    AND n.id != $1
+                    AND ($2::INT IS NULL OR n.category_id = $2)
+                ORDER BY ${articleDateExpr} DESC, n.id DESC
+                LIMIT 5
+            `,
+            [article.id, article.category_id || null]
+        ),
+        db.query(
+            `
+                SELECT
+                    n.id,
+                    n.title,
+                    n.slug,
+                    n.thumbnail_url,
+                    n.published_at
+                FROM news n
+                WHERE n.status = 'published' AND n.id != $1
+                ORDER BY ${articleDateExpr} DESC, n.id DESC
+                LIMIT 5
+            `,
+            [article.id]
+        ),
+        db.query(
+            `
+                SELECT
+                    c.id,
+                    c.name,
+                    c.slug,
+                    COUNT(n.id)::INTEGER as news_count
+                FROM categories c
+                LEFT JOIN news n ON n.category_id = c.id AND n.status = 'published'
+                GROUP BY c.id, c.name, c.slug
+                ORDER BY news_count DESC, c.name ASC
+            `
+        ),
+        db.query(
+            `
+                SELECT
+                    n.id,
+                    n.title,
+                    n.slug
+                FROM news n
+                WHERE n.status = 'published'
+                    AND ${articleDateExpr} < $1
+                ORDER BY ${articleDateExpr} DESC, n.id DESC
+                LIMIT 1
+            `,
+            [article.published_at || article.created_at]
+        ),
+        db.query(
+            `
+                SELECT
+                    n.id,
+                    n.title,
+                    n.slug
+                FROM news n
+                WHERE n.status = 'published'
+                    AND ${articleDateExpr} > $1
+                ORDER BY ${articleDateExpr} ASC, n.id ASC
+                LIMIT 1
+            `,
+            [article.published_at || article.created_at]
+        )
+    ]);
+
+    return {
+        data: article,
+        related: relatedResult.rows,
+        recent: recentResult.rows,
+        categories: categoryResult.rows,
+        navigation: {
+            prev: prevResult.rows[0] || null,
+            next: nextResult.rows[0] || null
+        }
+    };
+};
+
 export const setNewsFeaturedState = async ({ newsId, isFeatured }) => {
     const client = await db.getClient();
 

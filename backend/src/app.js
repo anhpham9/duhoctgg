@@ -35,7 +35,8 @@ import notificationsRoutes from "./routes/notifications.routes.js";
 // import auditLogsRoutes from "./routes/auditLogs.routes.js";
 // import activityLogsRoutes from "./routes/activityLogs.routes.js";
 import { getPublicStaticPageBySlug } from "./controllers/publicStaticPages.controller.js";
-import { getPublicNewsList } from "./controllers/publicNews.controller.js";
+import { getPublicNewsBySlug, getPublicNewsList } from "./controllers/publicNews.controller.js";
+import { trackNewsView } from "./controllers/news.controller.js";
 import { ensureSettingsKeysExist } from "./services/settings.service.js";
 
 
@@ -113,6 +114,8 @@ import { getPublicGeneralSettings } from './controllers/publicSettings.controlle
 app.get('/api/public/static-pages/:slug', getPublicStaticPageBySlug);
 app.get('/api/public/general-settings', getPublicGeneralSettings);
 app.get('/api/public/news', getPublicNewsList);
+app.get('/api/public/news/:slug', getPublicNewsBySlug);
+app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 
     rateLimiter.publicContact, 
