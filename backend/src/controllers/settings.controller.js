@@ -152,7 +152,8 @@ export const updateGeneralSettings = async (req, res) => {
             [GENERAL_SETTINGS_KEYS.siteUrl,               String(payload.siteUrl)],
             [GENERAL_SETTINGS_KEYS.siteLogoUrl,           String(payload.siteLogoUrl)],
             [GENERAL_SETTINGS_KEYS.siteFaviconUrl,       String(payload.siteFaviconUrl)],
-            [GENERAL_SETTINGS_KEYS.siteDescription,       String(payload.siteDescription)]
+            [GENERAL_SETTINGS_KEYS.siteDescription,       String(payload.siteDescription)],
+            [GENERAL_SETTINGS_KEYS.siteCopyright,       String(payload.siteCopyright)]
         ];
 
         const placeholders = settingsEntries

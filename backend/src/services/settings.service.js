@@ -9,7 +9,8 @@ export const GENERAL_SETTINGS_KEYS = {
     siteUrl: `${GENERAL_SETTINGS_PREFIX}site_url`,
     siteLogoUrl: `${GENERAL_SETTINGS_PREFIX}site_logo_url`,
     siteFaviconUrl: `${GENERAL_SETTINGS_PREFIX}site_favicon_url`,
-    siteDescription: `${GENERAL_SETTINGS_PREFIX}site_description`
+    siteDescription: `${GENERAL_SETTINGS_PREFIX}site_description`,
+    siteCopyright: `${GENERAL_SETTINGS_PREFIX}site_copyright`
 };
 
 export const CONTACT_SETTINGS_KEYS = {
@@ -28,7 +29,8 @@ export const GENERAL_SETTINGS_DESCRIPTIONS = {
     [GENERAL_SETTINGS_KEYS.siteUrl]: "General setting: website url",
     [GENERAL_SETTINGS_KEYS.siteLogoUrl]: "General setting: website logo URL",
     [GENERAL_SETTINGS_KEYS.siteFaviconUrl]: "General setting: website favicon URL",
-    [GENERAL_SETTINGS_KEYS.siteDescription]: "General setting: website description"
+    [GENERAL_SETTINGS_KEYS.siteDescription]: "General setting: website description",
+    [GENERAL_SETTINGS_KEYS.siteCopyright]: "General setting: website copyright"
 };
 
 export const CONTACT_SETTINGS_DESCRIPTIONS = {
@@ -47,7 +49,8 @@ export const getDefaultGeneralSettings = () => ({
     siteUrl: "",
     siteLogoUrl: "",
     siteFaviconUrl: "",
-    siteDescription: ""
+    siteDescription: "",
+    siteCopyright: ""
 });
 
 export const getDefaultContactSettings = () => ({
@@ -70,6 +73,7 @@ export const mapRowsToGeneralSettings = (rows = []) => {
         if (row.key === GENERAL_SETTINGS_KEYS.siteLogoUrl) data.siteLogoUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteFaviconUrl) data.siteFaviconUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteDescription) data.siteDescription = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.siteCopyright) data.siteCopyright = row.value || "";
     }
 
     return data;
@@ -160,7 +164,8 @@ export const getPublicGeneralSettingsData = async () => {
         getGeneralSettingsData([
             GENERAL_SETTINGS_KEYS.siteName,
             GENERAL_SETTINGS_KEYS.siteUrl,
-            GENERAL_SETTINGS_KEYS.siteDescription
+            GENERAL_SETTINGS_KEYS.siteDescription,
+            GENERAL_SETTINGS_KEYS.siteCopyright
         ]),
         getContactSettingsData()
     ]);
@@ -169,6 +174,7 @@ export const getPublicGeneralSettingsData = async () => {
         siteName: generalData.siteName,
         siteUrl: generalData.siteUrl,
         siteDescription: generalData.siteDescription,
+        siteCopyright: generalData.siteCopyright,
         companyFullName: contactData.companyFullName,
         companyShortName: contactData.companyShortName,
         contactEmail: contactData.contactEmail,

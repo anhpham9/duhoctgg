@@ -35,6 +35,12 @@ const settings = [
     group_name: "general"
   },
   {
+    key: "general.site_copyright",
+    value: "© 2024 DuhocNB. All rights reserved.",
+    description: "General setting: website copyright",
+    group_name: "general"
+  },
+  {
     key: "contact.company_full_name",
     value: "Cong ty Co phan DuhocNB",
     description: "Contact setting: full company name",

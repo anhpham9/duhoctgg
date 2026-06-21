@@ -827,6 +827,11 @@ export class InputSanitizer {
             escapeHtml: false
         });
 
+        sanitized.siteCopyright = this.sanitizeText(payload.siteCopyright || '', {
+            maxLength: 255,
+            escapeHtml: false
+        });
+
         logger.debug('General settings data sanitized', {
             originalFields: Object.keys(payload),
             sanitizedFields: Object.keys(sanitized)

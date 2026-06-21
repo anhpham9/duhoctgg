@@ -95,7 +95,26 @@
 
                     <div class="form-group">
                         <label>Logo URL</label>
+                        <div class="input-mode-switch" role="group" aria-label="Logo input mode">
+                            <button
+                                type="button"
+                                class="mode-btn"
+                                :class="{ active: logoInputMode === 'url' }"
+                                @click="setImageInputMode('logo', 'url')"
+                            >
+                                Nhập link ảnh
+                            </button>
+                            <button
+                                type="button"
+                                class="mode-btn"
+                                :class="{ active: logoInputMode === 'upload' }"
+                                @click="setImageInputMode('logo', 'upload')"
+                            >
+                                Upload lên Cloudinary
+                            </button>
+                        </div>
                         <input
+                            v-if="logoInputMode === 'url'"
                             v-model.trim="generalSettings.siteLogoUrl"
                             @input="clearGeneralError('siteLogoUrl')"
                             type="url"
@@ -103,7 +122,7 @@
                             :class="{ 'is-invalid': !!generalErrors.siteLogoUrl }"
                             placeholder="https://example.com/logo.png"
                         >
-                        <div class="upload-inline-actions">
+                        <div v-else class="upload-inline-actions">
                             <input
                                 ref="logoFileInput"
                                 type="file"
@@ -120,7 +139,7 @@
                                 <i class="fas" :class="logoUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
                                 {{ logoUploading ? 'Đang upload logo...' : 'Upload logo' }}
                             </button>
-                            <span class="upload-inline-hint">PNG/JPG/WEBP/GIF, tối đa 1MB</span>
+                            <span class="upload-inline-hint">PNG/JPG/WEBP/GIF, tối đa 1MB. Ảnh chỉ upload khi bấm Lưu cài đặt.</span>
                         </div>
                         <div class="image-preview-card">
                             <p class="image-preview-title">Xem trước Logo</p>
@@ -139,7 +158,26 @@
 
                     <div class="form-group">
                         <label>Favicon URL</label>
+                        <div class="input-mode-switch" role="group" aria-label="Favicon input mode">
+                            <button
+                                type="button"
+                                class="mode-btn"
+                                :class="{ active: faviconInputMode === 'url' }"
+                                @click="setImageInputMode('favicon', 'url')"
+                            >
+                                Nhập link ảnh
+                            </button>
+                            <button
+                                type="button"
+                                class="mode-btn"
+                                :class="{ active: faviconInputMode === 'upload' }"
+                                @click="setImageInputMode('favicon', 'upload')"
+                            >
+                                Upload lên Cloudinary
+                            </button>
+                        </div>
                         <input
+                            v-if="faviconInputMode === 'url'"
                             v-model.trim="generalSettings.siteFaviconUrl"
                             @input="clearGeneralError('siteFaviconUrl')"
                             type="url"
@@ -147,7 +185,7 @@
                             :class="{ 'is-invalid': !!generalErrors.siteFaviconUrl }"
                             placeholder="https://example.com/favicon.png"
                         >
-                        <div class="upload-inline-actions">
+                        <div v-else class="upload-inline-actions">
                             <input
                                 ref="faviconFileInput"
                                 type="file"
@@ -164,7 +202,7 @@
                                 <i class="fas" :class="faviconUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
                                 {{ faviconUploading ? 'Đang upload favicon...' : 'Upload favicon' }}
                             </button>
-                            <span class="upload-inline-hint">ICO/PNG/JPG/WEBP/GIF, tối đa 0.5MB</span>
+                            <span class="upload-inline-hint">ICO/PNG/JPG/WEBP/GIF, tối đa 0.5MB. Ảnh chỉ upload khi bấm Lưu cài đặt.</span>
                         </div>
                         <div class="image-preview-card">
                             <p class="image-preview-title">Xem trước Favicon</p>
@@ -192,6 +230,19 @@
                             placeholder="Mô tả ngắn về website"
                         ></textarea>
                         <p v-if="generalErrors.siteDescription" class="field-error">{{ generalErrors.siteDescription }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bản quyền</label>
+                        <input
+                            v-model="generalSettings.siteCopyright"
+                            @input="clearGeneralError('siteCopyright')"
+                            type="text"
+                            class="form-control"
+                            :class="{ 'is-invalid': !!generalErrors.siteCopyright }"
+                            placeholder="Bản quyền của website"
+                        >
+                        <p v-if="generalErrors.siteCopyright" class="field-error">{{ generalErrors.siteCopyright }}</p>
                     </div>
                 </template>
 
@@ -367,13 +418,16 @@ const logoPreviewTempUrl = ref('')
 const faviconPreviewTempUrl = ref('')
 const pendingLogoFile = ref(null)
 const pendingFaviconFile = ref(null)
+const logoInputMode = ref('upload')
+const faviconInputMode = ref('upload')
 
 const generalSettings = reactive({
     siteName: '',
     siteUrl: '',
     siteLogoUrl: '',
     siteFaviconUrl: '',
-    siteDescription: ''
+    siteDescription: '',
+    siteCopyright: ''
 })
 
 const contactSettings = reactive({
@@ -392,7 +446,8 @@ const generalErrors = reactive({
     siteUrl: '',
     siteLogoUrl: '',
     siteFaviconUrl: '',
-    siteDescription: ''
+    siteDescription: '',
+    siteCopyright: ''
 })
 
 const contactErrors = reactive({
@@ -465,6 +520,27 @@ const clearPendingFaviconSelection = () => {
 const clearPendingGeneralSelections = () => {
     clearPendingLogoSelection()
     clearPendingFaviconSelection()
+}
+
+const syncImageInputModesFromSettings = () => {
+    logoInputMode.value = generalSettings.siteLogoUrl ? 'url' : 'upload'
+    faviconInputMode.value = generalSettings.siteFaviconUrl ? 'url' : 'upload'
+}
+
+const setImageInputMode = (type, mode) => {
+    if (!['url', 'upload'].includes(mode)) return
+
+    if (type === 'logo') {
+        logoInputMode.value = mode
+        clearGeneralError('siteLogoUrl')
+        if (mode === 'url') clearPendingLogoSelection()
+    }
+
+    if (type === 'favicon') {
+        faviconInputMode.value = mode
+        clearGeneralError('siteFaviconUrl')
+        if (mode === 'url') clearPendingFaviconSelection()
+    }
 }
 
 const triggerLogoPicker = () => {
@@ -591,6 +667,7 @@ const setGeneralSettings = (data = {}) => {
     generalSettings.siteLogoUrl = data.siteLogoUrl || ''
     generalSettings.siteFaviconUrl = data.siteFaviconUrl || ''
     generalSettings.siteDescription = data.siteDescription || ''
+    generalSettings.siteCopyright = data.siteCopyright || ''
 }
 
 const setContactSettings = (data = {}) => {
@@ -610,6 +687,7 @@ const clearGeneralErrors = () => {
     generalErrors.siteLogoUrl = ''
     generalErrors.siteFaviconUrl = ''
     generalErrors.siteDescription = ''
+    generalErrors.siteCopyright = ''
 }
 
 const clearContactErrors = () => {
@@ -634,16 +712,28 @@ const validateGeneral = () => {
         generalErrors.siteDescription = 'Mô tả website tối đa 2000 ký tự'
     }
 
+    if (generalSettings.siteCopyright.length > 255) {
+        generalErrors.siteCopyright = 'Bản quyền tối đa 255 ký tự'
+    }
+
     if (generalSettings.siteUrl && !isValidUrl(generalSettings.siteUrl)) {
         generalErrors.siteUrl = 'Website link không hợp lệ (cần bắt đầu bằng http/https)'
     }
 
-    if (generalSettings.siteLogoUrl && !isValidUrl(generalSettings.siteLogoUrl)) {
-        generalErrors.siteLogoUrl = 'Logo URL không hợp lệ (cần bắt đầu bằng http/https)'
+    if (logoInputMode.value === 'url') {
+        if (generalSettings.siteLogoUrl && !isValidUrl(generalSettings.siteLogoUrl)) {
+            generalErrors.siteLogoUrl = 'Logo URL không hợp lệ (cần bắt đầu bằng http/https)'
+        }
+    } else if (!pendingLogoFile.value && !generalSettings.siteLogoUrl) {
+        generalErrors.siteLogoUrl = 'Bạn phải chọn ảnh logo để upload hoặc chuyển sang chế độ nhập link'
     }
 
-    if (generalSettings.siteFaviconUrl && !isValidUrl(generalSettings.siteFaviconUrl)) {
-        generalErrors.siteFaviconUrl = 'Favicon URL không hợp lệ (cần bắt đầu bằng http/https)'
+    if (faviconInputMode.value === 'url') {
+        if (generalSettings.siteFaviconUrl && !isValidUrl(generalSettings.siteFaviconUrl)) {
+            generalErrors.siteFaviconUrl = 'Favicon URL không hợp lệ (cần bắt đầu bằng http/https)'
+        }
+    } else if (!pendingFaviconFile.value && !generalSettings.siteFaviconUrl) {
+        generalErrors.siteFaviconUrl = 'Bạn phải chọn ảnh favicon để upload hoặc chuyển sang chế độ nhập link'
     }
 
     return !Object.values(generalErrors).some(Boolean)
@@ -672,8 +762,8 @@ const validateContact = () => {
         contactErrors.googleMapEmbedUrl = 'Google Maps URL không hợp lệ (cần bắt đầu bằng http/https)'
     }
 
-    if (contactSettings.workingHours.length > 2000) {
-        contactErrors.workingHours = 'Giờ làm việc tối đa 2000 ký tự'
+    if (contactSettings.workingHours.length > 500) {
+        contactErrors.workingHours = 'Giờ làm việc tối đa 500 ký tự'
     }
 
     return !Object.values(contactErrors).some(Boolean)
@@ -696,6 +786,7 @@ const fetchGeneralSettings = async () => {
         setGeneralSettings(payload)
         lastSavedGeneral.value = { ...payload }
         clearPendingGeneralSelections()
+        syncImageInputModesFromSettings()
     } finally {
         loadingGeneral.value = false
     }
@@ -745,7 +836,16 @@ const saveGeneralSettings = async () => {
             siteUrl: generalSettings.siteUrl.trim(),
             siteLogoUrl: generalSettings.siteLogoUrl.trim(),
             siteFaviconUrl: generalSettings.siteFaviconUrl.trim(),
-            siteDescription: generalSettings.siteDescription || ''
+            siteDescription: generalSettings.siteDescription || '',
+            siteCopyright: generalSettings.siteCopyright || ''
+        }
+
+        if (logoInputMode.value === 'upload') {
+            payload.siteLogoUrl = pendingLogoFile.value ? payload.siteLogoUrl : String(generalSettings.siteLogoUrl || '').trim()
+        }
+
+        if (faviconInputMode.value === 'upload') {
+            payload.siteFaviconUrl = pendingFaviconFile.value ? payload.siteFaviconUrl : String(generalSettings.siteFaviconUrl || '').trim()
         }
 
         if (pendingLogoFile.value) {
@@ -779,6 +879,7 @@ const saveGeneralSettings = async () => {
                 generalErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
                 generalErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
                 generalErrors.siteDescription = data.errors.siteDescription || ''
+                generalErrors.siteCopyright = data.errors.siteCopyright || ''
             }
             throw new Error(data?.message || 'Không thể lưu cài đặt website')
         }
@@ -863,6 +964,7 @@ const resetCurrentTab = () => {
             setGeneralSettings(lastSavedGeneral.value)
             clearGeneralErrors()
             clearPendingGeneralSelections()
+            syncImageInputModesFromSettings()
             showInfo('Đã khôi phục dữ liệu tab website')
             return
         }
@@ -872,10 +974,12 @@ const resetCurrentTab = () => {
             siteUrl: '',
             siteLogoUrl: '',
             siteFaviconUrl: '',
-            siteDescription: ''
+            siteDescription: '',
+            siteCopyright: ''
         })
         clearGeneralErrors()
         clearPendingGeneralSelections()
+        syncImageInputModesFromSettings()
         showInfo('Đã đặt lại tab website')
         return
     }
@@ -1054,6 +1158,32 @@ onBeforeUnmount(() => {
 .form-control.is-invalid {
     border-color: #dc3545;
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.input-mode-switch {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-bottom: 0.55rem;
+    padding: 0.2rem;
+    border-radius: 10px;
+    background: #eff4fb;
+    border: 1px solid #d4e2f4;
+}
+
+.mode-btn {
+    border: 0;
+    background: transparent;
+    color: #27466b;
+    padding: 0.38rem 0.66rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mode-btn.active {
+    background: #1976d2;
+    color: #fff;
 }
 
 .upload-inline-actions {
