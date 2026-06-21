@@ -167,11 +167,11 @@ CREATE TABLE contacts (
 
     assigned_to INTEGER REFERENCES users(id),
 
-    first_contacted_at TIMESTAMP,
-    closed_at TIMESTAMP,
+    first_contacted_at TIMESTAMPTZ,
+    closed_at TIMESTAMPTZ,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -187,12 +187,38 @@ CREATE TABLE contact_notes (
 
     note TEXT NOT NULL,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_contacts_status ON contacts(status);
 CREATE INDEX idx_contacts_assigned ON contacts(assigned_to);
 ```
+
+### Migration ghi chu (contacts module)
+
+Run migration len TIMESTAMPTZ (UTC storage):
+
+SQL
+psql -U <db_user> -d <db_name> -f scripts/migrations/2026-06-21_contacts_timestamptz_up.sql
+
+Rollback migration:
+
+SQL
+psql -U <db_user> -d <db_name> -f scripts/migrations/2026-06-21_contacts_timestamptz_down.sql
+
+### Migration ghi chu (phase 2 - remaining tables)
+
+Scope: users, categories, news, news_views, schools, school_reviews, faqs, static_pages, page_contents, media_asset_refs, notifications, notification_settings, audit_logs, password_reset_tokens, user_sessions, files, activity_logs, backup_records, social_links.
+
+Run migration len TIMESTAMPTZ (UTC storage):
+
+SQL
+psql -U <db_user> -d <db_name> -f scripts/migrations/2026-06-21_phase2_remaining_tables_timestamptz_up.sql
+
+Rollback migration:
+
+SQL
+psql -U <db_user> -d <db_name> -f scripts/migrations/2026-06-21_phase2_remaining_tables_timestamptz_down.sql
 
 ### 🧱 11. Bảng regions (khu vực)
 
