@@ -178,6 +178,24 @@
                         <p v-if="formErrors.visa_success_rate" class="field-error">{{ formErrors.visa_success_rate }}
                         </p>
                     </div>
+
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <input v-model.number="form.rating" @input="clearFieldError('rating')"
+                            @blur="validateField('rating')"
+                            :class="['form-control', { 'is-invalid': !!formErrors.rating }]" type="number"
+                            min="0" max="5" step="0.1">
+                        <p v-if="formErrors.rating" class="field-error">{{ formErrors.rating }}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số lượng review</label>
+                        <input v-model.number="form.review_count" @input="clearFieldError('review_count')"
+                            @blur="validateField('review_count')"
+                            :class="['form-control', { 'is-invalid': !!formErrors.review_count }]" type="number"
+                            min="0" step="1">
+                        <p v-if="formErrors.review_count" class="field-error">{{ formErrors.review_count }}</p>
+                    </div>
                     
                     <div class="form-group full">
                         <div class="form-split">
@@ -414,7 +432,9 @@ const form = reactive({
     type_id: null,
     status: 'pending',
     logo_url: '',
-    thumbnail_url: ''
+    thumbnail_url: '',
+    rating: null,
+    review_count: 0
 })
 
 const featureItems = ref([])
@@ -437,6 +457,8 @@ const formErrors = reactive({
     status: '',
     logo_url: '',
     thumbnail_url: '',
+    rating: '',
+    review_count: '',
     features: ''
 })
 
@@ -831,6 +853,28 @@ const validateField = (field) => {
         return true
     }
 
+    if (field === 'rating') {
+        if (form.rating === null || form.rating === undefined || form.rating === '') {
+            formErrors.rating = ''
+            return true
+        }
+        const value = Number(form.rating)
+        if (!Number.isFinite(value) || value < 0 || value > 5) return (formErrors.rating = 'Rating phai trong khoang 0 - 5', false)
+        formErrors.rating = ''
+        return true
+    }
+
+    if (field === 'review_count') {
+        if (form.review_count === null || form.review_count === undefined || form.review_count === '') {
+            formErrors.review_count = ''
+            return true
+        }
+        const value = Number(form.review_count)
+        if (!Number.isInteger(value) || value < 0) return (formErrors.review_count = 'So luong review phai la so nguyen >= 0', false)
+        formErrors.review_count = ''
+        return true
+    }
+
     if (field === 'features') {
         featureItems.value = normalizeFeatureItems(featureItems.value)
         formErrors.features = ''
@@ -841,7 +885,7 @@ const validateField = (field) => {
 }
 
 const validateForm = () => {
-    const fields = ['name', 'name_en', 'slug', 'location', 'phone', 'fax', 'email', 'website', 'tuition_per_year', 'class_size', 'visa_success_rate', 'intake_months', 'region_id', 'type_id', 'status', 'logo_url', 'thumbnail_url', 'features']
+    const fields = ['name', 'name_en', 'slug', 'location', 'phone', 'fax', 'email', 'website', 'tuition_per_year', 'class_size', 'visa_success_rate', 'intake_months', 'region_id', 'type_id', 'status', 'logo_url', 'thumbnail_url', 'rating', 'review_count', 'features']
     return fields.every((field) => validateField(field))
 }
 
@@ -891,7 +935,9 @@ const buildPayload = () => {
         type_id: form.type_id || undefined,
         status: form.status,
         logo_url: form.logo_url || undefined,
-        thumbnail_url: form.thumbnail_url || undefined
+        thumbnail_url: form.thumbnail_url || undefined,
+        rating: form.rating === null || form.rating === undefined || form.rating === '' ? undefined : Number(form.rating),
+        review_count: form.review_count === null || form.review_count === undefined || form.review_count === '' ? undefined : Number(form.review_count)
     }
 
     const features = normalizeFeatureItems(featureItems.value)

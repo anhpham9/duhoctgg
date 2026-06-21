@@ -267,7 +267,9 @@ export const createSchool = async (req, res) => {
             type_id,
             status,
             logo_url,
-            thumbnail_url
+            thumbnail_url,
+            rating,
+            review_count
         } = sanitizedData;
         const incomingAssetPublicIds = {
             [MEDIA_FIELD_NAMES.schoolLogoUrl]: String(req.body?.logoAssetPublicId || "").trim(),
@@ -380,9 +382,9 @@ export const createSchool = async (req, res) => {
             INSERT INTO schools (
                 name, name_en, slug, location, phone, fax, email, website, tuition_per_year, class_size,
                 visa_success_rate, intake_months, features, region_id, type_id, 
-                status, logo_url, thumbnail_url
+                status, logo_url, thumbnail_url, rating, review_count
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::smallint[], $13, $14, $15, $16, $17, $18)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::smallint[], $13, $14, $15, $16, $17, $18, $19, $20)
             RETURNING *
         `, [
             name,
@@ -402,7 +404,9 @@ export const createSchool = async (req, res) => {
             type_id || null,
             status || 'pending',
             logo_url || null,
-            thumbnail_url || null
+            thumbnail_url || null,
+            rating !== undefined ? rating : null,
+            review_count !== undefined ? review_count : 0
         ]);
 
         const newSchool = result.rows[0];
@@ -492,7 +496,8 @@ export const updateSchool = async (req, res) => {
             status,
             logo_url,
             thumbnail_url,
-            rating
+            rating,
+            review_count
         } = sanitizedData;
         const incomingAssetPublicIds = {
             [MEDIA_FIELD_NAMES.schoolLogoUrl]: String(req.body?.logoAssetPublicId || "").trim(),
@@ -725,7 +730,14 @@ export const updateSchool = async (req, res) => {
         if (rating !== undefined) {
             updateData.rating = rating;
             updates.push(`rating = $${paramCount}`);
-            values.push(rating || null);
+            values.push(rating);
+            paramCount++;
+        }
+
+        if (review_count !== undefined) {
+            updateData.review_count = review_count;
+            updates.push(`review_count = $${paramCount}`);
+            values.push(review_count);
             paramCount++;
         }
 

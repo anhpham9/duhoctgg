@@ -184,11 +184,12 @@ export class InputSanitizer {
 
     // Sanitize numeric input
     static sanitizeNumber(input, options = {}) {
-        let number = parseInt(input, 10);
+        const useFloat = options.allowFloat === true;
+        let number = useFloat ? parseFloat(input) : parseInt(input, 10);
         
-        if (isNaN(number)) {
+        if (Number.isNaN(number)) {
             logger.warn('Invalid number input', { input });
-            return options.default || 0;
+            return options.default ?? 0;
         }
 
         // Apply min/max constraints
@@ -208,6 +209,10 @@ export class InputSanitizer {
                 max: options.max 
             });
             number = options.max;
+        }
+
+        if (useFloat && Number.isInteger(options.decimals) && options.decimals >= 0) {
+            number = Number(number.toFixed(options.decimals));
         }
 
         return number;
@@ -691,6 +696,24 @@ export class InputSanitizer {
 
         if (schoolData.thumbnail_url) {
             sanitized.thumbnail_url = this.sanitizeUrl(schoolData.thumbnail_url);
+        }
+
+        if (schoolData.rating !== undefined && schoolData.rating !== null && schoolData.rating !== '') {
+            sanitized.rating = this.sanitizeNumber(schoolData.rating, {
+                allowFloat: true,
+                decimals: 1,
+                min: 0,
+                max: 5,
+                default: null
+            });
+        }
+
+        if (schoolData.review_count !== undefined && schoolData.review_count !== null && schoolData.review_count !== '') {
+            sanitized.review_count = this.sanitizeNumber(schoolData.review_count, {
+                min: 0,
+                max: 1000000,
+                default: 0
+            });
         }
 
         logger.debug('School data sanitized', {

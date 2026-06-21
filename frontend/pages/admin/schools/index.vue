@@ -3,15 +3,15 @@
         <div v-if="loadingUser || !hasPermission" class="permission-check">
             <div v-if="loadingUser" class="loading-permission">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Dang kiem tra quyen truy cap...</p>
+                <p>Đang kiểm tra quyền truy cập...</p>
             </div>
             <div v-else class="permission-denied">
                 <i class="fas fa-shield-alt"></i>
-                <h3>Khong the truy cap Quan ly truong hoc</h3>
-                <p>Chi Superadmin, Admin va Manager moi co the quan ly truong hoc.</p>
+                <h3>Không thể truy cập Quản lý trường học</h3>
+                <p>Chỉ Superadmin, Admin và Manager mới có thể quản lý trường học.</p>
                 <NuxtLink to="/admin" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i>
-                    Quay lai Dashboard
+                    Quay lại Dashboard
                 </NuxtLink>
             </div>
         </div>
@@ -21,29 +21,29 @@
                 <div class="header-content">
                     <h1>
                         <i class="fas fa-school"></i>
-                        Quan ly truong hoc
+                        Quản lý trường học
                     </h1>
-                    <p>Danh sach va quan ly thong tin cac truong doi tac</p>
+                    <p>Danh sách và quản lý thông tin các trường đối tác</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-primary" @click="createSchool">
                         <i class="fas fa-plus"></i>
-                        Them truong
+                        Thêm trường
                     </button>
                     <button class="btn btn-secondary" @click="fetchSchools" :disabled="loading">
                         <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-                        Lam moi
+                        Làm mới
                     </button>
                 </div>
             </div>
 
             <div class="table-section">
                 <div class="table-header">
-                    <h2>Danh sach truong hoc ({{ filteredSchools.length }})</h2>
+                    <h2>Danh sách trường học ({{ filteredSchools.length }})</h2>
                     <div class="table-actions">
                         <button class="btn btn-secondary" @click="fetchSchools" :disabled="loading">
                             <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-                            Lam moi
+                            Làm mới
                         </button>
                     </div>
                 </div>
@@ -56,17 +56,14 @@
                                 v-model="searchTerm"
                                 type="search"
                                 class="search-input"
-                                placeholder="Tim theo ten truong hoac dia diem..."
+                                placeholder="Tìm theo tên trường hoặc địa điểm..."
                             >
-                            <button v-if="searchTerm" @click="searchTerm = ''" class="clear-search">
-                                <i class="fas fa-times"></i>
-                            </button>
                         </div>
 
                         <div class="filter-group">
-                            <label>Loc theo khu vuc:</label>
+                            <label>Lọc theo khu vực:</label>
                             <select v-model="selectedRegion" class="filter-select">
-                                <option value="">Tat ca khu vuc</option>
+                                <option value="">Tất cả khu vực</option>
                                 <option v-for="region in regions" :key="region.id" :value="region.slug">
                                     {{ region.name }}
                                 </option>
@@ -74,9 +71,9 @@
                         </div>
 
                         <div class="filter-group">
-                            <label>Loc theo loai:</label>
+                            <label>Lọc theo loại:</label>
                             <select v-model="selectedType" class="filter-select">
-                                <option value="">Tat ca loai truong</option>
+                                <option value="">Tất cả loại trường</option>
                                 <option v-for="type in schoolTypes" :key="type.id" :value="type.slug">
                                     {{ type.name }}
                                 </option>
@@ -84,18 +81,18 @@
                         </div>
 
                         <div class="filter-group">
-                            <label>Loc theo trang thai:</label>
+                            <label>Lọc theo trạng thái:</label>
                             <select v-model="selectedStatus" class="filter-select">
-                                <option value="">Tat ca trang thai</option>
-                                <option value="partner">Doi tac</option>
-                                <option value="active">Hoat dong</option>
-                                <option value="paused">Tam dung</option>
-                                <option value="pending">Cho duyet</option>
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="partner">Đối tác</option>
+                                <option value="active">Hoạt động</option>
+                                <option value="paused">Tạm dừng</option>
+                                <option value="pending">Chờ duyệt</option>
                             </select>
                         </div>
 
                         <div class="filter-group">
-                            <label>Hien thi:</label>
+                            <label>Hiển thị:</label>
                             <select :value="perPage" @change="setItemsPerPage(parseInt($event.target.value))" class="filter-select">
                                 <option v-for="option in itemsPerPageOptions" :key="option.value" :value="option.value">
                                     {{ option.label }}
@@ -105,7 +102,7 @@
 
                         <div class="filter-group">
                             <button class="btn btn-outline-secondary" @click="clearAllFilters" style="margin-top: 24px;">
-                                <i class="fas fa-eraser"></i> Xoa bo loc
+                                <i class="fas fa-eraser"></i> Xóa bỏ lọc
                             </button>
                         </div>
                     </div>
@@ -113,26 +110,26 @@
 
                 <div v-if="loading" class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <p>Dang tai du lieu truong hoc...</p>
+                    <p>Đang tải dữ liệu trường học...</p>
                 </div>
 
                 <div v-else-if="error" class="error-state">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <p>Loi: {{ error }}</p>
-                    <button class="btn btn-primary" @click="fetchSchools">Thu lai</button>
+                    <p>Lỗi: {{ error }}</p>
+                    <button class="btn btn-primary" @click="fetchSchools">Thử lại</button>
                 </div>
 
                 <div v-else class="table-container">
                     <table class="schools-table-list">
                         <thead>
                             <tr>
-                                <th>Ten truong</th>
-                                <th>Khu vuc</th>
-                                <th>Loai truong</th>
-                                <th>Hoc phi/nam</th>
+                                <th>Tên trường</th>
+                                <th>Khu vực</th>
+                                <th>Loại trường</th>
+                                <th>Học phí/năm</th>
                                 <th>Rating</th>
-                                <th>Trang thai</th>
-                                <th>Thao tac</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -173,20 +170,20 @@
 
                     <div v-if="filteredSchools.length === 0" class="empty-state">
                         <i class="fas fa-search"></i>
-                        <h3>Khong tim thay ket qua</h3>
+                        <h3>Không tìm thấy kết quả</h3>
                         <p v-if="searchTerm || selectedRegion || selectedType || selectedStatus">
-                            Khong co truong hoc nao phu hop voi bo loc hien tai.
+                            Không có trường học nào phù hợp với bộ lọc hiện tại.
                         </p>
                         <p v-else>
-                            Chua co truong hoc nao trong he thong.
+                            Chưa có trường học nào trong hệ thống.
                         </p>
                     </div>
 
                     <div v-if="totalPages > 1" class="pagination">
                         <div class="pagination-info">
-                            Hien thi {{ ((currentPage - 1) * perPage) + 1 }} -
+                            Hiển thị {{ ((currentPage - 1) * perPage) + 1 }} -
                             {{ Math.min(currentPage * perPage, filteredSchools.length) }}
-                            trong tong so {{ filteredSchools.length }} truong hoc
+                            trong tổng số {{ filteredSchools.length }} trường học
                         </div>
                         <div class="pagination-controls">
                             <button @click="goToPage(1)" :disabled="currentPage === 1" class="btn-page btn-page-first">
@@ -220,7 +217,7 @@
         <div v-if="showDeleteConfirm && schoolToDelete" class="modal-overlay">
             <div class="modal modal-small" @click.stop>
                 <div class="modal-header">
-                    <h3>Xac nhan xoa</h3>
+                    <h3>Xác nhận xóa</h3>
                     <button @click="closeDeleteConfirm" class="btn-close">
                         <i class="fas fa-times"></i>
                     </button>
@@ -228,15 +225,15 @@
                 <div class="modal-body">
                     <div class="delete-confirmation">
                         <i class="fas fa-exclamation-triangle warning-icon"></i>
-                        <p>Ban co chac chan muon xoa truong <strong>{{ schoolToDelete.name }}</strong>?</p>
-                        <p class="warning-text">Thao tac nay khong the hoan tac!</p>
+                        <p>Bạn có chắc chắn muốn xóa trường <strong>{{ schoolToDelete.name }}</strong>?</p>
+                        <p class="warning-text">Thao tác này không thể hoàn tác!</p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Huy</button>
+                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
                     <button @click="confirmDeleteSchool" type="button" class="btn btn-danger" :disabled="deletingId === schoolToDelete.id">
                         <i v-if="deletingId === schoolToDelete.id" class="fas fa-spinner fa-spin"></i>
-                        {{ deletingId === schoolToDelete.id ? 'Dang xoa...' : 'Xoa truong' }}
+                        {{ deletingId === schoolToDelete.id ? 'Đang xóa...' : 'Xóa trường' }}
                     </button>
                 </div>
             </div>
@@ -261,7 +258,7 @@ definePageMeta({
 })
 
 useHead({
-    title: 'Quan ly truong hoc - Admin'
+    title: 'Quản lý trường học - Admin'
 })
 
 const config = useRuntimeConfig()
@@ -333,7 +330,7 @@ const fetchSchools = async () => {
         }
         schools.value = data.data || []
     } catch (err) {
-        error.value = err.message || 'Khong the tai du lieu truong hoc'
+        error.value = err.message || 'Không thể tải dữ liệu trường học'
     } finally {
         loading.value = false
     }
@@ -409,7 +406,7 @@ const viewSchool = (id) => navigateTo(`/admin/schools/view/${id}`)
 
 const deleteSchool = (id, name) => {
     if (!canDelete.value) {
-        showError('Ban khong co quyen xoa truong hoc.')
+        showError('Bạn không có quyền xóa trường học.')
         return
     }
     schoolToDelete.value = { id, name }
@@ -435,11 +432,11 @@ const confirmDeleteSchool = async () => {
         if (!response.ok) {
             throw new Error(data?.message || `HTTP ${response.status}`)
         }
-        showSuccess(data?.message || 'Da xoa truong hoc thanh cong!')
+        showSuccess(data?.message || 'Đã xóa trường học thành công!')
         closeDeleteConfirm()
         await fetchSchools()
     } catch (err) {
-        showError(err.message || 'Khong the xoa truong hoc')
+        showError(err.message || 'Không thể xóa trường học')
     } finally {
         deletingId.value = null
     }
@@ -462,10 +459,10 @@ const getStatusClass = (status) => {
 
 const getStatusText = (status) => {
     const texts = {
-        partner: 'Doi tac',
-        active: 'Hoat dong',
-        paused: 'Tam dung',
-        pending: 'Cho duyet'
+        partner: 'Đối tác',
+        active: 'Hoạt động',
+        paused: 'Tạm dừng',
+        pending: 'Chờ duyệt'
     }
     return texts[status] || status
 }
@@ -550,21 +547,6 @@ onMounted(async () => {
 .search-input:focus {
     outline: none;
     border-color: #1976d2;
-}
-
-.clear-search {
-    position: absolute;
-    right: 8px;
-    background: none;
-    border: none;
-    color: #999;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 50%;
-}
-
-.clear-search:hover {
-    background: #f0f0f0;
 }
 
 .filter-group {
