@@ -43,6 +43,9 @@ const LOGO_MAX_FILE_SIZE = Number.isFinite(configuredLogoMaxFileSize) && configu
 const FAVICON_MAX_FILE_SIZE = Number.isFinite(configuredFaviconMaxFileSize) && configuredFaviconMaxFileSize > 0
     ? configuredFaviconMaxFileSize
     : DEFAULT_FAVICON_MAX_FILE_SIZE;
+const ALLOWED_SITE_LANGUAGES = ["vi", "en", "ja"];
+const ALLOWED_SITE_TIMEZONES = ["Asia/Ho_Chi_Minh", "Asia/Tokyo", "UTC"];
+const ALLOWED_DATE_FORMATS = ["dd/mm/yyyy", "mm/dd/yyyy", "yyyy-mm-dd"];
 
 const uploadBufferToCloudinary = (fileBuffer, options = {}) => {
     return new Promise((resolve, reject) => {
@@ -139,6 +142,36 @@ export const updateGeneralSettings = async (req, res) => {
             });
         }
 
+        if (!ALLOWED_SITE_LANGUAGES.includes(payload.siteLanguage)) {
+            return res.status(400).json({
+                success: false,
+                message: "Ngôn ngữ hệ thống không hợp lệ",
+                errors: {
+                    siteLanguage: "Ngôn ngữ hệ thống không hợp lệ"
+                }
+            });
+        }
+
+        if (!ALLOWED_SITE_TIMEZONES.includes(payload.siteTimezone)) {
+            return res.status(400).json({
+                success: false,
+                message: "Múi giờ hệ thống không hợp lệ",
+                errors: {
+                    siteTimezone: "Múi giờ hệ thống không hợp lệ"
+                }
+            });
+        }
+
+        if (!ALLOWED_DATE_FORMATS.includes(payload.dateFormat)) {
+            return res.status(400).json({
+                success: false,
+                message: "Định dạng ngày không hợp lệ",
+                errors: {
+                    dateFormat: "Định dạng ngày không hợp lệ"
+                }
+            });
+        }
+
         await db.query("BEGIN");
 
         const existingAssetRefs = mapMediaAssetRefsByField(await getMediaAssetRefsByOwner({
@@ -153,7 +186,10 @@ export const updateGeneralSettings = async (req, res) => {
             [GENERAL_SETTINGS_KEYS.siteLogoUrl,           String(payload.siteLogoUrl)],
             [GENERAL_SETTINGS_KEYS.siteFaviconUrl,       String(payload.siteFaviconUrl)],
             [GENERAL_SETTINGS_KEYS.siteDescription,       String(payload.siteDescription)],
-            [GENERAL_SETTINGS_KEYS.siteCopyright,       String(payload.siteCopyright)]
+            [GENERAL_SETTINGS_KEYS.siteCopyright,       String(payload.siteCopyright)],
+            [GENERAL_SETTINGS_KEYS.siteLanguage,        String(payload.siteLanguage)],
+            [GENERAL_SETTINGS_KEYS.siteTimezone,        String(payload.siteTimezone)],
+            [GENERAL_SETTINGS_KEYS.dateFormat,          String(payload.dateFormat)]
         ];
 
         const placeholders = settingsEntries

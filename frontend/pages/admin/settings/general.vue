@@ -38,18 +38,10 @@
             </div>
 
             <div class="tabs">
-                <button
-                    class="tab-btn"
-                    :class="{ active: activeTab === 'general' }"
-                    @click="activeTab = 'general'"
-                >
+                <button class="tab-btn" :class="{ active: activeTab === 'general' }" @click="activeTab = 'general'">
                     Thông tin website
                 </button>
-                <button
-                    class="tab-btn"
-                    :class="{ active: activeTab === 'contact' }"
-                    @click="activeTab = 'contact'"
-                >
+                <button class="tab-btn" :class="{ active: activeTab === 'contact' }" @click="activeTab = 'contact'">
                     Thông tin liên hệ
                 </button>
             </div>
@@ -67,300 +59,265 @@
 
             <div v-else class="settings-form">
                 <template v-if="activeTab === 'general'">
-                    <div class="form-group">
-                        <label>Tên website <span class="required">*</span></label>
-                        <input
-                            v-model.trim="generalSettings.siteName"
-                            @input="clearGeneralError('siteName')"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!generalErrors.siteName }"
-                            placeholder="Nhập tên website"
-                        >
-                        <p v-if="generalErrors.siteName" class="field-error">{{ generalErrors.siteName }}</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Website link</label>
-                        <input
-                            v-model.trim="generalSettings.siteUrl"
-                            @input="clearGeneralError('siteUrl')"
-                            type="url"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!generalErrors.siteUrl }"
-                            placeholder="https://example.com"
-                        >
-                        <p v-if="generalErrors.siteUrl" class="field-error">{{ generalErrors.siteUrl }}</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Logo URL</label>
-                        <div class="input-mode-switch" role="group" aria-label="Logo input mode">
-                            <button
-                                type="button"
-                                class="mode-btn"
-                                :class="{ active: logoInputMode === 'url' }"
-                                @click="setImageInputMode('logo', 'url')"
-                            >
-                                Nhập link ảnh
-                            </button>
-                            <button
-                                type="button"
-                                class="mode-btn"
-                                :class="{ active: logoInputMode === 'upload' }"
-                                @click="setImageInputMode('logo', 'upload')"
-                            >
-                                Upload lên Cloudinary
-                            </button>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tên website <span class="required">*</span></label>
+                            <input v-model.trim="generalSettings.siteName" @input="clearGeneralError('siteName')"
+                                type="text" class="form-control" :class="{ 'is-invalid': !!generalErrors.siteName }"
+                                placeholder="Nhập tên website">
+                            <p v-if="generalErrors.siteName" class="field-error">{{ generalErrors.siteName }}</p>
                         </div>
-                        <input
-                            v-if="logoInputMode === 'url'"
-                            v-model.trim="generalSettings.siteLogoUrl"
-                            @input="clearGeneralError('siteLogoUrl')"
-                            type="url"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!generalErrors.siteLogoUrl }"
-                            placeholder="https://example.com/logo.png"
-                        >
-                        <div v-else class="upload-inline-actions">
-                            <input
-                                ref="logoFileInput"
-                                type="file"
-                                accept="image/png,image/jpeg,image/webp,image/gif"
-                                class="hidden-file-input"
-                                @change="onLogoFileChange"
-                            >
-                            <button
-                                class="btn btn-secondary btn-upload-inline"
-                                type="button"
-                                :disabled="logoUploading || saving || isLoading"
-                                @click="triggerLogoPicker"
-                            >
-                                <i class="fas" :class="logoUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
-                                {{ logoUploading ? 'Đang upload logo...' : 'Upload logo' }}
-                            </button>
-                            <span class="upload-inline-hint">PNG/JPG/WEBP/GIF, tối đa 1MB. Ảnh chỉ upload khi bấm Lưu cài đặt.</span>
+
+                        <div class="form-group">
+                            <label>Website link</label>
+                            <input v-model.trim="generalSettings.siteUrl" @input="clearGeneralError('siteUrl')"
+                                type="url" class="form-control" :class="{ 'is-invalid': !!generalErrors.siteUrl }"
+                                placeholder="https://example.com">
+                            <p v-if="generalErrors.siteUrl" class="field-error">{{ generalErrors.siteUrl }}</p>
                         </div>
-                        <div class="image-preview-card">
-                            <p class="image-preview-title">Xem trước Logo</p>
-                            <div class="image-preview-surface logo-preview-surface">
-                                <img
-                                    v-if="logoPreviewSrc"
-                                    :src="logoPreviewSrc"
-                                    alt="Logo preview"
-                                    class="image-preview"
-                                >
-                                <p v-else class="image-preview-empty">Chưa có ảnh logo để xem trước</p>
+
+                        <div class="form-group full">
+                            <div class="form-split">
+                                <div class="form-col">
+                                    <label>Logo URL</label>
+                                    <div class="input-mode-switch" role="group" aria-label="Logo input mode">
+                                        <button type="button" class="mode-btn"
+                                            :class="{ active: logoInputMode === 'url' }"
+                                            @click="setImageInputMode('logo', 'url')">
+                                            Nhập link ảnh
+                                        </button>
+                                        <button type="button" class="mode-btn"
+                                            :class="{ active: logoInputMode === 'upload' }"
+                                            @click="setImageInputMode('logo', 'upload')">
+                                            Upload lên Cloudinary
+                                        </button>
+                                    </div>
+                                    <input v-if="logoInputMode === 'url'" v-model.trim="generalSettings.siteLogoUrl"
+                                        @input="clearGeneralError('siteLogoUrl')" type="url" class="form-control"
+                                        :class="{ 'is-invalid': !!generalErrors.siteLogoUrl }"
+                                        placeholder="https://example.com/logo.png">
+                                    <div v-else class="upload-inline-actions">
+                                        <input ref="logoFileInput" type="file"
+                                            accept="image/png,image/jpeg,image/webp,image/gif" class="hidden-file-input"
+                                            @change="onLogoFileChange">
+                                        <button class="btn btn-secondary btn-upload-inline" type="button"
+                                            :disabled="logoUploading || saving || isLoading" @click="triggerLogoPicker">
+                                            <i class="fas"
+                                                :class="logoUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                                            {{ logoUploading ? 'Đang upload logo...' : 'Upload logo' }}
+                                        </button>
+                                        <span class="upload-inline-hint">PNG/JPG/WEBP/GIF, tối đa 1MB. Ảnh chỉ upload
+                                            khi bấm Lưu cài đặt.</span>
+                                    </div>
+                                    <p v-if="generalErrors.siteLogoUrl" class="field-error">{{ generalErrors.siteLogoUrl
+                                        }}</p>
+                                </div>
+                                <div class="form-col">
+                                    <div class="image-preview-card">
+                                        <p class="image-preview-title">Xem trước Logo</p>
+                                        <div class="image-preview-surface logo-preview-surface">
+                                            <img v-if="logoPreviewSrc" :src="logoPreviewSrc" alt="Logo preview"
+                                                class="image-preview">
+                                            <p v-else class="image-preview-empty">Chưa có ảnh logo để xem trước</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <p v-if="generalErrors.siteLogoUrl" class="field-error">{{ generalErrors.siteLogoUrl }}</p>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Favicon URL</label>
-                        <div class="input-mode-switch" role="group" aria-label="Favicon input mode">
-                            <button
-                                type="button"
-                                class="mode-btn"
-                                :class="{ active: faviconInputMode === 'url' }"
-                                @click="setImageInputMode('favicon', 'url')"
-                            >
-                                Nhập link ảnh
-                            </button>
-                            <button
-                                type="button"
-                                class="mode-btn"
-                                :class="{ active: faviconInputMode === 'upload' }"
-                                @click="setImageInputMode('favicon', 'upload')"
-                            >
-                                Upload lên Cloudinary
-                            </button>
-                        </div>
-                        <input
-                            v-if="faviconInputMode === 'url'"
-                            v-model.trim="generalSettings.siteFaviconUrl"
-                            @input="clearGeneralError('siteFaviconUrl')"
-                            type="url"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!generalErrors.siteFaviconUrl }"
-                            placeholder="https://example.com/favicon.png"
-                        >
-                        <div v-else class="upload-inline-actions">
-                            <input
-                                ref="faviconFileInput"
-                                type="file"
-                                accept=".ico,image/x-icon,image/vnd.microsoft.icon,image/png,image/jpeg,image/webp,image/gif"
-                                class="hidden-file-input"
-                                @change="onFaviconFileChange"
-                            >
-                            <button
-                                class="btn btn-secondary btn-upload-inline"
-                                type="button"
-                                :disabled="faviconUploading || saving || isLoading"
-                                @click="triggerFaviconPicker"
-                            >
-                                <i class="fas" :class="faviconUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
-                                {{ faviconUploading ? 'Đang upload favicon...' : 'Upload favicon' }}
-                            </button>
-                            <span class="upload-inline-hint">ICO/PNG/JPG/WEBP/GIF, tối đa 0.5MB. Ảnh chỉ upload khi bấm Lưu cài đặt.</span>
-                        </div>
-                        <div class="image-preview-card">
-                            <p class="image-preview-title">Xem trước Favicon</p>
-                            <div class="image-preview-surface favicon-preview-surface">
-                                <img
-                                    v-if="faviconPreviewSrc"
-                                    :src="faviconPreviewSrc"
-                                    alt="Favicon preview"
-                                    class="image-preview image-preview-favicon"
-                                >
-                                <p v-else class="image-preview-empty">Chưa có ảnh favicon để xem trước</p>
+                        <div class="form-group full">
+                            <div class="form-split">
+                                <div class="form-col">
+                                    <label>Favicon URL</label>
+                                    <div class="input-mode-switch" role="group" aria-label="Favicon input mode">
+                                        <button type="button" class="mode-btn"
+                                            :class="{ active: faviconInputMode === 'url' }"
+                                            @click="setImageInputMode('favicon', 'url')">
+                                            Nhập link ảnh
+                                        </button>
+                                        <button type="button" class="mode-btn"
+                                            :class="{ active: faviconInputMode === 'upload' }"
+                                            @click="setImageInputMode('favicon', 'upload')">
+                                            Upload lên Cloudinary
+                                        </button>
+                                    </div>
+                                    <input v-if="faviconInputMode === 'url'"
+                                        v-model.trim="generalSettings.siteFaviconUrl"
+                                        @input="clearGeneralError('siteFaviconUrl')" type="url" class="form-control"
+                                        :class="{ 'is-invalid': !!generalErrors.siteFaviconUrl }"
+                                        placeholder="https://example.com/favicon.png">
+                                    <div v-else class="upload-inline-actions">
+                                        <input ref="faviconFileInput" type="file"
+                                            accept=".ico,image/x-icon,image/vnd.microsoft.icon,image/png,image/jpeg,image/webp,image/gif"
+                                            class="hidden-file-input" @change="onFaviconFileChange">
+                                        <button class="btn btn-secondary btn-upload-inline" type="button"
+                                            :disabled="faviconUploading || saving || isLoading"
+                                            @click="triggerFaviconPicker">
+                                            <i class="fas"
+                                                :class="faviconUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                                            {{ faviconUploading ? 'Đang upload favicon...' : 'Upload favicon' }}
+                                        </button>
+                                        <span class="upload-inline-hint">ICO/PNG/JPG/WEBP/GIF, tối đa 0.5MB. Ảnh chỉ upload khi bấm Lưu cài đặt.</span>
+                                        <p v-if="generalErrors.siteFaviconUrl" class="field-error">{{
+                                            generalErrors.siteFaviconUrl
+                                            }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="image-preview-card">
+                                        <p class="image-preview-title">Xem trước Favicon</p>
+                                        <div class="image-preview-surface favicon-preview-surface">
+                                            <img v-if="faviconPreviewSrc" :src="faviconPreviewSrc" alt="Favicon preview"
+                                                class="image-preview image-preview-favicon">
+                                            <p v-else class="image-preview-empty">Chưa có ảnh favicon để xem trước</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+
                             </div>
                         </div>
-                        <p v-if="generalErrors.siteFaviconUrl" class="field-error">{{ generalErrors.siteFaviconUrl }}</p>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Mô tả website</label>
-                        <textarea
-                            v-model="generalSettings.siteDescription"
-                            @input="clearGeneralError('siteDescription')"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!generalErrors.siteDescription }"
-                            rows="3"
-                            placeholder="Mô tả ngắn về website"
-                        ></textarea>
-                        <p v-if="generalErrors.siteDescription" class="field-error">{{ generalErrors.siteDescription }}</p>
-                    </div>
+                        <div class="form-group full">
+                            <label>Mô tả website</label>
+                            <textarea v-model="generalSettings.siteDescription"
+                                @input="clearGeneralError('siteDescription')" class="form-control"
+                                :class="{ 'is-invalid': !!generalErrors.siteDescription }" rows="3"
+                                placeholder="Mô tả ngắn về website"></textarea>
+                            <p v-if="generalErrors.siteDescription" class="field-error">{{ generalErrors.siteDescription
+                            }}
+                            </p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Bản quyền</label>
-                        <input
-                            v-model="generalSettings.siteCopyright"
-                            @input="clearGeneralError('siteCopyright')"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!generalErrors.siteCopyright }"
-                            placeholder="Bản quyền của website"
-                        >
-                        <p v-if="generalErrors.siteCopyright" class="field-error">{{ generalErrors.siteCopyright }}</p>
+                        <div class="form-group">
+                            <label>Bản quyền</label>
+                            <input v-model="generalSettings.siteCopyright" @input="clearGeneralError('siteCopyright')"
+                                type="text" class="form-control"
+                                :class="{ 'is-invalid': !!generalErrors.siteCopyright }"
+                                placeholder="Bản quyền của website">
+                            <p v-if="generalErrors.siteCopyright" class="field-error">{{ generalErrors.siteCopyright }}
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ngôn ngữ hệ thống</label>
+                            <select v-model="generalSettings.siteLanguage" @change="clearGeneralError('siteLanguage')"
+                                class="form-control" :class="{ 'is-invalid': !!generalErrors.siteLanguage }">
+                                <option v-for="option in siteLanguageOptions" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                            <p v-if="generalErrors.siteLanguage" class="field-error">{{ generalErrors.siteLanguage }}
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Múi giờ hệ thống</label>
+                            <select v-model="generalSettings.siteTimezone" @change="clearGeneralError('siteTimezone')"
+                                class="form-control" :class="{ 'is-invalid': !!generalErrors.siteTimezone }">
+                                <option v-for="option in siteTimezoneOptions" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                            <p v-if="generalErrors.siteTimezone" class="field-error">{{ generalErrors.siteTimezone }}
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Định dạng ngày</label>
+                            <select v-model="generalSettings.dateFormat" @change="clearGeneralError('dateFormat')"
+                                class="form-control" :class="{ 'is-invalid': !!generalErrors.dateFormat }">
+                                <option v-for="option in dateFormatOptions" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                            <p v-if="generalErrors.dateFormat" class="field-error">{{ generalErrors.dateFormat }}</p>
+                        </div>
                     </div>
                 </template>
 
                 <template v-else>
-                    <div class="form-group">
-                        <label>Tên công ty đầy đủ</label>
-                        <input
-                            v-model.trim="contactSettings.companyFullName"
-                            @input="clearContactError('companyFullName')"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.companyFullName }"
-                            placeholder="Ông ty Cổ phần ..."
-                        >
-                        <p v-if="contactErrors.companyFullName" class="field-error">{{ contactErrors.companyFullName }}</p>
-                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tên công ty đầy đủ</label>
+                            <input v-model.trim="contactSettings.companyFullName"
+                                @input="clearContactError('companyFullName')" type="text" class="form-control"
+                                :class="{ 'is-invalid': !!contactErrors.companyFullName }"
+                                placeholder="Ông ty Cổ phần ...">
+                            <p v-if="contactErrors.companyFullName" class="field-error">{{ contactErrors.companyFullName
+                                }}
+                            </p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Tên công ty dạng ngắn</label>
-                        <input
-                            v-model.trim="contactSettings.companyShortName"
-                            @input="clearContactError('companyShortName')"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.companyShortName }"
-                            placeholder="DuhocNB"
-                        >
-                        <p v-if="contactErrors.companyShortName" class="field-error">{{ contactErrors.companyShortName }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Tên công ty dạng ngắn</label>
+                            <input v-model.trim="contactSettings.companyShortName"
+                                @input="clearContactError('companyShortName')" type="text" class="form-control"
+                                :class="{ 'is-invalid': !!contactErrors.companyShortName }" placeholder="DuhocNB">
+                            <p v-if="contactErrors.companyShortName" class="field-error">{{
+                                contactErrors.companyShortName
+                                }}</p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Email liên hệ</label>
-                        <input
-                            v-model.trim="contactSettings.contactEmail"
-                            @input="clearContactError('contactEmail')"
-                            type="email"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.contactEmail }"
-                            placeholder="email@example.com"
-                        >
-                        <p v-if="contactErrors.contactEmail" class="field-error">{{ contactErrors.contactEmail }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Email liên hệ</label>
+                            <input v-model.trim="contactSettings.contactEmail"
+                                @input="clearContactError('contactEmail')" type="email" class="form-control"
+                                :class="{ 'is-invalid': !!contactErrors.contactEmail }" placeholder="email@example.com">
+                            <p v-if="contactErrors.contactEmail" class="field-error">{{ contactErrors.contactEmail }}
+                            </p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Số điện thoại</label>
-                        <input
-                            v-model.trim="contactSettings.phone"
-                            @input="clearContactError('phone')"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.phone }"
-                            placeholder="0123456789"
-                        >
-                        <p v-if="contactErrors.phone" class="field-error">{{ contactErrors.phone }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input v-model.trim="contactSettings.phone" @input="clearContactError('phone')" type="text"
+                                class="form-control" :class="{ 'is-invalid': !!contactErrors.phone }"
+                                placeholder="0123456789">
+                            <p v-if="contactErrors.phone" class="field-error">{{ contactErrors.phone }}</p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Hotline</label>
-                        <input
-                            v-model.trim="contactSettings.hotline"
-                            @input="clearContactError('hotline')"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.hotline }"
-                            placeholder="1900xxxx"
-                        >
-                        <p v-if="contactErrors.hotline" class="field-error">{{ contactErrors.hotline }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Hotline</label>
+                            <input v-model.trim="contactSettings.hotline" @input="clearContactError('hotline')"
+                                type="text" class="form-control" :class="{ 'is-invalid': !!contactErrors.hotline }"
+                                placeholder="1900xxxx">
+                            <p v-if="contactErrors.hotline" class="field-error">{{ contactErrors.hotline }}</p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Địa chỉ</label>
-                        <textarea
-                            v-model="contactSettings.address"
-                            @input="clearContactError('address')"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.address }"
-                            rows="2"
-                            placeholder="Nhập địa chỉ"
-                        ></textarea>
-                        <p v-if="contactErrors.address" class="field-error">{{ contactErrors.address }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Địa chỉ</label>
+                            <textarea v-model="contactSettings.address" @input="clearContactError('address')"
+                                class="form-control" :class="{ 'is-invalid': !!contactErrors.address }" rows="2"
+                                placeholder="Nhập địa chỉ"></textarea>
+                            <p v-if="contactErrors.address" class="field-error">{{ contactErrors.address }}</p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Google Maps embed URL</label>
-                        <textarea
-                            v-model.trim="contactSettings.googleMapEmbedUrl"
-                            @input="clearContactError('googleMapEmbedUrl')"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.googleMapEmbedUrl }"
-                            rows="4"
-                            placeholder="https://www.google.com/maps/embed?..."
-                        ></textarea>
-                        <p v-if="contactErrors.googleMapEmbedUrl" class="field-error">{{ contactErrors.googleMapEmbedUrl }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Google Maps embed URL</label>
+                            <textarea v-model.trim="contactSettings.googleMapEmbedUrl"
+                                @input="clearContactError('googleMapEmbedUrl')" class="form-control"
+                                :class="{ 'is-invalid': !!contactErrors.googleMapEmbedUrl }" rows="4"
+                                placeholder="https://www.google.com/maps/embed?..."></textarea>
+                            <p v-if="contactErrors.googleMapEmbedUrl" class="field-error">{{
+                                contactErrors.googleMapEmbedUrl
+                                }}</p>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Giờ làm việc</label>
-                        <textarea
-                            v-model="contactSettings.workingHours"
-                            @input="clearContactError('workingHours')"
-                            class="form-control"
-                            :class="{ 'is-invalid': !!contactErrors.workingHours }"
-                            rows="2"
-                            placeholder="Thứ 2 - Thứ 6: 8:00 - 18:00&#10;Thứ 7 - Chủ nhật: 9:00 - 17:00"
-                        ></textarea>
-                        <p v-if="contactErrors.workingHours" class="field-error">{{ contactErrors.workingHours }}</p>
-                    </div>
+                        <div class="form-group">
+                            <label>Giờ làm việc</label>
+                            <textarea v-model="contactSettings.workingHours" @input="clearContactError('workingHours')"
+                                class="form-control" :class="{ 'is-invalid': !!contactErrors.workingHours }" rows="2"
+                                placeholder="Thứ 2 - Thứ 6: 8:00 - 18:00&#10;Thứ 7 - Chủ nhật: 9:00 - 17:00"></textarea>
+                            <p v-if="contactErrors.workingHours" class="field-error">{{ contactErrors.workingHours }}
+                            </p>
+                        </div>
 
-                    <div v-if="mapPreviewUrl" class="map-preview-card">
-                        <p class="map-preview-title">Xem trước Google Maps</p>
-                        <iframe
-                            :src="mapPreviewUrl"
-                            class="map-preview-iframe"
-                            allowfullscreen
-                            loading="lazy"
-                            referrerpolicy="no-referrer-when-downgrade"
-                            title="Google Maps preview"
-                        ></iframe>
+                        <div v-if="mapPreviewUrl" class="map-preview-card">
+                            <p class="map-preview-title">Xem trước Google Maps</p>
+                            <iframe :src="mapPreviewUrl" class="map-preview-iframe" allowfullscreen loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade" title="Google Maps preview"></iframe>
+                        </div>
                     </div>
                 </template>
 
@@ -386,6 +343,7 @@ import { onMounted, onBeforeUnmount, reactive, ref, computed } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
+import { persistClientSiteSettings } from '~/utils/siteSettings'
 
 definePageMeta({
     layout: 'admin',
@@ -420,6 +378,21 @@ const pendingLogoFile = ref(null)
 const pendingFaviconFile = ref(null)
 const logoInputMode = ref('upload')
 const faviconInputMode = ref('upload')
+const siteLanguageOptions = [
+    { value: 'vi', label: 'Tiếng Việt (vi)' },
+    { value: 'en', label: 'English (en)' },
+    { value: 'ja', label: '日本語 (ja)' }
+]
+const siteTimezoneOptions = [
+    { value: 'Asia/Ho_Chi_Minh', label: 'Asia/Ho_Chi_Minh (GMT+7)' },
+    { value: 'Asia/Tokyo', label: 'Asia/Tokyo (GMT+9)' },
+    { value: 'UTC', label: 'UTC (GMT+0)' }
+]
+const dateFormatOptions = [
+    { value: 'dd/mm/yyyy', label: 'dd/mm/yyyy' },
+    { value: 'mm/dd/yyyy', label: 'mm/dd/yyyy' },
+    { value: 'yyyy-mm-dd', label: 'yyyy-mm-dd' }
+]
 
 const generalSettings = reactive({
     siteName: '',
@@ -427,7 +400,10 @@ const generalSettings = reactive({
     siteLogoUrl: '',
     siteFaviconUrl: '',
     siteDescription: '',
-    siteCopyright: ''
+    siteCopyright: '',
+    siteLanguage: 'vi',
+    siteTimezone: 'Asia/Ho_Chi_Minh',
+    dateFormat: 'dd/mm/yyyy'
 })
 
 const contactSettings = reactive({
@@ -447,7 +423,10 @@ const generalErrors = reactive({
     siteLogoUrl: '',
     siteFaviconUrl: '',
     siteDescription: '',
-    siteCopyright: ''
+    siteCopyright: '',
+    siteLanguage: '',
+    siteTimezone: '',
+    dateFormat: ''
 })
 
 const contactErrors = reactive({
@@ -668,6 +647,9 @@ const setGeneralSettings = (data = {}) => {
     generalSettings.siteFaviconUrl = data.siteFaviconUrl || ''
     generalSettings.siteDescription = data.siteDescription || ''
     generalSettings.siteCopyright = data.siteCopyright || ''
+    generalSettings.siteLanguage = data.siteLanguage || 'vi'
+    generalSettings.siteTimezone = data.siteTimezone || 'Asia/Ho_Chi_Minh'
+    generalSettings.dateFormat = data.dateFormat || 'dd/mm/yyyy'
 }
 
 const setContactSettings = (data = {}) => {
@@ -688,6 +670,9 @@ const clearGeneralErrors = () => {
     generalErrors.siteFaviconUrl = ''
     generalErrors.siteDescription = ''
     generalErrors.siteCopyright = ''
+    generalErrors.siteLanguage = ''
+    generalErrors.siteTimezone = ''
+    generalErrors.dateFormat = ''
 }
 
 const clearContactErrors = () => {
@@ -718,6 +703,18 @@ const validateGeneral = () => {
 
     if (generalSettings.siteUrl && !isValidUrl(generalSettings.siteUrl)) {
         generalErrors.siteUrl = 'Website link không hợp lệ (cần bắt đầu bằng http/https)'
+    }
+
+    if (!siteLanguageOptions.some((option) => option.value === generalSettings.siteLanguage)) {
+        generalErrors.siteLanguage = 'Ngôn ngữ hệ thống không hợp lệ'
+    }
+
+    if (!siteTimezoneOptions.some((option) => option.value === generalSettings.siteTimezone)) {
+        generalErrors.siteTimezone = 'Múi giờ hệ thống không hợp lệ'
+    }
+
+    if (!dateFormatOptions.some((option) => option.value === generalSettings.dateFormat)) {
+        generalErrors.dateFormat = 'Định dạng ngày không hợp lệ'
     }
 
     if (logoInputMode.value === 'url') {
@@ -785,6 +782,7 @@ const fetchGeneralSettings = async () => {
         const payload = data?.data || {}
         setGeneralSettings(payload)
         lastSavedGeneral.value = { ...payload }
+        persistClientSiteSettings(payload)
         clearPendingGeneralSelections()
         syncImageInputModesFromSettings()
     } finally {
@@ -837,7 +835,10 @@ const saveGeneralSettings = async () => {
             siteLogoUrl: generalSettings.siteLogoUrl.trim(),
             siteFaviconUrl: generalSettings.siteFaviconUrl.trim(),
             siteDescription: generalSettings.siteDescription || '',
-            siteCopyright: generalSettings.siteCopyright || ''
+            siteCopyright: generalSettings.siteCopyright || '',
+            siteLanguage: generalSettings.siteLanguage,
+            siteTimezone: generalSettings.siteTimezone,
+            dateFormat: generalSettings.dateFormat
         }
 
         if (logoInputMode.value === 'upload') {
@@ -880,6 +881,9 @@ const saveGeneralSettings = async () => {
                 generalErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
                 generalErrors.siteDescription = data.errors.siteDescription || ''
                 generalErrors.siteCopyright = data.errors.siteCopyright || ''
+                generalErrors.siteLanguage = data.errors.siteLanguage || ''
+                generalErrors.siteTimezone = data.errors.siteTimezone || ''
+                generalErrors.dateFormat = data.errors.dateFormat || ''
             }
             throw new Error(data?.message || 'Không thể lưu cài đặt website')
         }
@@ -887,6 +891,7 @@ const saveGeneralSettings = async () => {
         const savedData = data?.data || payload
         setGeneralSettings(savedData)
         lastSavedGeneral.value = { ...savedData }
+        persistClientSiteSettings(savedData)
         clearPendingGeneralSelections()
         showSuccess(data?.message || 'Đã lưu cài đặt website thành công')
     } catch (err) {
@@ -975,7 +980,10 @@ const resetCurrentTab = () => {
             siteLogoUrl: '',
             siteFaviconUrl: '',
             siteDescription: '',
-            siteCopyright: ''
+            siteCopyright: '',
+            siteLanguage: 'vi',
+            siteTimezone: 'Asia/Ho_Chi_Minh',
+            dateFormat: 'dd/mm/yyyy'
         })
         clearGeneralErrors()
         clearPendingGeneralSelections()
@@ -1129,8 +1137,38 @@ onBeforeUnmount(() => {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
 .form-group {
-    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-row {
+    grid-column: 1 / -1;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.form-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-col {
+    min-width: 0;
 }
 
 .form-group label {

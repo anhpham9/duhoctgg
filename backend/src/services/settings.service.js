@@ -10,7 +10,10 @@ export const GENERAL_SETTINGS_KEYS = {
     siteLogoUrl: `${GENERAL_SETTINGS_PREFIX}site_logo_url`,
     siteFaviconUrl: `${GENERAL_SETTINGS_PREFIX}site_favicon_url`,
     siteDescription: `${GENERAL_SETTINGS_PREFIX}site_description`,
-    siteCopyright: `${GENERAL_SETTINGS_PREFIX}site_copyright`
+    siteCopyright: `${GENERAL_SETTINGS_PREFIX}site_copyright`,
+    siteLanguage: `${GENERAL_SETTINGS_PREFIX}site_language`,
+    siteTimezone: `${GENERAL_SETTINGS_PREFIX}site_timezone`,
+    dateFormat: `${GENERAL_SETTINGS_PREFIX}date_format`
 };
 
 export const CONTACT_SETTINGS_KEYS = {
@@ -30,7 +33,10 @@ export const GENERAL_SETTINGS_DESCRIPTIONS = {
     [GENERAL_SETTINGS_KEYS.siteLogoUrl]: "General setting: website logo URL",
     [GENERAL_SETTINGS_KEYS.siteFaviconUrl]: "General setting: website favicon URL",
     [GENERAL_SETTINGS_KEYS.siteDescription]: "General setting: website description",
-    [GENERAL_SETTINGS_KEYS.siteCopyright]: "General setting: website copyright"
+    [GENERAL_SETTINGS_KEYS.siteCopyright]: "General setting: website copyright",
+    [GENERAL_SETTINGS_KEYS.siteLanguage]: "General setting: site language",
+    [GENERAL_SETTINGS_KEYS.siteTimezone]: "General setting: site timezone",
+    [GENERAL_SETTINGS_KEYS.dateFormat]: "General setting: date format"
 };
 
 export const CONTACT_SETTINGS_DESCRIPTIONS = {
@@ -50,7 +56,10 @@ export const getDefaultGeneralSettings = () => ({
     siteLogoUrl: "",
     siteFaviconUrl: "",
     siteDescription: "",
-    siteCopyright: ""
+    siteCopyright: "",
+    siteLanguage: "vi",
+    siteTimezone: "Asia/Ho_Chi_Minh",
+    dateFormat: "dd/mm/yyyy"
 });
 
 export const getDefaultContactSettings = () => ({
@@ -74,6 +83,9 @@ export const mapRowsToGeneralSettings = (rows = []) => {
         if (row.key === GENERAL_SETTINGS_KEYS.siteFaviconUrl) data.siteFaviconUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteDescription) data.siteDescription = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteCopyright) data.siteCopyright = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.siteLanguage) data.siteLanguage = row.value || "vi";
+        if (row.key === GENERAL_SETTINGS_KEYS.siteTimezone) data.siteTimezone = row.value || "Asia/Ho_Chi_Minh";
+        if (row.key === GENERAL_SETTINGS_KEYS.dateFormat) data.dateFormat = row.value || "dd/mm/yyyy";
     }
 
     return data;
@@ -175,6 +187,9 @@ export const getPublicGeneralSettingsData = async () => {
         siteUrl: generalData.siteUrl,
         siteDescription: generalData.siteDescription,
         siteCopyright: generalData.siteCopyright,
+        siteLanguage: generalData.siteLanguage,
+        siteTimezone: generalData.siteTimezone,
+        dateFormat: generalData.dateFormat,
         companyFullName: contactData.companyFullName,
         companyShortName: contactData.companyShortName,
         contactEmail: contactData.contactEmail,

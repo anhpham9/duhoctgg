@@ -204,6 +204,7 @@ import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
 import { useVisiblePages } from '~/composables/usePaginationHelper'
 import { usePaginationSettings } from '~/composables/usePaginationSettings'
+import { formatDate as formatSystemDate } from '~/utils/date'
 
 definePageMeta({
     layout: 'admin',
@@ -410,7 +411,9 @@ const confirmDeleteNews = async () => {
 
 const formatDate = (date) => {
     if (!date) return '-'
-    return new Date(date).toLocaleDateString('vi-VN')
+
+    const formatted = formatSystemDate(date)
+    return formatted === '-' ? '-' : formatted.split(' ').pop()
 }
 
 const getStatusClass = (status) => {

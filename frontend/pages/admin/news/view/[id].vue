@@ -78,6 +78,7 @@
 import { computed, onMounted, ref } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
+import { formatDate as formatSystemDate } from '~/utils/date'
 
 const route = useRoute()
 const newsId = route.params.id
@@ -129,7 +130,7 @@ const fetchNewsDetail = async () => {
 
 const formatDate = (date) => {
     if (!date) return '-'
-    return new Date(date).toLocaleString('vi-VN')
+    return formatSystemDate(date)
 }
 
 const getStatusClass = (status) => {

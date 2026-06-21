@@ -194,6 +194,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
+import { formatDate as formatSystemDate } from '~/utils/date'
 
 definePageMeta({
     layout: 'admin',
@@ -254,9 +255,7 @@ const statusClass = (status) => {
 
 const formatDateTime = (value) => {
     if (!value) return '-'
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return '-'
-    return date.toLocaleString('vi-VN')
+    return formatSystemDate(value)
 }
 
 const formatSize = (bytes) => {

@@ -180,6 +180,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { formatDate as formatSystemDate } from '~/utils/date'
 
 const config = useRuntimeConfig()
 const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/news`, {
@@ -347,14 +348,8 @@ const changePage = async (page) => {
 const formatDate = (dateString) => {
     if (!dateString) return '--/--/----'
 
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '--/--/----'
-
-    return date.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    })
+    const formatted = formatSystemDate(dateString)
+    return formatted === '-' ? '--/--/----' : formatted.split(' ').pop()
 }
 
 onMounted(async () => {

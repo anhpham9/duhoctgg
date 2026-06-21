@@ -832,6 +832,21 @@ export class InputSanitizer {
             escapeHtml: false
         });
 
+        sanitized.siteLanguage = this.sanitizeText(payload.siteLanguage || 'vi', {
+            maxLength: 20,
+            escapeHtml: false
+        }).toLowerCase();
+
+        sanitized.siteTimezone = this.sanitizeText(payload.siteTimezone || 'Asia/Ho_Chi_Minh', {
+            maxLength: 100,
+            escapeHtml: false
+        });
+
+        sanitized.dateFormat = this.sanitizeText(payload.dateFormat || 'dd/mm/yyyy', {
+            maxLength: 20,
+            escapeHtml: false
+        }).toLowerCase();
+
         logger.debug('General settings data sanitized', {
             originalFields: Object.keys(payload),
             sanitizedFields: Object.keys(sanitized)

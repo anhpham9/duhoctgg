@@ -142,6 +142,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { formatDate as formatSystemDate } from '~/utils/date'
 
 definePageMeta({
     layout: 'default'
@@ -252,11 +253,8 @@ const copyCurrentLink = async () => {
 const formatDate = (value) => {
     if (!value) return '-'
 
-    try {
-        return new Date(value).toLocaleDateString('vi-VN')
-    } catch {
-        return '-'
-    }
+    const formatted = formatSystemDate(value)
+    return formatted === '-' ? '-' : formatted.split(' ').pop()
 }
 
 const formatViews = (value) => {
