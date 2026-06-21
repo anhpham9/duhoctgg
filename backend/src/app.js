@@ -38,6 +38,7 @@ import { getPublicStaticPageBySlug } from "./controllers/publicStaticPages.contr
 import { getPublicNewsBySlug, getPublicNewsList } from "./controllers/publicNews.controller.js";
 import { trackNewsView } from "./controllers/news.controller.js";
 import { ensureSettingsKeysExist } from "./services/settings.service.js";
+import { ensureMediaAssetTableExists } from "./services/mediaAsset.service.js";
 
 
 // RBAC/permission middleware mẫu
@@ -195,6 +196,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, async () => {
     // Initialize settings keys in database
+    await ensureMediaAssetTableExists();
     await ensureSettingsKeysExist();
     
     backupService.startBackupScheduler();

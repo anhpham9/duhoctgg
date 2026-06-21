@@ -103,6 +103,37 @@
                             :class="{ 'is-invalid': !!generalErrors.siteLogoUrl }"
                             placeholder="https://example.com/logo.png"
                         >
+                        <div class="upload-inline-actions">
+                            <input
+                                ref="logoFileInput"
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,image/gif"
+                                class="hidden-file-input"
+                                @change="onLogoFileChange"
+                            >
+                            <button
+                                class="btn btn-secondary btn-upload-inline"
+                                type="button"
+                                :disabled="logoUploading || saving || isLoading"
+                                @click="triggerLogoPicker"
+                            >
+                                <i class="fas" :class="logoUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                                {{ logoUploading ? 'Đang upload logo...' : 'Upload logo' }}
+                            </button>
+                            <span class="upload-inline-hint">PNG/JPG/WEBP/GIF, tối đa 1MB</span>
+                        </div>
+                        <div class="image-preview-card">
+                            <p class="image-preview-title">Xem trước Logo</p>
+                            <div class="image-preview-surface logo-preview-surface">
+                                <img
+                                    v-if="logoPreviewSrc"
+                                    :src="logoPreviewSrc"
+                                    alt="Logo preview"
+                                    class="image-preview"
+                                >
+                                <p v-else class="image-preview-empty">Chưa có ảnh logo để xem trước</p>
+                            </div>
+                        </div>
                         <p v-if="generalErrors.siteLogoUrl" class="field-error">{{ generalErrors.siteLogoUrl }}</p>
                     </div>
 
@@ -116,6 +147,37 @@
                             :class="{ 'is-invalid': !!generalErrors.siteFaviconUrl }"
                             placeholder="https://example.com/favicon.png"
                         >
+                        <div class="upload-inline-actions">
+                            <input
+                                ref="faviconFileInput"
+                                type="file"
+                                accept=".ico,image/x-icon,image/vnd.microsoft.icon,image/png,image/jpeg,image/webp,image/gif"
+                                class="hidden-file-input"
+                                @change="onFaviconFileChange"
+                            >
+                            <button
+                                class="btn btn-secondary btn-upload-inline"
+                                type="button"
+                                :disabled="faviconUploading || saving || isLoading"
+                                @click="triggerFaviconPicker"
+                            >
+                                <i class="fas" :class="faviconUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                                {{ faviconUploading ? 'Đang upload favicon...' : 'Upload favicon' }}
+                            </button>
+                            <span class="upload-inline-hint">ICO/PNG/JPG/WEBP/GIF, tối đa 0.5MB</span>
+                        </div>
+                        <div class="image-preview-card">
+                            <p class="image-preview-title">Xem trước Favicon</p>
+                            <div class="image-preview-surface favicon-preview-surface">
+                                <img
+                                    v-if="faviconPreviewSrc"
+                                    :src="faviconPreviewSrc"
+                                    alt="Favicon preview"
+                                    class="image-preview image-preview-favicon"
+                                >
+                                <p v-else class="image-preview-empty">Chưa có ảnh favicon để xem trước</p>
+                            </div>
+                        </div>
                         <p v-if="generalErrors.siteFaviconUrl" class="field-error">{{ generalErrors.siteFaviconUrl }}</p>
                     </div>
 
@@ -269,7 +331,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, reactive, ref, computed } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
@@ -296,7 +358,15 @@ const activeTab = ref('general')
 const loadingGeneral = ref(false)
 const loadingContact = ref(false)
 const saving = ref(false)
+const logoUploading = ref(false)
+const faviconUploading = ref(false)
 const error = ref('')
+const logoFileInput = ref(null)
+const faviconFileInput = ref(null)
+const logoPreviewTempUrl = ref('')
+const faviconPreviewTempUrl = ref('')
+const pendingLogoFile = ref(null)
+const pendingFaviconFile = ref(null)
 
 const generalSettings = reactive({
     siteName: '',
@@ -340,6 +410,12 @@ const lastSavedGeneral = ref(null)
 const lastSavedContact = ref(null)
 
 const isLoading = computed(() => loadingGeneral.value || loadingContact.value)
+const logoPreviewSrc = computed(() => {
+    return String(logoPreviewTempUrl.value || generalSettings.siteLogoUrl || '').trim()
+})
+const faviconPreviewSrc = computed(() => {
+    return String(faviconPreviewTempUrl.value || generalSettings.siteFaviconUrl || '').trim()
+})
 const mapPreviewUrl = computed(() => {
     const rawValue = String(contactSettings.googleMapEmbedUrl || '').trim()
     if (!rawValue) return ''
@@ -368,6 +444,145 @@ const clearGeneralError = (field) => {
 
 const clearContactError = (field) => {
     if (contactErrors[field]) contactErrors[field] = ''
+}
+
+const resetPreviewObjectUrl = (previewRef) => {
+    if (!previewRef.value) return
+    URL.revokeObjectURL(previewRef.value)
+    previewRef.value = ''
+}
+
+const clearPendingLogoSelection = () => {
+    pendingLogoFile.value = null
+    resetPreviewObjectUrl(logoPreviewTempUrl)
+}
+
+const clearPendingFaviconSelection = () => {
+    pendingFaviconFile.value = null
+    resetPreviewObjectUrl(faviconPreviewTempUrl)
+}
+
+const clearPendingGeneralSelections = () => {
+    clearPendingLogoSelection()
+    clearPendingFaviconSelection()
+}
+
+const triggerLogoPicker = () => {
+    logoFileInput.value?.click()
+}
+
+const triggerFaviconPicker = () => {
+    faviconFileInput.value?.click()
+}
+
+const uploadGeneralImageFile = async ({ file, imageType }) => {
+    const fileType = String(file?.type || '').toLowerCase()
+    const fileName = String(file?.name || '').toLowerCase()
+    const isIcoFile = fileName.endsWith('.ico')
+    const allowedTypes = imageType === 'favicon'
+        ? ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/x-icon', 'image/vnd.microsoft.icon']
+        : ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+
+    if (!allowedTypes.includes(fileType) && !(imageType === 'favicon' && isIcoFile)) {
+        const allowedLabel = imageType === 'favicon'
+            ? 'ICO/PNG/JPG/WEBP/GIF'
+            : 'PNG/JPG/WEBP/GIF'
+        throw new Error(`Định dạng file ${imageType} không hợp lệ (chỉ nhận ${allowedLabel})`)
+    }
+
+    const maxFileSize = imageType === 'favicon' ? 512 * 1024 : 1 * 1024 * 1024
+    if (file.size > maxFileSize) {
+        const maxFileSizeLabel = imageType === 'favicon' ? '0.5MB' : '1MB'
+        throw new Error(`File ${imageType} vượt quá ${maxFileSizeLabel}`)
+    }
+
+    const formData = new FormData()
+    formData.append('image', file)
+    formData.append('type', imageType)
+
+    const response = await fetch(`${API_BASE}/settings/general/upload-image`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+        throw new Error(data?.message || `Upload ${imageType} thất bại`)
+    }
+
+    const uploadedUrl = String(data?.data?.url || '').trim()
+    if (!uploadedUrl) {
+        throw new Error(`Không nhận được URL ${imageType} từ server`)
+    }
+
+    return {
+        uploadedUrl,
+        uploadedPublicId: String(data?.data?.publicId || '').trim(),
+        data
+    }
+}
+
+const rollbackUploadedGeneralImages = async (publicIds = []) => {
+    const validPublicIds = publicIds.filter(Boolean)
+    await Promise.all(validPublicIds.map((publicId) => fetch(`${API_BASE}/settings/general/upload-image`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId })
+    }).catch(() => null)))
+}
+
+const onLogoFileChange = async (event) => {
+    const file = event?.target?.files?.[0]
+    event.target.value = ''
+
+    if (!file) return
+
+    const fileType = String(file?.type || '').toLowerCase()
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(fileType)) {
+        showError('Định dạng file logo không hợp lệ (chỉ nhận PNG/JPG/WEBP/GIF)')
+        return
+    }
+
+    if (file.size > 1 * 1024 * 1024) {
+        showError('File logo vượt quá 1MB')
+        return
+    }
+
+    resetPreviewObjectUrl(logoPreviewTempUrl)
+    logoPreviewTempUrl.value = URL.createObjectURL(file)
+    pendingLogoFile.value = file
+    clearGeneralError('siteLogoUrl')
+    showInfo('Logo đã được chọn. Ảnh sẽ chỉ upload khi bạn bấm Lưu cài đặt.')
+}
+
+const onFaviconFileChange = async (event) => {
+    const file = event?.target?.files?.[0]
+    event.target.value = ''
+
+    if (!file) return
+
+    const fileType = String(file?.type || '').toLowerCase()
+    const fileName = String(file?.name || '').toLowerCase()
+    const isIcoFile = fileName.endsWith('.ico')
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/x-icon', 'image/vnd.microsoft.icon']
+    if (!allowedTypes.includes(fileType) && !isIcoFile) {
+        showError('Định dạng file favicon không hợp lệ (chỉ nhận ICO/PNG/JPG/WEBP/GIF)')
+        return
+    }
+
+    if (file.size > 512 * 1024) {
+        showError('File favicon vượt quá 0.5MB')
+        return
+    }
+
+    resetPreviewObjectUrl(faviconPreviewTempUrl)
+    faviconPreviewTempUrl.value = URL.createObjectURL(file)
+    pendingFaviconFile.value = file
+    clearGeneralError('siteFaviconUrl')
+    showInfo('Favicon đã được chọn. Ảnh sẽ chỉ upload khi bạn bấm Lưu cài đặt.')
 }
 
 const setGeneralSettings = (data = {}) => {
@@ -480,6 +695,7 @@ const fetchGeneralSettings = async () => {
         const payload = data?.data || {}
         setGeneralSettings(payload)
         lastSavedGeneral.value = { ...payload }
+        clearPendingGeneralSelections()
     } finally {
         loadingGeneral.value = false
     }
@@ -521,37 +737,64 @@ const saveGeneralSettings = async () => {
         return
     }
 
-    const payload = {
-        siteName: generalSettings.siteName.trim(),
-        siteUrl: generalSettings.siteUrl.trim(),
-        siteLogoUrl: generalSettings.siteLogoUrl.trim(),
-        siteFaviconUrl: generalSettings.siteFaviconUrl.trim(),
-        siteDescription: generalSettings.siteDescription || ''
-    }
+    const uploadedPublicIds = []
 
-    const response = await fetch(`${API_BASE}/settings/general`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-    const data = await response.json()
-
-    if (!response.ok) {
-        if (data?.errors) {
-            generalErrors.siteName = data.errors.siteName || ''
-            generalErrors.siteUrl = data.errors.siteUrl || ''
-            generalErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
-            generalErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
-            generalErrors.siteDescription = data.errors.siteDescription || ''
+    try {
+        const payload = {
+            siteName: generalSettings.siteName.trim(),
+            siteUrl: generalSettings.siteUrl.trim(),
+            siteLogoUrl: generalSettings.siteLogoUrl.trim(),
+            siteFaviconUrl: generalSettings.siteFaviconUrl.trim(),
+            siteDescription: generalSettings.siteDescription || ''
         }
-        throw new Error(data?.message || 'Không thể lưu cài đặt website')
-    }
 
-    const savedData = data?.data || payload
-    setGeneralSettings(savedData)
-    lastSavedGeneral.value = { ...savedData }
-    showSuccess(data?.message || 'Đã lưu cài đặt website thành công')
+        if (pendingLogoFile.value) {
+            logoUploading.value = true
+            const { uploadedUrl, uploadedPublicId } = await uploadGeneralImageFile({ file: pendingLogoFile.value, imageType: 'logo' })
+            payload.siteLogoUrl = uploadedUrl
+            if (uploadedPublicId) uploadedPublicIds.push(uploadedPublicId)
+            payload.siteLogoAssetPublicId = uploadedPublicId || ''
+        }
+
+        if (pendingFaviconFile.value) {
+            faviconUploading.value = true
+            const { uploadedUrl, uploadedPublicId } = await uploadGeneralImageFile({ file: pendingFaviconFile.value, imageType: 'favicon' })
+            payload.siteFaviconUrl = uploadedUrl
+            if (uploadedPublicId) uploadedPublicIds.push(uploadedPublicId)
+            payload.siteFaviconAssetPublicId = uploadedPublicId || ''
+        }
+
+        const response = await fetch(`${API_BASE}/settings/general`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        const data = await response.json()
+
+        if (!response.ok) {
+            if (data?.errors) {
+                generalErrors.siteName = data.errors.siteName || ''
+                generalErrors.siteUrl = data.errors.siteUrl || ''
+                generalErrors.siteLogoUrl = data.errors.siteLogoUrl || ''
+                generalErrors.siteFaviconUrl = data.errors.siteFaviconUrl || ''
+                generalErrors.siteDescription = data.errors.siteDescription || ''
+            }
+            throw new Error(data?.message || 'Không thể lưu cài đặt website')
+        }
+
+        const savedData = data?.data || payload
+        setGeneralSettings(savedData)
+        lastSavedGeneral.value = { ...savedData }
+        clearPendingGeneralSelections()
+        showSuccess(data?.message || 'Đã lưu cài đặt website thành công')
+    } catch (err) {
+        await rollbackUploadedGeneralImages(uploadedPublicIds)
+        throw err
+    } finally {
+        logoUploading.value = false
+        faviconUploading.value = false
+    }
 }
 
 const saveContactSettings = async () => {
@@ -619,6 +862,7 @@ const resetCurrentTab = () => {
         if (lastSavedGeneral.value) {
             setGeneralSettings(lastSavedGeneral.value)
             clearGeneralErrors()
+            clearPendingGeneralSelections()
             showInfo('Đã khôi phục dữ liệu tab website')
             return
         }
@@ -631,6 +875,7 @@ const resetCurrentTab = () => {
             siteDescription: ''
         })
         clearGeneralErrors()
+        clearPendingGeneralSelections()
         showInfo('Đã đặt lại tab website')
         return
     }
@@ -661,6 +906,11 @@ onMounted(async () => {
     if (hasPermission.value) {
         await fetchSettings()
     }
+})
+
+onBeforeUnmount(() => {
+    resetPreviewObjectUrl(logoPreviewTempUrl)
+    resetPreviewObjectUrl(faviconPreviewTempUrl)
 })
 </script>
 
@@ -804,6 +1054,78 @@ onMounted(async () => {
 .form-control.is-invalid {
     border-color: #dc3545;
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.upload-inline-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.hidden-file-input {
+    display: none;
+}
+
+.btn-upload-inline {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+}
+
+.upload-inline-hint {
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.image-preview-card {
+    margin-top: 0.6rem;
+    border: 1px solid #dbe6f5;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 0.75rem;
+}
+
+.image-preview-title {
+    margin: 0 0 0.55rem;
+    color: #18477d;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.image-preview-surface {
+    border: 1px dashed #bdd0ea;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+}
+
+.logo-preview-surface {
+    min-height: 140px;
+}
+
+.favicon-preview-surface {
+    min-height: 96px;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 120px;
+    object-fit: contain;
+}
+
+.image-preview-favicon {
+    max-width: 64px;
+    max-height: 64px;
+}
+
+.image-preview-empty {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
 }
 
 .field-error {

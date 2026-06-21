@@ -33,6 +33,7 @@ git checkout develop
 # dùng roles.code thay vì roles.name, tương tự với permissions
 # dùng roles.code để kiểm tra quyền, thay vì roles.id như trước đó
 feature/rbac-code-refactor
+feature/upload-cloudinary
 
 # backend
 feature/init-backend
@@ -65,6 +66,8 @@ feature/frontend-settings-admin
 feature/frontend-contact-public
 feature/frontend-news-public
 feature/frontend-auth-rbac
+
+
 
 ```
 ## Các tình huống đặc biệt

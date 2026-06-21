@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import { cloudinary, isCloudinaryConfigured } from "../config/cloudinary.js";
 import { logError, logInfo, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
@@ -10,8 +11,60 @@ import {
     getGeneralSettingsData,
     getContactSettingsData
 } from "../services/settings.service.js";
+import {
+    MEDIA_OWNER_TYPES,
+    MEDIA_OWNER_KEYS,
+    MEDIA_FIELD_NAMES,
+    getMediaAssetRefsByOwner,
+    mapMediaAssetRefsByField,
+    upsertMediaAssetRef,
+    deleteMediaAssetRef
+} from "../services/mediaAsset.service.js";
 
 const MANAGE_SETTINGS_ROLES = [1, 2];
+const ALLOWED_GENERAL_IMAGE_TYPES = new Set(["logo", "favicon"]);
+const configuredImageMimeTypes = String(process.env.CLOUDINARY_ALLOWED_MIME || "").trim();
+const ALLOWED_IMAGE_MIME_TYPES = (configuredImageMimeTypes || "image/jpeg,image/png,image/webp,image/gif")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+const ALLOWED_FAVICON_MIME_TYPES = new Set([
+    ...ALLOWED_IMAGE_MIME_TYPES,
+    "image/x-icon",
+    "image/vnd.microsoft.icon"
+]);
+const DEFAULT_LOGO_MAX_FILE_SIZE = 1 * 1024 * 1024;
+const DEFAULT_FAVICON_MAX_FILE_SIZE = 512 * 1024;
+const configuredLogoMaxFileSize = Number(process.env.CLOUDINARY_MAX_FILE_SIZE || DEFAULT_LOGO_MAX_FILE_SIZE);
+const configuredFaviconMaxFileSize = Number(process.env.CLOUDINARY_FAVICON_MAX_FILE_SIZE || DEFAULT_FAVICON_MAX_FILE_SIZE);
+const LOGO_MAX_FILE_SIZE = Number.isFinite(configuredLogoMaxFileSize) && configuredLogoMaxFileSize > 0
+    ? configuredLogoMaxFileSize
+    : DEFAULT_LOGO_MAX_FILE_SIZE;
+const FAVICON_MAX_FILE_SIZE = Number.isFinite(configuredFaviconMaxFileSize) && configuredFaviconMaxFileSize > 0
+    ? configuredFaviconMaxFileSize
+    : DEFAULT_FAVICON_MAX_FILE_SIZE;
+
+const uploadBufferToCloudinary = (fileBuffer, options = {}) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+            if (error) return reject(error);
+            return resolve(result);
+        });
+
+        uploadStream.end(fileBuffer);
+    });
+};
+
+const hasIcoExtension = (fileName = "") => String(fileName).trim().toLowerCase().endsWith(".ico");
+
+const destroyCloudinaryAsset = async (publicId) => {
+    if (!publicId || !isCloudinaryConfigured()) return null;
+
+    return cloudinary.uploader.destroy(publicId, {
+        resource_type: "image",
+        invalidate: true
+    });
+};
 
 export const getGeneralSettings = async (req, res) => {
     try {
@@ -52,6 +105,7 @@ export const getGeneralSettings = async (req, res) => {
 export const updateGeneralSettings = async (req, res) => {
     const currentUserRole = req.user?.role_id;
     const currentUserId = req.user?.id;
+    const publicIdsToDelete = [];
 
     try {
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
@@ -70,6 +124,10 @@ export const updateGeneralSettings = async (req, res) => {
         }
 
         const payload = InputSanitizer.sanitizeGeneralSettingsData(req.body || {});
+        const incomingAssetPublicIds = {
+            [MEDIA_FIELD_NAMES.siteLogoUrl]: String(req.body?.siteLogoAssetPublicId || "").trim(),
+            [MEDIA_FIELD_NAMES.siteFaviconUrl]: String(req.body?.siteFaviconAssetPublicId || "").trim()
+        };
 
         if (!payload.siteName) {
             return res.status(400).json({
@@ -82,6 +140,12 @@ export const updateGeneralSettings = async (req, res) => {
         }
 
         await db.query("BEGIN");
+
+        const existingAssetRefs = mapMediaAssetRefsByField(await getMediaAssetRefsByOwner({
+            ownerType: MEDIA_OWNER_TYPES.settings,
+            ownerKey: MEDIA_OWNER_KEYS.general,
+            client: db
+        }));
 
         const settingsEntries = [
             [GENERAL_SETTINGS_KEYS.siteName,              String(payload.siteName)],
@@ -114,7 +178,70 @@ export const updateGeneralSettings = async (req, res) => {
             values
         );
 
+        const fieldMappings = [
+            {
+                fieldName: MEDIA_FIELD_NAMES.siteLogoUrl,
+                payloadKey: "siteLogoUrl"
+            },
+            {
+                fieldName: MEDIA_FIELD_NAMES.siteFaviconUrl,
+                payloadKey: "siteFaviconUrl"
+            }
+        ];
+
+        for (const fieldMapping of fieldMappings) {
+            const existingAssetRef = existingAssetRefs[fieldMapping.fieldName] || null;
+            const nextAssetUrl = String(payload[fieldMapping.payloadKey] || "").trim();
+            const nextPublicId = incomingAssetPublicIds[fieldMapping.fieldName] || "";
+
+            if (nextPublicId) {
+                if (existingAssetRef?.public_id && existingAssetRef.public_id !== nextPublicId) {
+                    publicIdsToDelete.push(existingAssetRef.public_id);
+                }
+
+                await upsertMediaAssetRef({
+                    ownerType: MEDIA_OWNER_TYPES.settings,
+                    ownerKey: MEDIA_OWNER_KEYS.general,
+                    fieldName: fieldMapping.fieldName,
+                    publicId: nextPublicId,
+                    assetUrl: nextAssetUrl,
+                    userId: currentUserId,
+                    client: db
+                });
+
+                continue;
+            }
+
+            if (!existingAssetRef) {
+                continue;
+            }
+
+            if (!nextAssetUrl || nextAssetUrl !== String(existingAssetRef.asset_url || "").trim()) {
+                const deletedAssetRef = await deleteMediaAssetRef({
+                    ownerType: MEDIA_OWNER_TYPES.settings,
+                    ownerKey: MEDIA_OWNER_KEYS.general,
+                    fieldName: fieldMapping.fieldName,
+                    client: db
+                });
+
+                if (deletedAssetRef?.public_id) {
+                    publicIdsToDelete.push(deletedAssetRef.public_id);
+                }
+            }
+        }
+
         await db.query("COMMIT");
+
+        for (const publicId of publicIdsToDelete) {
+            try {
+                await destroyCloudinaryAsset(publicId);
+            } catch (cleanupError) {
+                logError("Cleanup old settings image failed", cleanupError, {
+                    requesterId: currentUserId,
+                    publicId
+                });
+            }
+        }
 
         auditLog("UPDATE_GENERAL_SETTINGS", currentUserId, {
             updatedFields: Object.keys(payload)
@@ -146,6 +273,172 @@ export const updateGeneralSettings = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Lỗi máy chủ nội bộ"
+        });
+    }
+};
+
+export const uploadGeneralImage = async (req, res) => {
+    const currentUserRole = req.user?.role_id;
+    const currentUserId = req.user?.id;
+
+    try {
+        if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                "/api/settings/general/upload-image",
+                "POST",
+                "settings.general.upload"
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: "Truy cập bị từ chối. Bạn không thể upload ảnh cài đặt."
+            });
+        }
+
+        if (!isCloudinaryConfigured()) {
+            return res.status(500).json({
+                success: false,
+                message: "Cloudinary chưa được cấu hình trên server"
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Vui lòng chọn file ảnh để upload"
+            });
+        }
+
+        const imageTypeRaw = String(req.body?.type || "logo").trim().toLowerCase();
+        const imageType = ALLOWED_GENERAL_IMAGE_TYPES.has(imageTypeRaw) ? imageTypeRaw : "logo";
+        const maxFileSize = imageType === "favicon" ? FAVICON_MAX_FILE_SIZE : LOGO_MAX_FILE_SIZE;
+
+        const fileMimeType = String(req.file.mimetype || "").toLowerCase();
+        const isFavicon = imageType === "favicon";
+        const isAllowedFaviconMime = ALLOWED_FAVICON_MIME_TYPES.has(fileMimeType);
+        const isAllowedImageMime = ALLOWED_IMAGE_MIME_TYPES.includes(fileMimeType);
+        const allowByIcoExtension = isFavicon && hasIcoExtension(req.file.originalname);
+
+        if (!(isAllowedImageMime || (isFavicon && (isAllowedFaviconMime || allowByIcoExtension)))) {
+            return res.status(400).json({
+                success: false,
+                message: "Định dạng file không hợp lệ. Chỉ chấp nhận JPG, PNG, WEBP, GIF, ICO"
+            });
+        }
+
+        if (Number(req.file.size || 0) > maxFileSize) {
+            const maxFileSizeMB = (maxFileSize / (1024 * 1024)).toFixed(2);
+            return res.status(400).json({
+                success: false,
+                message: `File ${imageType} vượt quá giới hạn ${maxFileSizeMB} MB`
+            });
+        }
+
+        const folderRoot = String(process.env.CLOUDINARY_FOLDER || "duhocNB").trim() || "duhocNB";
+
+        const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
+            folder: `${folderRoot}/settings/${imageType}`,
+            resource_type: "image",
+            transformation: [
+                { quality: "auto", fetch_format: "auto" }
+            ]
+        });
+
+        auditLog("UPLOAD_GENERAL_IMAGE", currentUserId, {
+            imageType,
+            publicId: uploadResult.public_id,
+            bytes: uploadResult.bytes,
+            format: uploadResult.format,
+            originalName: req.file.originalname
+        }, req);
+
+        return res.json({
+            success: true,
+            message: "Upload ảnh thành công",
+            data: {
+                imageType,
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+                width: uploadResult.width,
+                height: uploadResult.height,
+                bytes: uploadResult.bytes,
+                format: uploadResult.format
+            }
+        });
+    } catch (error) {
+        logError("Upload general image failed", error, {
+            requesterId: currentUserId,
+            imageType: req.body?.type
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: "Upload ảnh thất bại. Vui lòng thử lại sau."
+        });
+    }
+};
+
+export const deleteGeneralImage = async (req, res) => {
+    const currentUserRole = req.user?.role_id;
+    const currentUserId = req.user?.id;
+
+    try {
+        if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                "/api/settings/general/upload-image",
+                "DELETE",
+                "settings.general.delete_upload"
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: "Truy cập bị từ chối. Bạn không thể xóa ảnh cài đặt."
+            });
+        }
+
+        if (!isCloudinaryConfigured()) {
+            return res.status(500).json({
+                success: false,
+                message: "Cloudinary chưa được cấu hình trên server"
+            });
+        }
+
+        const publicId = String(req.body?.publicId || "").trim();
+        if (!publicId) {
+            return res.status(400).json({
+                success: false,
+                message: "publicId là bắt buộc"
+            });
+        }
+
+        const destroyResult = await destroyCloudinaryAsset(publicId);
+
+        auditLog("DELETE_GENERAL_IMAGE", currentUserId, {
+            publicId,
+            result: destroyResult?.result || "unknown"
+        }, req);
+
+        return res.json({
+            success: true,
+            message: "Đã xóa ảnh khỏi Cloudinary",
+            data: {
+                publicId,
+                result: destroyResult?.result || "unknown"
+            }
+        });
+    } catch (error) {
+        logError("Delete general image failed", error, {
+            requesterId: currentUserId,
+            publicId: req.body?.publicId
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: "Không thể xóa ảnh khỏi Cloudinary"
         });
     }
 };

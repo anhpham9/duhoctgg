@@ -216,6 +216,28 @@ CREATE TABLE IF NOT EXISTS settings (
     group_name VARCHAR(50) CHECK (group_name IN ('general', 'contact', 'seo')) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS media_asset_refs (
+    id BIGSERIAL PRIMARY KEY,
+    owner_type VARCHAR(50) NOT NULL,
+    owner_key VARCHAR(100) NOT NULL,
+    field_name VARCHAR(100) NOT NULL,
+    public_id VARCHAR(255) NOT NULL UNIQUE,
+    asset_url TEXT NOT NULL,
+    resource_type VARCHAR(50) DEFAULT 'image',
+    format VARCHAR(20),
+    bytes BIGINT DEFAULT 0,
+    width INTEGER,
+    height INTEGER,
+    cloud_folder VARCHAR(255),
+    created_by BIGINT REFERENCES users(id),
+    updated_by BIGINT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (owner_type, owner_key, field_name)
+);
+CREATE INDEX IF NOT EXISTS idx_media_asset_refs_owner ON media_asset_refs(owner_type, owner_key);
+CREATE INDEX IF NOT EXISTS idx_media_asset_refs_field ON media_asset_refs(field_name);
+
 -- ======================== NOTIFICATIONS ========================
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
