@@ -13,6 +13,7 @@ const seedScripts = [
   'seedSchoolTypes.js',
   'seedRegions.js',
   'seedSchools.js',
+  'seedSchoolDetailContent.js',
   'seedNews.js',
   'seedNewsViewStats.js',
   'seedContacts.js',

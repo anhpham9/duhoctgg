@@ -33,6 +33,153 @@ const SCHOOL_IMAGE_MAX_FILE_SIZE = Number.isFinite(configuredSchoolImageMaxFileS
     ? configuredSchoolImageMaxFileSize
     : DEFAULT_SCHOOL_IMAGE_MAX_FILE_SIZE;
 
+const sanitizePlainText = (value, maxLength = 5000) => InputSanitizer.sanitizeText(String(value || ""), {
+    maxLength,
+    escapeHtml: false
+});
+
+const toSafeInteger = (value, fallback = 0) => {
+    const number = Number(value);
+    return Number.isInteger(number) ? number : fallback;
+};
+
+const ensureSchoolAccessPermission = (res, { roleId, userId, ip, path, method, action }) => {
+    if (ALLOWED_SCHOOLS_ROLES.includes(roleId)) return true;
+
+    SecurityLogger.logPermissionViolation(userId, ip, path, method, action);
+    res.status(403).json({
+        success: false,
+        message: "Access denied. Insufficient permissions to manage school details."
+    });
+    return false;
+};
+
+const ensureSchoolExists = async (schoolId, client = db) => {
+    const result = await client.query("SELECT id FROM schools WHERE id = $1", [schoolId]);
+    return result.rows.length > 0;
+};
+
+const fetchSchoolDetailContentById = async (schoolId, client = db) => {
+    const introResult = await client.query(`
+        SELECT short_intro, founding_history, school_philosophy
+        FROM school_detail_contents
+        WHERE school_id = $1
+    `, [schoolId]);
+
+    const programOverviewResult = await client.query(`
+        SELECT hero_title, hero_description
+        FROM school_program_overviews
+        WHERE school_id = $1
+    `, [schoolId]);
+
+    const programCardsResult = await client.query(`
+        SELECT id, icon, course_name, course_description, duration_text, price_text, target_text, sort_order, is_active
+        FROM school_program_cards
+        WHERE school_id = $1
+        ORDER BY sort_order ASC, id ASC
+    `, [schoolId]);
+
+    const admissionOverviewResult = await client.query(`
+        SELECT hero_title, hero_description
+        FROM school_admission_overviews
+        WHERE school_id = $1
+    `, [schoolId]);
+
+    const admissionCardsResult = await client.query(`
+        SELECT id, icon, criterion_name, sort_order, is_active
+        FROM school_admission_cards
+        WHERE school_id = $1
+        ORDER BY sort_order ASC, id ASC
+    `, [schoolId]);
+
+    const admissionCardIds = admissionCardsResult.rows.map((row) => row.id);
+    const admissionCardItemsResult = admissionCardIds.length > 0
+        ? await client.query(`
+            SELECT id, admission_card_id, item_text, sort_order
+            FROM school_admission_card_items
+            WHERE admission_card_id = ANY($1::int[])
+            ORDER BY sort_order ASC, id ASC
+        `, [admissionCardIds])
+        : { rows: [] };
+
+    const facilityOverviewResult = await client.query(`
+        SELECT hero_title, hero_description
+        FROM school_facility_overviews
+        WHERE school_id = $1
+    `, [schoolId]);
+
+    const facilityCardsResult = await client.query(`
+        SELECT id, icon, service_name, content_detail, sort_order, is_active
+        FROM school_facility_cards
+        WHERE school_id = $1
+        ORDER BY sort_order ASC, id ASC
+    `, [schoolId]);
+
+    const admissionItemsByCardId = new Map();
+    for (const item of admissionCardItemsResult.rows) {
+        if (!admissionItemsByCardId.has(item.admission_card_id)) {
+            admissionItemsByCardId.set(item.admission_card_id, []);
+        }
+        admissionItemsByCardId.get(item.admission_card_id).push({
+            id: item.id,
+            itemText: item.item_text,
+            sortOrder: item.sort_order
+        });
+    }
+
+    const intro = introResult.rows[0] || {};
+    const programOverview = programOverviewResult.rows[0] || {};
+    const admissionOverview = admissionOverviewResult.rows[0] || {};
+    const facilityOverview = facilityOverviewResult.rows[0] || {};
+
+    return {
+        intro: {
+            shortIntro: intro.short_intro || "",
+            foundingHistory: intro.founding_history || "",
+            schoolPhilosophy: intro.school_philosophy || ""
+        },
+        program: {
+            heroTitle: programOverview.hero_title || "",
+            heroDescription: programOverview.hero_description || "",
+            cards: programCardsResult.rows.map((row) => ({
+                id: row.id,
+                icon: row.icon || "",
+                courseName: row.course_name || "",
+                courseDescription: row.course_description || "",
+                durationText: row.duration_text || "",
+                priceText: row.price_text || "",
+                targetText: row.target_text || "",
+                sortOrder: row.sort_order,
+                isActive: row.is_active
+            }))
+        },
+        admission: {
+            heroTitle: admissionOverview.hero_title || "",
+            heroDescription: admissionOverview.hero_description || "",
+            cards: admissionCardsResult.rows.map((row) => ({
+                id: row.id,
+                icon: row.icon || "",
+                criterionName: row.criterion_name || "",
+                sortOrder: row.sort_order,
+                isActive: row.is_active,
+                items: admissionItemsByCardId.get(row.id) || []
+            }))
+        },
+        facility: {
+            heroTitle: facilityOverview.hero_title || "",
+            heroDescription: facilityOverview.hero_description || "",
+            cards: facilityCardsResult.rows.map((row) => ({
+                id: row.id,
+                icon: row.icon || "",
+                serviceName: row.service_name || "",
+                contentDetail: row.content_detail || "",
+                sortOrder: row.sort_order,
+                isActive: row.is_active
+            }))
+        }
+    };
+};
+
 // Get all schools with region, type, and review info
 export const getSchools = async (req, res) => {
     try {
@@ -1117,5 +1264,268 @@ export const deleteSchoolImage = async (req, res) => {
             success: false,
             message: error?.message || "Delete image failed"
         });
+    }
+};
+
+export const getSchoolDetailContent = async (req, res) => {
+    try {
+        const schoolId = Number(req.params.id);
+        const currentUserRole = req.user.role_id;
+        const currentUserId = req.user.id;
+
+        if (!ensureSchoolAccessPermission(res, {
+            roleId: currentUserRole,
+            userId: currentUserId,
+            ip: req.ip,
+            path: `/api/schools/${req.params.id}/detail-content`,
+            method: "GET",
+            action: "schools.detail.view"
+        })) {
+            return;
+        }
+
+        if (!Number.isInteger(schoolId) || schoolId < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid school ID"
+            });
+        }
+
+        const schoolExists = await ensureSchoolExists(schoolId);
+        if (!schoolExists) {
+            return res.status(404).json({
+                success: false,
+                message: "School not found"
+            });
+        }
+
+        const data = await fetchSchoolDetailContentById(schoolId);
+        return res.json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        logError("Get school detail content failed", error, {
+            requesterId: req.user?.id,
+            schoolId: req.params?.id
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+export const updateSchoolDetailContent = async (req, res) => {
+    const schoolId = Number(req.params.id);
+    const currentUserRole = req.user.role_id;
+    const currentUserId = req.user.id;
+
+    if (!ensureSchoolAccessPermission(res, {
+        roleId: currentUserRole,
+        userId: currentUserId,
+        ip: req.ip,
+        path: `/api/schools/${req.params.id}/detail-content`,
+        method: "PUT",
+        action: "schools.detail.update"
+    })) {
+        return;
+    }
+
+    if (!Number.isInteger(schoolId) || schoolId < 1) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid school ID"
+        });
+    }
+
+    const client = await db.connect();
+    try {
+        await client.query("BEGIN");
+
+        const schoolExists = await ensureSchoolExists(schoolId, client);
+        if (!schoolExists) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({
+                success: false,
+                message: "School not found"
+            });
+        }
+
+        const payload = req.body || {};
+
+        if (payload.intro !== undefined) {
+            const intro = payload.intro || {};
+            await client.query(`
+                INSERT INTO school_detail_contents (school_id, short_intro, founding_history, school_philosophy, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (school_id) DO UPDATE
+                SET short_intro = EXCLUDED.short_intro,
+                    founding_history = EXCLUDED.founding_history,
+                    school_philosophy = EXCLUDED.school_philosophy,
+                    updated_at = NOW()
+            `, [
+                schoolId,
+                sanitizePlainText(intro.shortIntro, 2000),
+                sanitizePlainText(intro.foundingHistory, 20000),
+                sanitizePlainText(intro.schoolPhilosophy, 10000)
+            ]);
+        }
+
+        if (payload.program !== undefined) {
+            const program = payload.program || {};
+            await client.query(`
+                INSERT INTO school_program_overviews (school_id, hero_title, hero_description, updated_at)
+                VALUES ($1, $2, $3, NOW())
+                ON CONFLICT (school_id) DO UPDATE
+                SET hero_title = EXCLUDED.hero_title,
+                    hero_description = EXCLUDED.hero_description,
+                    updated_at = NOW()
+            `, [
+                schoolId,
+                sanitizePlainText(program.heroTitle, 255),
+                sanitizePlainText(program.heroDescription, 2000)
+            ]);
+
+            await client.query(`DELETE FROM school_program_cards WHERE school_id = $1`, [schoolId]);
+
+            const cards = Array.isArray(program.cards) ? program.cards : [];
+            for (let index = 0; index < cards.length; index++) {
+                const card = cards[index] || {};
+                await client.query(`
+                    INSERT INTO school_program_cards (
+                        school_id, icon, course_name, course_description, duration_text, price_text, target_text, sort_order, is_active
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `, [
+                    schoolId,
+                    sanitizePlainText(card.icon, 120),
+                    sanitizePlainText(card.courseName, 255),
+                    sanitizePlainText(card.courseDescription, 3000),
+                    sanitizePlainText(card.durationText, 255),
+                    sanitizePlainText(card.priceText, 255),
+                    sanitizePlainText(card.targetText, 1000),
+                    toSafeInteger(card.sortOrder, index),
+                    card.isActive !== false
+                ]);
+            }
+        }
+
+        if (payload.admission !== undefined) {
+            const admission = payload.admission || {};
+            await client.query(`
+                INSERT INTO school_admission_overviews (school_id, hero_title, hero_description, updated_at)
+                VALUES ($1, $2, $3, NOW())
+                ON CONFLICT (school_id) DO UPDATE
+                SET hero_title = EXCLUDED.hero_title,
+                    hero_description = EXCLUDED.hero_description,
+                    updated_at = NOW()
+            `, [
+                schoolId,
+                sanitizePlainText(admission.heroTitle, 255),
+                sanitizePlainText(admission.heroDescription, 2000)
+            ]);
+
+            const currentAdmissionCards = await client.query(`
+                SELECT id FROM school_admission_cards WHERE school_id = $1
+            `, [schoolId]);
+            const currentAdmissionCardIds = currentAdmissionCards.rows.map((row) => row.id);
+            if (currentAdmissionCardIds.length > 0) {
+                await client.query(
+                    `DELETE FROM school_admission_card_items WHERE admission_card_id = ANY($1::int[])`,
+                    [currentAdmissionCardIds]
+                );
+            }
+            await client.query(`DELETE FROM school_admission_cards WHERE school_id = $1`, [schoolId]);
+
+            const cards = Array.isArray(admission.cards) ? admission.cards : [];
+            for (let index = 0; index < cards.length; index++) {
+                const card = cards[index] || {};
+                const admissionCardResult = await client.query(`
+                    INSERT INTO school_admission_cards (school_id, icon, criterion_name, sort_order, is_active)
+                    VALUES ($1, $2, $3, $4, $5)
+                    RETURNING id
+                `, [
+                    schoolId,
+                    sanitizePlainText(card.icon, 120),
+                    sanitizePlainText(card.criterionName, 255),
+                    toSafeInteger(card.sortOrder, index),
+                    card.isActive !== false
+                ]);
+
+                const admissionCardId = admissionCardResult.rows[0].id;
+                const items = Array.isArray(card.items) ? card.items : [];
+
+                for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+                    const item = items[itemIndex] || {};
+                    await client.query(`
+                        INSERT INTO school_admission_card_items (admission_card_id, item_text, sort_order)
+                        VALUES ($1, $2, $3)
+                    `, [
+                        admissionCardId,
+                        sanitizePlainText(item.itemText || item, 1000),
+                        toSafeInteger(item.sortOrder, itemIndex)
+                    ]);
+                }
+            }
+        }
+
+        if (payload.facility !== undefined) {
+            const facility = payload.facility || {};
+            await client.query(`
+                INSERT INTO school_facility_overviews (school_id, hero_title, hero_description, updated_at)
+                VALUES ($1, $2, $3, NOW())
+                ON CONFLICT (school_id) DO UPDATE
+                SET hero_title = EXCLUDED.hero_title,
+                    hero_description = EXCLUDED.hero_description,
+                    updated_at = NOW()
+            `, [
+                schoolId,
+                sanitizePlainText(facility.heroTitle, 255),
+                sanitizePlainText(facility.heroDescription, 2000)
+            ]);
+
+            await client.query(`DELETE FROM school_facility_cards WHERE school_id = $1`, [schoolId]);
+
+            const cards = Array.isArray(facility.cards) ? facility.cards : [];
+            for (let index = 0; index < cards.length; index++) {
+                const card = cards[index] || {};
+                await client.query(`
+                    INSERT INTO school_facility_cards (school_id, icon, service_name, content_detail, sort_order, is_active)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                `, [
+                    schoolId,
+                    sanitizePlainText(card.icon, 120),
+                    sanitizePlainText(card.serviceName, 255),
+                    sanitizePlainText(card.contentDetail, 6000),
+                    toSafeInteger(card.sortOrder, index),
+                    card.isActive !== false
+                ]);
+            }
+        }
+
+        await client.query("COMMIT");
+
+        const data = await fetchSchoolDetailContentById(schoolId);
+        return res.json({
+            success: true,
+            message: "School detail content saved successfully",
+            data
+        });
+    } catch (error) {
+        await client.query("ROLLBACK");
+        logError("Update school detail content failed", error, {
+            requesterId: currentUserId,
+            schoolId: req.params?.id,
+            payload: req.body
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    } finally {
+        client.release();
     }
 };

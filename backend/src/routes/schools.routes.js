@@ -7,6 +7,8 @@ import {
     updateSchool, 
     deleteSchool,
     getSchoolsStats,
+    getSchoolDetailContent,
+    updateSchoolDetailContent,
     uploadSchoolImage,
     deleteSchoolImage
 } from '../controllers/schools.controller.js';
@@ -33,6 +35,8 @@ router.get('/', getSchools);                    // GET /api/schools
 router.get('/stats', getSchoolsStats);          // GET /api/schools/stats
 router.post('/upload-image', rateLimiter.uploadLimiter, schoolImageUpload.single('image'), uploadSchoolImage); // POST /api/schools/upload-image
 router.delete('/upload-image', deleteSchoolImage); // DELETE /api/schools/upload-image
+router.get('/:id/detail-content', getSchoolDetailContent); // GET /api/schools/:id/detail-content
+router.put('/:id/detail-content', updateSchoolDetailContent); // PUT /api/schools/:id/detail-content
 router.get('/:id', getSchoolById);              // GET /api/schools/:id
 router.post('/', createSchool);                 // POST /api/schools
 router.put('/:id', updateSchool);               // PUT /api/schools/:id

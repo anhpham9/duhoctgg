@@ -39,7 +39,20 @@
                 <button class="btn btn-primary" @click="fetchSchoolDetail">Thử lại</button>
             </div>
 
-            <form v-else class="school-form" @submit.prevent="handleUpdateSchool">
+            <div v-else class="tab-nav top-tabs">
+                <button
+                    v-for="tab in contentTabs"
+                    :key="tab.key"
+                    type="button"
+                    class="tab-btn"
+                    :class="{ active: activeContentTab === tab.key }"
+                    @click="activeContentTab = tab.key"
+                >
+                    {{ tab.label }}
+                </button>
+            </div>
+
+            <form v-if="!loading && !error && activeContentTab === 'main'" class="school-form" @submit.prevent="handleUpdateSchool">
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Tên trường bằng tiếng Nhật <span class="required">*</span></label>
@@ -320,6 +333,209 @@
                     </button>
                 </div>
             </form>
+
+            <div v-if="!loading && !error && activeContentTab !== 'main'" class="detail-tabs-panel">
+                <div class="detail-tabs-header">
+                    <h2><i class="fas fa-layer-group"></i> Nội dung chi tiết trường học</h2>
+                    <p>School ID: #{{ schoolId }} - Có thể lưu nháp từng tab hoặc lưu tất cả cùng lúc.</p>
+                </div>
+
+                <div v-if="activeContentTab === 'intro'" class="tab-content">
+                    <h3>Giới thiệu trường</h3>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Giới thiệu ngắn gọn</label>
+                            <textarea v-model.trim="detailContent.intro.shortIntro" class="form-control" rows="4" placeholder="Đoạn giới thiệu ngắn gọn về trường"></textarea>
+                        </div>
+                        <div class="form-group full">
+                            <label>Lịch sử thành lập</label>
+                            <textarea v-model.trim="detailContent.intro.foundingHistory" class="form-control" rows="8" placeholder="Nội dung lịch sử thành lập trường"></textarea>
+                        </div>
+                        <div class="form-group full">
+                            <label>Lý niệm nhà trường</label>
+                            <textarea v-model.trim="detailContent.intro.schoolPhilosophy" class="form-control" rows="6" placeholder="Nội dung lý niệm của nhà trường"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeContentTab === 'program'" class="tab-content">
+                    <h3>Chương trình học</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Hero H3</label>
+                            <input v-model.trim="detailContent.program.heroTitle" class="form-control" type="text" placeholder="Tiêu đề phần chương trình học">
+                        </div>
+                        <div class="form-group full">
+                            <label>Hero description</label>
+                            <textarea v-model.trim="detailContent.program.heroDescription" class="form-control" rows="3" placeholder="Mô tả ngắn 100-200 chữ"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="cards-header">
+                        <h4>Cards khóa học</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="addProgramCard">
+                            <i class="fas fa-plus"></i> Thêm card
+                        </button>
+                    </div>
+
+                    <div v-for="(card, index) in detailContent.program.cards" :key="`program-${index}`" class="content-card">
+                        <div class="content-card-grid">
+                            <div class="form-group">
+                                <label>
+                                    Icon
+                                    <span v-if="card.icon" class="icon-preview-chip" :title="card.icon">
+                                        <i :class="card.icon"></i>
+                                        <span>{{ card.icon }}</span>
+                                    </span>
+                                </label>
+                                <input v-model.trim="card.icon" class="form-control" type="text" placeholder="fas fa-graduation-cap">
+                            </div>
+                            <div class="form-group">
+                                <label>Tên khóa học</label>
+                                <input v-model.trim="card.courseName" class="form-control" type="text" placeholder="Tên khóa học">
+                            </div>
+                            <div class="form-group full">
+                                <label>Giải thích khóa học</label>
+                                <textarea v-model.trim="card.courseDescription" class="form-control" rows="3" placeholder="Mô tả khóa học"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Thời gian</label>
+                                <input v-model.trim="card.durationText" class="form-control" type="text" placeholder="12 tháng">
+                            </div>
+                            <div class="form-group">
+                                <label>Giá tiền</label>
+                                <input v-model.trim="card.priceText" class="form-control" type="text" placeholder="850,000 JPY/năm">
+                            </div>
+                            <div class="form-group full">
+                                <label>Mục tiêu / tỷ lệ</label>
+                                <textarea v-model.trim="card.targetText" class="form-control" rows="2" placeholder="Tỷ lệ đỗ JLPT N2 đạt 85%..."></textarea>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-icon-danger" aria-label="Xóa card" @click="removeProgramCard(index)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="activeContentTab === 'admission'" class="tab-content">
+                    <h3>Điều kiện tuyển sinh</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Hero H3</label>
+                            <input v-model.trim="detailContent.admission.heroTitle" class="form-control" type="text" placeholder="Tiêu đề điều kiện tuyển sinh">
+                        </div>
+                        <div class="form-group full">
+                            <label>Hero description</label>
+                            <textarea v-model.trim="detailContent.admission.heroDescription" class="form-control" rows="3" placeholder="Mô tả ngắn 100-200 chữ"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="cards-header">
+                        <h4>Cards tiêu chí</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="addAdmissionCard">
+                            <i class="fas fa-plus"></i> Thêm card
+                        </button>
+                    </div>
+
+                    <div v-for="(card, cardIndex) in detailContent.admission.cards" :key="`admission-${cardIndex}`" class="content-card">
+                        <div class="content-card-grid">
+                            <div class="form-group">
+                                <label>
+                                    Icon
+                                    <span v-if="card.icon" class="icon-preview-chip" :title="card.icon">
+                                        <i :class="card.icon"></i>
+                                        <span>{{ card.icon }}</span>
+                                    </span>
+                                </label>
+                                <input v-model.trim="card.icon" class="form-control" type="text" placeholder="fas fa-file-signature">
+                            </div>
+                            <div class="form-group">
+                                <label>Tên tiêu chí</label>
+                                <input v-model.trim="card.criterionName" class="form-control" type="text" placeholder="Ví dụ: Hồ sơ học vấn">
+                            </div>
+                            <div class="form-group full">
+                                <label>Nội dung tiêu chí nhỏ</label>
+                                <div class="subitems-list">
+                                    <div v-for="(item, itemIndex) in card.items" :key="`admission-${cardIndex}-item-${itemIndex}`" class="subitem-row">
+                                        <input v-model.trim="item.itemText" class="form-control" type="text" placeholder="Mỗi dòng là 1 gạch đầu dòng">
+                                        <button type="button" class="btn-icon-danger" @click="removeAdmissionItem(cardIndex, itemIndex)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" @click="addAdmissionItem(cardIndex)">
+                                    <i class="fas fa-plus"></i> Thêm gạch đầu dòng
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-icon-danger" @click="removeAdmissionCard(cardIndex)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="activeContentTab === 'facility'" class="tab-content">
+                    <h3>Cơ sở vật chất & dịch vụ</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Hero H3</label>
+                            <input v-model.trim="detailContent.facility.heroTitle" class="form-control" type="text" placeholder="Tiêu đề cơ sở vật chất & dịch vụ">
+                        </div>
+                        <div class="form-group full">
+                            <label>Hero description</label>
+                            <textarea v-model.trim="detailContent.facility.heroDescription" class="form-control" rows="3" placeholder="Mô tả ngắn 100-200 chữ"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="cards-header">
+                        <h4>Cards cơ sở vật chất / dịch vụ</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="addFacilityCard">
+                            <i class="fas fa-plus"></i> Thêm card
+                        </button>
+                    </div>
+
+                    <div v-for="(card, index) in detailContent.facility.cards" :key="`facility-${index}`" class="content-card">
+                        <div class="content-card-grid">
+                            <div class="form-group">
+                                <label>
+                                    Icon
+                                    <span v-if="card.icon" class="icon-preview-chip" :title="card.icon">
+                                        <i :class="card.icon"></i>
+                                        <span>{{ card.icon }}</span>
+                                    </span>
+                                </label>
+                                <input v-model.trim="card.icon" class="form-control" type="text" placeholder="fas fa-building">
+                            </div>
+                            <div class="form-group">
+                                <label>Tên dịch vụ</label>
+                                <input v-model.trim="card.serviceName" class="form-control" type="text" placeholder="Tên cơ sở vật chất / dịch vụ">
+                            </div>
+                            <div class="form-group full">
+                                <label>Nội dung chi tiết</label>
+                                <textarea v-model.trim="card.contentDetail" class="form-control" rows="5" placeholder="Nội dung chi tiết khoảng 200-500 chữ"></textarea>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-icon-danger" @click="removeFacilityCard(index)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-actions">
+                    <button type="button" class="btn btn-secondary" :disabled="detailSaving" @click="resetTemplateForActiveTab">
+                        <i class="fas fa-magic"></i>
+                        Reset ve du lieu mau tab nay
+                    </button>
+                    <button type="button" class="btn btn-secondary" :disabled="detailSaving" @click="saveDraftByActiveTab">
+                        <i v-if="detailSaving && savingScope === activeContentTab" class="fas fa-spinner fa-spin"></i>
+                        {{ detailSaving && savingScope === activeContentTab ? 'Đang lưu nháp...' : 'Lưu nháp tab hiện tại' }}
+                    </button>
+                    <button type="button" class="btn btn-primary" :disabled="detailSaving" @click="saveAllDetailContent">
+                        <i v-if="detailSaving && savingScope === 'all'" class="fas fa-spinner fa-spin"></i>
+                        {{ detailSaving && savingScope === 'all' ? 'Đang lưu tất cả...' : 'Lưu tất cả' }}
+                    </button>
+                </div>
+            </div>
         </div>
 
         <Toast />
@@ -350,6 +566,9 @@ const schoolTypes = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
+const activeContentTab = ref('main')
+const detailSaving = ref(false)
+const savingScope = ref('')
 const INTAKE_MONTH_OPTIONS = [1, 4, 7, 10]
 const logoInputMode = ref('upload')
 const thumbnailInputMode = ref('upload')
@@ -413,6 +632,403 @@ const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 const logoPreviewSrc = computed(() => String(logoPreviewTempUrl.value || form.logo_url || '').trim())
 const thumbnailPreviewSrc = computed(() => String(thumbnailPreviewTempUrl.value || form.thumbnail_url || '').trim())
+const schoolIdNumber = computed(() => Number(schoolId))
+
+const contentTabs = [
+    { key: 'main', label: 'Thông tin chính' },
+    { key: 'intro', label: 'Giới thiệu trường' },
+    { key: 'program', label: 'Chương trình học' },
+    { key: 'admission', label: 'Điều kiện tuyển sinh' },
+    { key: 'facility', label: 'Cơ sở vật chất & dịch vụ' }
+]
+
+const TAB_LABELS = {
+    intro: 'Gioi thieu truong',
+    program: 'Chuong trinh hoc',
+    admission: 'Dieu kien tuyen sinh',
+    facility: 'Co so vat chat va dich vu'
+}
+
+const detailContent = reactive({
+    intro: {
+        shortIntro: '',
+        foundingHistory: '',
+        schoolPhilosophy: ''
+    },
+    program: {
+        heroTitle: '',
+        heroDescription: '',
+        cards: []
+    },
+    admission: {
+        heroTitle: '',
+        heroDescription: '',
+        cards: []
+    },
+    facility: {
+        heroTitle: '',
+        heroDescription: '',
+        cards: []
+    }
+})
+
+const newProgramCard = () => ({
+    icon: '',
+    courseName: '',
+    courseDescription: '',
+    durationText: '',
+    priceText: '',
+    targetText: '',
+    sortOrder: 0,
+    isActive: true
+})
+
+const newAdmissionCard = () => ({
+    icon: '',
+    criterionName: '',
+    sortOrder: 0,
+    isActive: true,
+    items: [{ itemText: '', sortOrder: 0 }]
+})
+
+const newFacilityCard = () => ({
+    icon: '',
+    serviceName: '',
+    contentDetail: '',
+    sortOrder: 0,
+    isActive: true
+})
+
+const addProgramCard = () => {
+    detailContent.program.cards.push({
+        ...newProgramCard(),
+        sortOrder: detailContent.program.cards.length
+    })
+}
+
+const removeProgramCard = (index) => {
+    detailContent.program.cards.splice(index, 1)
+}
+
+const addAdmissionCard = () => {
+    detailContent.admission.cards.push({
+        ...newAdmissionCard(),
+        sortOrder: detailContent.admission.cards.length
+    })
+}
+
+const removeAdmissionCard = (index) => {
+    detailContent.admission.cards.splice(index, 1)
+}
+
+const addAdmissionItem = (cardIndex) => {
+    detailContent.admission.cards[cardIndex]?.items?.push({ itemText: '', sortOrder: detailContent.admission.cards[cardIndex].items.length })
+}
+
+const removeAdmissionItem = (cardIndex, itemIndex) => {
+    detailContent.admission.cards[cardIndex]?.items?.splice(itemIndex, 1)
+}
+
+const addFacilityCard = () => {
+    detailContent.facility.cards.push({
+        ...newFacilityCard(),
+        sortOrder: detailContent.facility.cards.length
+    })
+}
+
+const removeFacilityCard = (index) => {
+    detailContent.facility.cards.splice(index, 1)
+}
+
+const syncDetailContentFromResponse = (payload = {}) => {
+    const intro = payload?.intro || {}
+    const program = payload?.program || {}
+    const admission = payload?.admission || {}
+    const facility = payload?.facility || {}
+
+    detailContent.intro.shortIntro = String(intro.shortIntro || '')
+    detailContent.intro.foundingHistory = String(intro.foundingHistory || '')
+    detailContent.intro.schoolPhilosophy = String(intro.schoolPhilosophy || '')
+
+    detailContent.program.heroTitle = String(program.heroTitle || '')
+    detailContent.program.heroDescription = String(program.heroDescription || '')
+    detailContent.program.cards = Array.isArray(program.cards)
+        ? program.cards.map((card, index) => ({
+            ...newProgramCard(),
+            ...card,
+            sortOrder: Number.isInteger(Number(card?.sortOrder)) ? Number(card.sortOrder) : index,
+            isActive: card?.isActive !== false
+        }))
+        : []
+
+    detailContent.admission.heroTitle = String(admission.heroTitle || '')
+    detailContent.admission.heroDescription = String(admission.heroDescription || '')
+    detailContent.admission.cards = Array.isArray(admission.cards)
+        ? admission.cards.map((card, index) => ({
+            ...newAdmissionCard(),
+            ...card,
+            sortOrder: Number.isInteger(Number(card?.sortOrder)) ? Number(card.sortOrder) : index,
+            isActive: card?.isActive !== false,
+            items: Array.isArray(card?.items)
+                ? card.items.map((item, itemIndex) => ({
+                    itemText: String(item?.itemText || ''),
+                    sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : itemIndex
+                }))
+                : [{ itemText: '', sortOrder: 0 }]
+        }))
+        : []
+
+    detailContent.facility.heroTitle = String(facility.heroTitle || '')
+    detailContent.facility.heroDescription = String(facility.heroDescription || '')
+    detailContent.facility.cards = Array.isArray(facility.cards)
+        ? facility.cards.map((card, index) => ({
+            ...newFacilityCard(),
+            ...card,
+            sortOrder: Number.isInteger(Number(card?.sortOrder)) ? Number(card.sortOrder) : index,
+            isActive: card?.isActive !== false
+        }))
+        : []
+}
+
+const getDetailPayloadBySection = (section = 'all') => {
+    const payload = {}
+
+    if (section === 'all' || section === 'intro') {
+        payload.intro = {
+            shortIntro: detailContent.intro.shortIntro,
+            foundingHistory: detailContent.intro.foundingHistory,
+            schoolPhilosophy: detailContent.intro.schoolPhilosophy
+        }
+    }
+
+    if (section === 'all' || section === 'program') {
+        payload.program = {
+            heroTitle: detailContent.program.heroTitle,
+            heroDescription: detailContent.program.heroDescription,
+            cards: detailContent.program.cards.map((card, index) => ({
+                icon: card.icon,
+                courseName: card.courseName,
+                courseDescription: card.courseDescription,
+                durationText: card.durationText,
+                priceText: card.priceText,
+                targetText: card.targetText,
+                sortOrder: Number.isInteger(Number(card.sortOrder)) ? Number(card.sortOrder) : index,
+                isActive: card.isActive !== false
+            }))
+        }
+    }
+
+    if (section === 'all' || section === 'admission') {
+        payload.admission = {
+            heroTitle: detailContent.admission.heroTitle,
+            heroDescription: detailContent.admission.heroDescription,
+            cards: detailContent.admission.cards.map((card, index) => ({
+                icon: card.icon,
+                criterionName: card.criterionName,
+                sortOrder: Number.isInteger(Number(card.sortOrder)) ? Number(card.sortOrder) : index,
+                isActive: card.isActive !== false,
+                items: (card.items || []).map((item, itemIndex) => ({
+                    itemText: item.itemText,
+                    sortOrder: Number.isInteger(Number(item.sortOrder)) ? Number(item.sortOrder) : itemIndex
+                })).filter((item) => String(item.itemText || '').trim())
+            }))
+        }
+    }
+
+    if (section === 'all' || section === 'facility') {
+        payload.facility = {
+            heroTitle: detailContent.facility.heroTitle,
+            heroDescription: detailContent.facility.heroDescription,
+            cards: detailContent.facility.cards.map((card, index) => ({
+                icon: card.icon,
+                serviceName: card.serviceName,
+                contentDetail: card.contentDetail,
+                sortOrder: Number.isInteger(Number(card.sortOrder)) ? Number(card.sortOrder) : index,
+                isActive: card.isActive !== false
+            }))
+        }
+    }
+
+    return payload
+}
+
+const fetchSchoolDetailContent = async () => {
+    if (!Number.isInteger(schoolIdNumber.value) || schoolIdNumber.value < 1) return
+
+    try {
+        const response = await fetch(`${API_BASE}/schools/${schoolIdNumber.value}/detail-content`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data?.message || `HTTP ${response.status}`)
+        syncDetailContentFromResponse(data?.data || {})
+    } catch (err) {
+        showError(err.message || 'Khong the tai noi dung chi tiet truong hoc')
+    }
+}
+
+const saveDetailBySection = async (section) => {
+    if (!Number.isInteger(schoolIdNumber.value) || schoolIdNumber.value < 1) {
+        showError('School ID khong hop le')
+        return
+    }
+
+    detailSaving.value = true
+    savingScope.value = section
+
+    try {
+        const response = await fetch(`${API_BASE}/schools/${schoolIdNumber.value}/detail-content`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(getDetailPayloadBySection(section))
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+            throw new Error(data?.message || `HTTP ${response.status}`)
+        }
+
+        syncDetailContentFromResponse(data?.data || {})
+        showSuccess(section === 'all' ? 'Da luu tat ca noi dung chi tiet' : 'Da luu nhap tab hien tai')
+    } catch (err) {
+        showError(err.message || 'Khong the luu noi dung chi tiet')
+    } finally {
+        detailSaving.value = false
+        savingScope.value = ''
+    }
+}
+
+const saveDraftByActiveTab = async () => {
+    await saveDetailBySection(activeContentTab.value)
+}
+
+const saveAllDetailContent = async () => {
+    await saveDetailBySection('all')
+}
+
+const applyTemplateBySection = (section) => {
+    const schoolName = String(form.name || `Truong #${schoolIdNumber.value || schoolId}`).trim()
+
+    if (section === 'intro') {
+        detailContent.intro.shortIntro = `${schoolName} la truong Nhat ngu tap trung dao tao thuc hanh, ho tro hoc vien Viet Nam hoi nhap nhanh tai Nhat Ban.`
+        detailContent.intro.foundingHistory = `${schoolName} duoc phat trien theo dinh huong dao tao tieng Nhat ung dung, ket hop bo sung ky nang hoc thuat va ky nang song cho du hoc sinh.`
+        detailContent.intro.schoolPhilosophy = 'Xay dung nen tang ngon ngu vung chac, phat trien tu duy hoc tap chu dong va dong hanh cung hoc vien den muc tieu hoc tap dai han.'
+        return
+    }
+
+    if (section === 'program') {
+        detailContent.program.heroTitle = 'Chuong trinh hoc theo muc tieu dau ra'
+        detailContent.program.heroDescription = 'Lo trinh linh hoat tu so cap den luyen thi, can bang giua ngu phap, hoi thoai va ren luyen ky nang hoc thuat.'
+        detailContent.program.cards = [
+            {
+                ...newProgramCard(),
+                icon: 'fas fa-graduation-cap',
+                courseName: 'Khoa so cap',
+                courseDescription: `Trang bi nen tang tieng Nhat giao tiep va ngu phap can ban tai ${schoolName}.`,
+                durationText: '12 thang',
+                priceText: '760,000 JPY/nam',
+                targetText: 'Muc tieu JLPT N4-N3',
+                sortOrder: 0
+            },
+            {
+                ...newProgramCard(),
+                icon: 'fas fa-book-open',
+                courseName: 'Khoa trung cap',
+                courseDescription: 'Tang cuong doc hieu, viet luan va thuyet trinh, phu hop hoc vien da co nen tang co ban.',
+                durationText: '18 thang',
+                priceText: '830,000 JPY/nam',
+                targetText: 'Muc tieu JLPT N2',
+                sortOrder: 1
+            },
+            {
+                ...newProgramCard(),
+                icon: 'fas fa-award',
+                courseName: 'Lop luyen thi chuyen sau',
+                courseDescription: 'Tap trung EJU, phong van va dinh huong vao truong chuyen mon hoac dai hoc.',
+                durationText: '6-12 thang',
+                priceText: '420,000 JPY/khoa',
+                targetText: 'Lich hoc linh hoat theo ky nhap hoc',
+                sortOrder: 2
+            }
+        ]
+        return
+    }
+
+    if (section === 'admission') {
+        detailContent.admission.heroTitle = 'Dieu kien tuyen sinh ro rang'
+        detailContent.admission.heroDescription = 'Tieu chi minh bach, co checklist cu the va tu van dong hanh xuyen suot tu luc chuan bi ho so den khi nhap hoc.'
+        detailContent.admission.cards = [
+            {
+                ...newAdmissionCard(),
+                icon: 'fas fa-file-signature',
+                criterionName: 'Hoc van',
+                sortOrder: 0,
+                items: [
+                    { itemText: 'Tot nghiep THPT tro len', sortOrder: 0 },
+                    { itemText: 'Bang diem day du va hop le', sortOrder: 1 }
+                ]
+            },
+            {
+                ...newAdmissionCard(),
+                icon: 'fas fa-language',
+                criterionName: 'Nang luc tieng Nhat',
+                sortOrder: 1,
+                items: [
+                    { itemText: 'Toi thieu 150 gio hoc tieng Nhat', sortOrder: 0 },
+                    { itemText: 'Khuyen khich co JLPT N5 tro len', sortOrder: 1 }
+                ]
+            },
+            {
+                ...newAdmissionCard(),
+                icon: 'fas fa-passport',
+                criterionName: 'Ho so tai chinh va visa',
+                sortOrder: 2,
+                items: [
+                    { itemText: 'Chung minh tai chinh theo quy dinh', sortOrder: 0 },
+                    { itemText: 'Ho so bao lanh day du, hop le', sortOrder: 1 }
+                ]
+            }
+        ]
+        return
+    }
+
+    if (section === 'facility') {
+        detailContent.facility.heroTitle = 'Co so vat chat va dich vu dong bo'
+        detailContent.facility.heroDescription = 'Moi truong hoc va sinh hoat duoc dau tu day du, ho tro toi uu qua trinh hoc tap va on dinh cuoc song du hoc sinh.'
+        detailContent.facility.cards = [
+            {
+                ...newFacilityCard(),
+                icon: 'fas fa-building',
+                serviceName: 'Ky tuc xa',
+                contentDetail: 'Ky tuc xa cach truong 10-20 phut di tau, co nhieu lua chon phong va quan ly ho tro 24/7.',
+                sortOrder: 0
+            },
+            {
+                ...newFacilityCard(),
+                icon: 'fas fa-book-reader',
+                serviceName: 'Phong tu hoc va thu vien',
+                contentDetail: 'Khong gian hoc tap mo den toi, co tai lieu luyen thi JLPT va EJU cap nhat lien tuc.',
+                sortOrder: 1
+            },
+            {
+                ...newFacilityCard(),
+                icon: 'fas fa-users',
+                serviceName: 'Ho tro viec lam them',
+                contentDetail: 'Doi ngu ho tro ket noi cong viec part-time phu hop va huong dan quy dinh lao dong can thiet.',
+                sortOrder: 2
+            }
+        ]
+    }
+}
+
+const resetTemplateForActiveTab = () => {
+    const section = activeContentTab.value
+    applyTemplateBySection(section)
+    showInfo(`Da nap du lieu mau cho tab ${TAB_LABELS[section] || section}. Bam Luu nhap de ghi vao he thong.`)
+}
 
 const toSlug = (text) => {
     return String(text || '')
@@ -1019,7 +1635,7 @@ const handleUpdateSchool = async () => {
 onMounted(async () => {
     await fetchCurrentUser()
     if (hasPermission.value) {
-        await Promise.all([fetchRegions(), fetchSchoolTypes(), fetchSchoolDetail()])
+        await Promise.all([fetchRegions(), fetchSchoolTypes(), fetchSchoolDetail(), fetchSchoolDetailContent()])
     }
 })
 
@@ -1348,6 +1964,137 @@ textarea.form-control {
     margin-bottom: 0.5rem;
 }
 
+.detail-tabs-panel {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 2px dashed #dbe6f5;
+}
+
+.detail-tabs-header h2 {
+    margin: 0;
+    color: #0f2f57;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-tabs-header p {
+    margin: 0.4rem 0 1rem;
+    color: #52617b;
+}
+
+.tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.top-tabs {
+    margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+    border: 1px solid #cdd8ea;
+    background: #f7faff;
+    color: #214165;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tab-btn.active {
+    background: #1976d2;
+    border-color: #1976d2;
+    color: #fff;
+}
+
+.tab-content {
+    border: 1px solid #e1e9f5;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #fbfdff;
+}
+
+.tab-content h3 {
+    margin-top: 0;
+    margin-bottom: 0.9rem;
+    color: #173a63;
+}
+
+.cards-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.cards-header h4 {
+    margin: 0;
+}
+
+.content-card {
+    border: 1px solid #d8e3f4;
+    border-radius: 10px;
+    background: #fff;
+    padding: 0.9rem;
+    margin-bottom: 0.8rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.content-card:has(> .btn-icon-danger:hover) {
+    background: #fff2f4;
+    border-color: #f3b4bd;
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.08);
+}
+
+.content-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.subitems-list {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.subitem-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+}
+
+.icon-preview-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: 0.45rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #eef5ff;
+    color: #204a78;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.icon-preview-chip i {
+    font-size: 0.85rem;
+}
+
+.tab-actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
 .field-hint {
     margin: 0 0 0.75rem;
     color: #6b7280;
@@ -1449,6 +2196,10 @@ textarea.form-control {
     .features-header {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .content-card-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>

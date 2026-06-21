@@ -141,6 +141,98 @@ CREATE TABLE IF NOT EXISTS schools (
 CREATE INDEX IF NOT EXISTS idx_schools_region ON schools(region_id);
 CREATE INDEX IF NOT EXISTS idx_schools_status ON schools(status);
 
+-- ======================== SCHOOL_DETAIL_CONTENTS ========================
+CREATE TABLE IF NOT EXISTS school_detail_contents (
+    school_id INTEGER PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,
+    short_intro TEXT,
+    founding_history TEXT,
+    school_philosophy TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ======================== SCHOOL_PROGRAM_OVERVIEWS ========================
+CREATE TABLE IF NOT EXISTS school_program_overviews (
+    school_id INTEGER PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,
+    hero_title VARCHAR(255),
+    hero_description TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ======================== SCHOOL_PROGRAM_CARDS ========================
+CREATE TABLE IF NOT EXISTS school_program_cards (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    icon VARCHAR(120),
+    course_name VARCHAR(255) NOT NULL,
+    course_description TEXT,
+    duration_text VARCHAR(255),
+    price_text VARCHAR(255),
+    target_text TEXT,
+    sort_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_school_program_cards_school ON school_program_cards(school_id);
+
+-- ======================== SCHOOL_ADMISSION_OVERVIEWS ========================
+CREATE TABLE IF NOT EXISTS school_admission_overviews (
+    school_id INTEGER PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,
+    hero_title VARCHAR(255),
+    hero_description TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ======================== SCHOOL_ADMISSION_CARDS ========================
+CREATE TABLE IF NOT EXISTS school_admission_cards (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    icon VARCHAR(120),
+    criterion_name VARCHAR(255) NOT NULL,
+    sort_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_school_admission_cards_school ON school_admission_cards(school_id);
+
+-- ======================== SCHOOL_ADMISSION_CARD_ITEMS ========================
+CREATE TABLE IF NOT EXISTS school_admission_card_items (
+    id SERIAL PRIMARY KEY,
+    admission_card_id INTEGER NOT NULL REFERENCES school_admission_cards(id) ON DELETE CASCADE,
+    item_text TEXT NOT NULL,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_school_admission_items_card ON school_admission_card_items(admission_card_id);
+
+-- ======================== SCHOOL_FACILITY_OVERVIEWS ========================
+CREATE TABLE IF NOT EXISTS school_facility_overviews (
+    school_id INTEGER PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,
+    hero_title VARCHAR(255),
+    hero_description TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ======================== SCHOOL_FACILITY_CARDS ========================
+CREATE TABLE IF NOT EXISTS school_facility_cards (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    icon VARCHAR(120),
+    service_name VARCHAR(255) NOT NULL,
+    content_detail TEXT,
+    sort_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_school_facility_cards_school ON school_facility_cards(school_id);
+
 -- ======================== SCHOOL_REVIEWS ========================
 CREATE TABLE IF NOT EXISTS school_reviews (
     id SERIAL PRIMARY KEY,
