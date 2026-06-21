@@ -55,13 +55,7 @@ const FALLBACK_FOOTER = {
     contactEmail: '',
     phone: '',
     hotline: '',
-    address: '123 Đường ABC, Q1, HCM',
-    socialLinks: [
-        { id: 'fallback-facebook', name: 'Facebook', icon: 'fab fa-facebook', url: '#' },
-        { id: 'fallback-tiktok', name: 'TikTok', icon: 'fab fa-tiktok', url: '#' },
-        { id: 'fallback-youtube', name: 'YouTube', icon: 'fab fa-youtube', url: '#' },
-        { id: 'fallback-instagram', name: 'Instagram', icon: 'fab fa-instagram', url: '#' }
-    ]
+    address: ''
 }
 
 const serviceLinks = [
@@ -85,8 +79,7 @@ const footer = computed(() => {
 
 const socialLinks = computed(() => {
     const list = Array.isArray(footer.value.socialLinks) ? footer.value.socialLinks : []
-    const valid = list.filter((item) => String(item?.url || '').trim())
-    return valid.length > 0 ? valid : FALLBACK_FOOTER.socialLinks
+    return list.filter((item) => String(item?.url || '').trim())
 })
 
 const footerBrandName = computed(() => {

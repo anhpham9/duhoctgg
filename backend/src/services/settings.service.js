@@ -224,7 +224,8 @@ export const getPublicFooterData = async () => {
             `SELECT id, name, icon, url, description, display_order
              FROM social_links
              WHERE is_active = TRUE
-             ORDER BY display_order ASC, id ASC`
+               ORDER BY display_order ASC, id ASC
+               LIMIT 5`
         )
     ]);
 

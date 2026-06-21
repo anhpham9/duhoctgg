@@ -3,19 +3,23 @@
         <div class="container">
             <div class="header-top-content">
                 <div class="social-icons-top">
-                    <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-tiktok"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a v-for="item in socialLinks" :key="item.id" :href="item.url" class="social-icon" target="_blank"
+                        rel="noopener noreferrer" :aria-label="item.name">
+                        <i :class="item.icon || 'fas fa-link'"></i>
+                    </a>
                 </div>
                 <div class="contact-info-top">
-                    <div class="email-info">
-                        <i class="fas fa-envelope"></i>
-                        <span>info@duhocnb.com</span>
+                    <div v-if="displayEmail">
+                        <a :href="`mailto:${displayEmail}`" class="email-info">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ displayEmail }}</span>
+                        </a>
                     </div>
-                    <div class="hotline-info">
-                        <i class="fas fa-phone"></i>
-                        <span class="hotline-label">Hotline: </span><span>+84 123 456 789</span>
+                    <div v-if="displayHotline">
+                        <a :href="`tel:${displayHotline}`" class="hotline-info">
+                            <i class="fas fa-phone"></i>
+                            <span class="hotline-label">Hotline: </span><span>{{ displayHotline }}</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -24,7 +28,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+
+const config = useRuntimeConfig()
+
+// Dùng cùng key với Footer.vue → Nuxt dedup, không gọi thêm request
+const { data } = await useFetch(`${config.public.apiBase}/public/footer`, {
+    key: 'public-footer-data'
+})
+
+const footer = computed(() => data.value?.data || {})
+
+const socialLinks = computed(() => {
+    const list = Array.isArray(footer.value.socialLinks) ? footer.value.socialLinks : []
+    return list.filter((item) => String(item?.url || '').trim())
+})
+
+const displayEmail = computed(() => footer.value.contactEmail || '')
+const displayHotline = computed(() => footer.value.hotline || footer.value.phone || '')
 
 const headerTop = ref(null)
 const isHidden = ref(false)
@@ -34,17 +55,13 @@ let ticking = false
 const handleScroll = () => {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop
 
-    // Hide/show header-top on scroll
     if (scrollTop > 80) {
         if (scrollTop > lastScrollTop && scrollTop > 150) {
-            // Scrolling down past threshold
             isHidden.value = true
         } else if (scrollTop < lastScrollTop) {
-            // Scrolling up
             isHidden.value = false
         }
     } else {
-        // At top of page
         isHidden.value = false
     }
 
@@ -106,9 +123,25 @@ onBeforeUnmount(() => {
     text-decoration: none;
 }
 
+.social-icon .fa-zalo {
+    display: inline-block !important;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    background-image: url(/assets/icons/zalo.svg);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-top: 5px;
+}
+
 .social-icon:hover {
     color: #ffeb3b;
     transform: translateY(-2px);
+}
+
+.social-icon:hover .fa-zalo {
+    background-color: #ffeb3b;
 }
 
 .contact-info-top {
@@ -122,6 +155,13 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     gap: 8px;
+    text-decoration: none;
+    color: white;
+}
+
+.email-info:hover,
+.hotline-info:hover {
+    color: #ffeb3b;
 }
 
 .email-info i,
@@ -153,6 +193,11 @@ onBeforeUnmount(() => {
         font-size: 14px;
     }
 
+    .social-icon .fa-zalo {
+        width: 14px;
+        height: 14px;
+    }
+
     .contact-info-top {
         gap: 0;
     }
@@ -180,6 +225,12 @@ onBeforeUnmount(() => {
 
     .social-icon {
         font-size: 13px;
+    }
+
+    .social-icon .fa-zalo {
+        width: 13px;
+        height: 13px;
+        margin-top: 4px;
     }
 
     .hotline-info span {
