@@ -254,6 +254,7 @@ CREATE TABLE schools (
     tuition_per_year INTEGER, -- học phí
     class_size INTEGER,       -- sĩ số lớp
     visa_success_rate INTEGER, -- %
+    intake_months SMALLINT[], -- các tháng nhập học: 1,4,7,10
 
     features JSONB, -- đặc điểm
 

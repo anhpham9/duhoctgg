@@ -85,6 +85,19 @@
                         <p v-if="formErrors.location" class="field-error">{{ formErrors.location }}</p>
                     </div>
 
+                    <div class="form-group full">
+                        <label>Ky nhap hoc <span class="required">*</span></label>
+                        <div class="checkbox-group">
+                            <label v-for="month in INTAKE_MONTH_OPTIONS" :key="month" class="checkbox">
+                                <input v-model="form.intake_months" type="checkbox" :value="month"
+                                    @change="clearFieldError('intake_months')">
+                                <span class="checkbox-mark"></span>
+                                <span class="checkbox-label">Thang {{ month }}</span>
+                            </label>
+                        </div>
+                        <p v-if="formErrors.intake_months" class="field-error">{{ formErrors.intake_months }}</p>
+                    </div>
+
                     <div class="form-group">
                         <label>Hoc phi/nam (VND)</label>
                         <input v-model.number="form.tuition_per_year" @input="clearFieldError('tuition_per_year')" @blur="validateField('tuition_per_year')" :class="['form-control', { 'is-invalid': !!formErrors.tuition_per_year }]" type="number" min="0" step="1000000">
@@ -193,16 +206,17 @@ const schoolTypes = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
+const INTAKE_MONTH_OPTIONS = [1, 4, 7, 10]
 
 const form = reactive({
     name: '', slug: '', location: '', tuition_per_year: null, class_size: null, visa_success_rate: null,
-    region_id: null, type_id: null, status: 'pending', logo_url: '', thumbnail_url: '', rating: null
+    intake_months: [], region_id: null, type_id: null, status: 'pending', logo_url: '', thumbnail_url: '', rating: null
 })
 const featureItems = ref([])
 
 const formErrors = reactive({
     name: '', slug: '', location: '', tuition_per_year: '', class_size: '', visa_success_rate: '',
-    region_id: '', type_id: '', status: '', logo_url: '', thumbnail_url: '', rating: '', features: ''
+    intake_months: '', region_id: '', type_id: '', status: '', logo_url: '', thumbnail_url: '', rating: '', features: ''
 })
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -237,6 +251,24 @@ const normalizeFeatureItems = (source) => {
     }
 
     return normalized
+}
+
+const normalizeIntakeMonths = (source) => {
+    if (!Array.isArray(source)) return []
+
+    const allowed = new Set(INTAKE_MONTH_OPTIONS)
+    const deduped = []
+    const seen = new Set()
+
+    for (const item of source) {
+        const month = Number(item)
+        if (!Number.isInteger(month) || !allowed.has(month) || seen.has(month)) continue
+        seen.add(month)
+        deduped.push(month)
+    }
+
+    deduped.sort((a, b) => a - b)
+    return deduped
 }
 
 const addFeature = () => { featureItems.value.push('') }
@@ -294,6 +326,12 @@ const validateField = (field) => {
         formErrors.visa_success_rate = ''
         return true
     }
+    if (field === 'intake_months') {
+        form.intake_months = normalizeIntakeMonths(form.intake_months)
+        if (!form.intake_months.length) return (formErrors.intake_months = 'Vui long chon it nhat 1 ky nhap hoc', false)
+        formErrors.intake_months = ''
+        return true
+    }
     if (field === 'rating') {
         if (form.rating === null || form.rating === undefined || form.rating === '') return (formErrors.rating = '', true)
         const value = Number(form.rating)
@@ -336,7 +374,7 @@ const validateField = (field) => {
     return true
 }
 
-const validateForm = () => ['name','slug','location','tuition_per_year','class_size','visa_success_rate','rating','region_id','type_id','status','logo_url','thumbnail_url','features'].every((f) => validateField(f))
+const validateForm = () => ['name','slug','location','tuition_per_year','class_size','visa_success_rate','intake_months','rating','region_id','type_id','status','logo_url','thumbnail_url','features'].every((f) => validateField(f))
 
 const fetchRegions = async () => {
     try {
@@ -369,6 +407,7 @@ const fetchSchoolDetail = async () => {
         form.tuition_per_year = item.tuition_per_year ? Number(item.tuition_per_year) : null
         form.class_size = item.class_size ? Number(item.class_size) : null
         form.visa_success_rate = item.visa_success_rate ? Number(item.visa_success_rate) : null
+        form.intake_months = normalizeIntakeMonths(item.intake_months)
         form.region_id = item.region_id ? Number(item.region_id) : null
         form.type_id = item.type_id ? Number(item.type_id) : null
         form.status = item.status || 'pending'
@@ -391,6 +430,7 @@ const buildPayload = () => {
         tuition_per_year: form.tuition_per_year || undefined,
         class_size: form.class_size || undefined,
         visa_success_rate: form.visa_success_rate || undefined,
+        intake_months: normalizeIntakeMonths(form.intake_months),
         region_id: form.region_id || undefined,
         type_id: form.type_id || undefined,
         status: form.status,
@@ -461,6 +501,14 @@ onMounted(async () => {
 .form-group.full { grid-column: 1 / -1; }
 .form-group label { display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500; }
 .form-control { width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 1rem; }
+.checkbox { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.checkbox input { display: none; }
+.checkbox-mark { position: relative; width: 20px; height: 20px; border: 2px solid #d0d5dd; border-radius: 6px; background: #fff; transition: all .2s ease; }
+.checkbox:hover .checkbox-mark { border-color: #3b82f6; }
+.checkbox input:checked + .checkbox-mark { background: #3b82f6; border-color: #3b82f6; }
+.checkbox input:checked + .checkbox-mark::after { content: ""; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.checkbox-label { font-size: 14px; color: #344054; }
 .form-control:focus { outline: none; border-color: #1976d2; }
 .form-control.is-invalid { border-color: #dc3545; box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15); }
 .field-error { margin: 0.4rem 0 0; color: #dc3545; font-size: 0.85rem; }

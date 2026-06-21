@@ -111,13 +111,24 @@ CREATE TABLE IF NOT EXISTS school_types (
 CREATE TABLE IF NOT EXISTS schools (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    name_en VARCHAR(255),
     slug VARCHAR(255) UNIQUE NOT NULL,
     location TEXT,
-    tuition_per_year INTEGER,
+    phone VARCHAR(20),
+    fax VARCHAR(20),
+    email VARCHAR(150),
+    website VARCHAR(255),
+    tuition_per_year INTEGER NOT NULL,
     class_size INTEGER,
-    visa_success_rate INTEGER,
+    visa_success_rate NUMERIC(5,2) NOT NULL,
     features JSONB,
     region_id INTEGER REFERENCES regions(id),
+    intake_months SMALLINT[] CHECK (
+        intake_months IS NULL OR (
+            intake_months <@ ARRAY[1, 4, 7, 10]::SMALLINT[]
+            AND COALESCE(array_length(intake_months, 1), 0) > 0
+        )
+    ),
     type_id INTEGER REFERENCES school_types(id),
     status VARCHAR(20) CHECK (status IN ('partner', 'active', 'paused', 'pending')) DEFAULT 'pending',
     logo_url TEXT,

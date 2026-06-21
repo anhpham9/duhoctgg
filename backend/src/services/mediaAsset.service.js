@@ -1,7 +1,8 @@
 import db from "../config/db.js";
 
 export const MEDIA_OWNER_TYPES = {
-    settings: "settings"
+    settings: "settings",
+    schools: "schools"
 };
 
 export const MEDIA_OWNER_KEYS = {
@@ -10,8 +11,12 @@ export const MEDIA_OWNER_KEYS = {
 
 export const MEDIA_FIELD_NAMES = {
     siteLogoUrl: "siteLogoUrl",
-    siteFaviconUrl: "siteFaviconUrl"
+    siteFaviconUrl: "siteFaviconUrl",
+    schoolLogoUrl: "schoolLogoUrl",
+    schoolThumbnailUrl: "schoolThumbnailUrl"
 };
+
+export const getSchoolOwnerKey = (schoolId) => `school:${schoolId}`;
 
 export const ensureMediaAssetTableExists = async () => {
     await db.query(`
@@ -134,4 +139,74 @@ export const deleteMediaAssetRef = async ({ ownerType, ownerKey, fieldName, clie
     );
 
     return result.rows[0] || null;
+};
+
+export const syncMediaAssetOwnership = async ({
+    ownerType,
+    ownerKey,
+    fieldMappings = [],
+    payload = {},
+    incomingAssetPublicIds = {},
+    userId = null,
+    client = db
+} = {}) => {
+    const existingAssetRefs = mapMediaAssetRefsByField(await getMediaAssetRefsByOwner({
+        ownerType,
+        ownerKey,
+        client
+    }));
+
+    const publicIdsToDelete = [];
+
+    for (const fieldMapping of fieldMappings) {
+        const existingAssetRef = existingAssetRefs[fieldMapping.fieldName] || null;
+        const payloadValue = payload?.[fieldMapping.payloadKey];
+        const nextAssetUrl = payloadValue === undefined || payloadValue === null
+            ? undefined
+            : String(payloadValue || "").trim();
+        const nextPublicId = String(incomingAssetPublicIds?.[fieldMapping.fieldName] || "").trim();
+
+        if (nextPublicId) {
+            if (existingAssetRef?.public_id && existingAssetRef.public_id !== nextPublicId) {
+                publicIdsToDelete.push(existingAssetRef.public_id);
+            }
+
+            await upsertMediaAssetRef({
+                ownerType,
+                ownerKey,
+                fieldName: fieldMapping.fieldName,
+                publicId: nextPublicId,
+                assetUrl: nextAssetUrl || "",
+                userId,
+                client
+            });
+
+            continue;
+        }
+
+        if (!existingAssetRef) {
+            continue;
+        }
+
+        const hasUrlChanged = nextAssetUrl !== undefined
+            && nextAssetUrl !== String(existingAssetRef.asset_url || "").trim();
+        const hasRemovedUrl = nextAssetUrl !== undefined && !nextAssetUrl;
+
+        if (hasUrlChanged || hasRemovedUrl) {
+            const deletedAssetRef = await deleteMediaAssetRef({
+                ownerType,
+                ownerKey,
+                fieldName: fieldMapping.fieldName,
+                client
+            });
+
+            if (deletedAssetRef?.public_id) {
+                publicIdsToDelete.push(deletedAssetRef.public_id);
+            }
+        }
+    }
+
+    return {
+        publicIdsToDelete
+    };
 };

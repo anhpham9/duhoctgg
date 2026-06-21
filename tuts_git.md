@@ -67,6 +67,7 @@ feature/frontend-settings-admin
 feature/frontend-contact-public
 feature/frontend-news-public
 feature/frontend-settings-public
+feature/frontend-schools-public
 
 
 

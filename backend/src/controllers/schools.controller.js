@@ -2,12 +2,36 @@ import db from "../config/db.js";
 import { logError, logInfo, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
+import {
+    MEDIA_OWNER_TYPES,
+    MEDIA_FIELD_NAMES,
+    getSchoolOwnerKey,
+    syncMediaAssetOwnership,
+    getMediaAssetRefsByOwner,
+    deleteMediaAssetRef
+} from "../services/mediaAsset.service.js";
+import {
+    DEFAULT_IMAGE_MIME_TYPES,
+    validateImageUploadFile,
+    uploadImageToCloudinary,
+    deleteCloudinaryAssetByPublicId,
+    deleteCloudinaryAssetsSafely,
+    ensureCloudinaryReady,
+    CMS_DEFAULT_MAX_FILE_SIZE
+} from "../services/cmsAsset.service.js";
 
 // Roles that can access schools: superadmin, admin, manager
 const ALLOWED_SCHOOLS_ROLES = [1, 2, 3];
 
 // Roles that can delete schools: superadmin only
 const DELETE_SCHOOLS_ROLES = [1];
+const ALLOWED_SCHOOL_IMAGE_TYPES = new Set(["logo", "thumbnail"]);
+const ALLOWED_IMAGE_MIME_TYPES = DEFAULT_IMAGE_MIME_TYPES;
+const DEFAULT_SCHOOL_IMAGE_MAX_FILE_SIZE = CMS_DEFAULT_MAX_FILE_SIZE;
+const configuredSchoolImageMaxFileSize = Number(process.env.CLOUDINARY_MAX_FILE_SIZE || CMS_DEFAULT_MAX_FILE_SIZE);
+const SCHOOL_IMAGE_MAX_FILE_SIZE = Number.isFinite(configuredSchoolImageMaxFileSize) && configuredSchoolImageMaxFileSize > 0
+    ? configuredSchoolImageMaxFileSize
+    : DEFAULT_SCHOOL_IMAGE_MAX_FILE_SIZE;
 
 // Get all schools with region, type, and review info
 export const getSchools = async (req, res) => {
@@ -36,11 +60,17 @@ export const getSchools = async (req, res) => {
             SELECT 
                 s.id,
                 s.name,
+                s.name_en,
                 s.slug,
                 s.location,
+                s.phone,
+                s.fax,
+                s.email,
+                s.website,
                 s.tuition_per_year,
                 s.class_size,
                 s.visa_success_rate,
+                s.intake_months,
                 s.features,
                 s.status,
                 s.logo_url,
@@ -221,11 +251,17 @@ export const createSchool = async (req, res) => {
         const sanitizedData = InputSanitizer.sanitizeSchoolData(req.body);
         const { 
             name, 
+            name_en,
             slug,
             location,
+            phone,
+            fax,
+            email,
+            website,
             tuition_per_year,
             class_size,
             visa_success_rate,
+            intake_months,
             features,
             region_id,
             type_id,
@@ -233,6 +269,10 @@ export const createSchool = async (req, res) => {
             logo_url,
             thumbnail_url
         } = sanitizedData;
+        const incomingAssetPublicIds = {
+            [MEDIA_FIELD_NAMES.schoolLogoUrl]: String(req.body?.logoAssetPublicId || "").trim(),
+            [MEDIA_FIELD_NAMES.schoolThumbnailUrl]: String(req.body?.thumbnailAssetPublicId || "").trim()
+        };
         
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
@@ -260,10 +300,19 @@ export const createSchool = async (req, res) => {
         }
 
         // Validate required fields
-        if (!name) {
+        if (!name || !name_en || !location || tuition_per_year === undefined || visa_success_rate === undefined || !region_id || !type_id) {
             return res.status(400).json({
                 success: false,
-                message: "School name is required"
+                message: "Missing required school fields",
+                errors: {
+                    name: !name ? "Ten truong la bat buoc" : "",
+                    name_en: !name_en ? "Ten truong tieng Anh la bat buoc" : "",
+                    location: !location ? "Dia chi la bat buoc" : "",
+                    tuition_per_year: tuition_per_year === undefined ? "Hoc phi la bat buoc" : "",
+                    visa_success_rate: visa_success_rate === undefined ? "Ti le visa la bat buoc" : "",
+                    region_id: !region_id ? "Khu vuc la bat buoc" : "",
+                    type_id: !type_id ? "Loai truong la bat buoc" : ""
+                }
             });
         }
 
@@ -319,22 +368,35 @@ export const createSchool = async (req, res) => {
             }
         }
 
+        if (intake_months !== undefined && (!Array.isArray(intake_months) || intake_months.length === 0)) {
+            return res.status(400).json({
+                success: false,
+                message: "Intake months must contain at least one value (1, 4, 7, 10)"
+            });
+        }
+
         // Create school
         const result = await db.query(`
             INSERT INTO schools (
-                name, slug, location, tuition_per_year, class_size, 
-                visa_success_rate, features, region_id, type_id, 
+                name, name_en, slug, location, phone, fax, email, website, tuition_per_year, class_size,
+                visa_success_rate, intake_months, features, region_id, type_id, 
                 status, logo_url, thumbnail_url
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::smallint[], $13, $14, $15, $16, $17, $18)
             RETURNING *
         `, [
             name,
+            name_en,
             schoolSlug,
             location || null,
+            phone || null,
+            fax || null,
+            email || null,
+            website || null,
             tuition_per_year || null,
             class_size || null,
             visa_success_rate || null,
+            intake_months || null,
             features || null,
             region_id || null,
             type_id || null,
@@ -344,6 +406,31 @@ export const createSchool = async (req, res) => {
         ]);
 
         const newSchool = result.rows[0];
+
+        const schoolOwnerKey = getSchoolOwnerKey(newSchool.id);
+        const ownershipSyncResult = await syncMediaAssetOwnership({
+            ownerType: MEDIA_OWNER_TYPES.schools,
+            ownerKey: schoolOwnerKey,
+            fieldMappings: [
+                {
+                    fieldName: MEDIA_FIELD_NAMES.schoolLogoUrl,
+                    payloadKey: "logo_url"
+                },
+                {
+                    fieldName: MEDIA_FIELD_NAMES.schoolThumbnailUrl,
+                    payloadKey: "thumbnail_url"
+                }
+            ],
+            payload: newSchool,
+            incomingAssetPublicIds,
+            userId: currentUserId,
+            client: db
+        });
+
+        await deleteCloudinaryAssetsSafely(ownershipSyncResult.publicIdsToDelete, logError, {
+            requesterId: currentUserId,
+            schoolId: newSchool.id
+        });
 
         // Audit log successful school creation
         auditLog('CREATE_SCHOOL', currentUserId, {
@@ -388,11 +475,17 @@ export const updateSchool = async (req, res) => {
         const sanitizedData = InputSanitizer.sanitizeSchoolData(req.body);
         const { 
             name, 
+            name_en,
             slug,
             location,
+            phone,
+            fax,
+            email,
+            website,
             tuition_per_year,
             class_size,
             visa_success_rate,
+            intake_months,
             features,
             region_id,
             type_id,
@@ -401,6 +494,10 @@ export const updateSchool = async (req, res) => {
             thumbnail_url,
             rating
         } = sanitizedData;
+        const incomingAssetPublicIds = {
+            [MEDIA_FIELD_NAMES.schoolLogoUrl]: String(req.body?.logoAssetPublicId || "").trim(),
+            [MEDIA_FIELD_NAMES.schoolThumbnailUrl]: String(req.body?.thumbnailAssetPublicId || "").trim()
+        };
         
         const currentUserRole = req.user.role_id;
         const currentUserId = req.user.id;
@@ -476,6 +573,41 @@ export const updateSchool = async (req, res) => {
             paramCount++;
         }
 
+        if (name_en !== undefined) {
+            updateData.name_en = name_en;
+            updates.push(`name_en = $${paramCount}`);
+            values.push(name_en || null);
+            paramCount++;
+        }
+
+        if (phone !== undefined) {
+            updateData.phone = phone;
+            updates.push(`phone = $${paramCount}`);
+            values.push(phone || null);
+            paramCount++;
+        }
+
+        if (fax !== undefined) {
+            updateData.fax = fax;
+            updates.push(`fax = $${paramCount}`);
+            values.push(fax || null);
+            paramCount++;
+        }
+
+        if (email !== undefined) {
+            updateData.email = email;
+            updates.push(`email = $${paramCount}`);
+            values.push(email || null);
+            paramCount++;
+        }
+
+        if (website !== undefined) {
+            updateData.website = website;
+            updates.push(`website = $${paramCount}`);
+            values.push(website || null);
+            paramCount++;
+        }
+
         if (tuition_per_year !== undefined) {
             updateData.tuition_per_year = tuition_per_year;
             updates.push(`tuition_per_year = $${paramCount}`);
@@ -501,6 +633,20 @@ export const updateSchool = async (req, res) => {
             updateData.features = features;
             updates.push(`features = $${paramCount}`);
             values.push(features || null);
+            paramCount++;
+        }
+
+        if (intake_months !== undefined) {
+            if (!Array.isArray(intake_months) || intake_months.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Intake months must contain at least one value (1, 4, 7, 10)"
+                });
+            }
+
+            updateData.intake_months = intake_months;
+            updates.push(`intake_months = $${paramCount}`);
+            values.push(intake_months.length ? intake_months : null);
             paramCount++;
         }
 
@@ -605,6 +751,30 @@ export const updateSchool = async (req, res) => {
         const result = await db.query(updateQuery, values);
         const updatedSchool = result.rows[0];
 
+        const ownershipSyncResult = await syncMediaAssetOwnership({
+            ownerType: MEDIA_OWNER_TYPES.schools,
+            ownerKey: getSchoolOwnerKey(id),
+            fieldMappings: [
+                {
+                    fieldName: MEDIA_FIELD_NAMES.schoolLogoUrl,
+                    payloadKey: "logo_url"
+                },
+                {
+                    fieldName: MEDIA_FIELD_NAMES.schoolThumbnailUrl,
+                    payloadKey: "thumbnail_url"
+                }
+            ],
+            payload: updatedSchool,
+            incomingAssetPublicIds,
+            userId: currentUserId,
+            client: db
+        });
+
+        await deleteCloudinaryAssetsSafely(ownershipSyncResult.publicIdsToDelete, logError, {
+            requesterId: currentUserId,
+            schoolId: id
+        });
+
         // Audit log successful school update
         auditLog('UPDATE_SCHOOL', currentUserId, {
             schoolId: id,
@@ -678,8 +848,29 @@ export const deleteSchool = async (req, res) => {
 
         const targetSchool = schoolResult.rows[0];
 
+        const schoolOwnerKey = getSchoolOwnerKey(id);
+        const existingAssetRefs = await getMediaAssetRefsByOwner({
+            ownerType: MEDIA_OWNER_TYPES.schools,
+            ownerKey: schoolOwnerKey,
+            client: db
+        });
+
         // Delete school (CASCADE will handle related tables)
         await db.query('DELETE FROM schools WHERE id = $1', [id]);
+
+        for (const fieldName of [MEDIA_FIELD_NAMES.schoolLogoUrl, MEDIA_FIELD_NAMES.schoolThumbnailUrl]) {
+            await deleteMediaAssetRef({
+                ownerType: MEDIA_OWNER_TYPES.schools,
+                ownerKey: schoolOwnerKey,
+                fieldName,
+                client: db
+            });
+        }
+
+        await deleteCloudinaryAssetsSafely(existingAssetRefs.map((item) => item.public_id), logError, {
+            requesterId: currentUserId,
+            schoolId: id
+        });
 
         // Audit log successful school deletion
         auditLog('DELETE_SCHOOL', currentUserId, {
@@ -790,6 +981,129 @@ export const getSchoolsStats = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: "Internal server error" 
+        });
+    }
+};
+
+export const uploadSchoolImage = async (req, res) => {
+    const currentUserRole = req.user?.role_id;
+    const currentUserId = req.user?.id;
+
+    try {
+        if (!ALLOWED_SCHOOLS_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                "/api/schools/upload-image",
+                "POST",
+                "schools.upload"
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You cannot upload school images."
+            });
+        }
+
+        ensureCloudinaryReady();
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select an image file"
+            });
+        }
+
+        const imageTypeRaw = String(req.body?.type || "logo").trim().toLowerCase();
+        const imageType = ALLOWED_SCHOOL_IMAGE_TYPES.has(imageTypeRaw) ? imageTypeRaw : "logo";
+        validateImageUploadFile({
+            file: req.file,
+            allowedMimeTypes: ALLOWED_IMAGE_MIME_TYPES,
+            maxFileSize: SCHOOL_IMAGE_MAX_FILE_SIZE,
+            imageLabel: imageType
+        });
+
+        const folderRoot = String(process.env.CLOUDINARY_FOLDER || "duhocNB").trim() || "duhocNB";
+
+        const uploadResult = await uploadImageToCloudinary({
+            file: req.file,
+            folder: `${folderRoot}/schools/${imageType}`,
+            transformation: [{ quality: "auto", fetch_format: "auto" }]
+        });
+
+        return res.json({
+            success: true,
+            message: "Upload image success",
+            data: {
+                imageType,
+                url: uploadResult.url,
+                publicId: uploadResult.publicId,
+                width: uploadResult.width,
+                height: uploadResult.height,
+                bytes: uploadResult.bytes,
+                format: uploadResult.format
+            }
+        });
+    } catch (error) {
+        const isValidationError = String(error?.message || "").toLowerCase().includes("invalid")
+            || String(error?.message || "").toLowerCase().includes("exceeds")
+            || String(error?.message || "").toLowerCase().includes("please select");
+
+        logError("Upload school image failed", error, {
+            requesterId: currentUserId,
+            imageType: req.body?.type
+        });
+
+        return res.status(isValidationError ? 400 : 500).json({
+            success: false,
+            message: error?.message || "Upload image failed"
+        });
+    }
+};
+
+export const deleteSchoolImage = async (req, res) => {
+    const currentUserRole = req.user?.role_id;
+    const currentUserId = req.user?.id;
+
+    try {
+        if (!ALLOWED_SCHOOLS_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                "/api/schools/upload-image",
+                "DELETE",
+                "schools.upload.delete"
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You cannot delete uploaded school images."
+            });
+        }
+
+        const publicId = String(req.body?.publicId || "").trim();
+        if (!publicId) {
+            return res.status(400).json({
+                success: false,
+                message: "publicId is required"
+            });
+        }
+
+        ensureCloudinaryReady();
+        await deleteCloudinaryAssetByPublicId(publicId);
+
+        return res.json({
+            success: true,
+            message: "Deleted uploaded image"
+        });
+    } catch (error) {
+        logError("Delete school image failed", error, {
+            requesterId: currentUserId
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: error?.message || "Delete image failed"
         });
     }
 };

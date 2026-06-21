@@ -559,10 +559,18 @@ export class InputSanitizer {
     // Comprehensive schools data sanitization
     static sanitizeSchoolData(schoolData) {
         const sanitized = {};
+        const allowedIntakeMonths = new Set([1, 4, 7, 10]);
 
         // Sanitize each field
         if (schoolData.name) {
             sanitized.name = this.sanitizeText(schoolData.name, {
+                maxLength: 200,
+                escapeHtml: false
+            });
+        }
+
+        if (schoolData.name_en) {
+            sanitized.name_en = this.sanitizeText(schoolData.name_en, {
                 maxLength: 200,
                 escapeHtml: false
             });
@@ -577,6 +585,22 @@ export class InputSanitizer {
                 maxLength: 500,
                 escapeHtml: false
             });
+        }
+
+        if (schoolData.phone) {
+            sanitized.phone = this.sanitizePhone(schoolData.phone);
+        }
+
+        if (schoolData.fax) {
+            sanitized.fax = this.sanitizePhone(schoolData.fax);
+        }
+
+        if (schoolData.email) {
+            sanitized.email = this.sanitizeEmail(schoolData.email);
+        }
+
+        if (schoolData.website) {
+            sanitized.website = this.sanitizeUrl(schoolData.website);
         }
 
         if (schoolData.tuition_per_year) {
@@ -608,6 +632,35 @@ export class InputSanitizer {
             if (typeof schoolData.features === 'object') {
                 sanitized.features = this.sanitizeJSONData(schoolData.features);
             }
+        }
+
+        if (schoolData.intake_months !== undefined) {
+            const source = Array.isArray(schoolData.intake_months)
+                ? schoolData.intake_months
+                : [];
+
+            const normalized = [];
+            const seen = new Set();
+
+            for (const month of source) {
+                const value = this.sanitizeNumber(month, {
+                    min: 1,
+                    max: 12,
+                    default: null
+                });
+
+                if (!Number.isInteger(value) || !allowedIntakeMonths.has(value)) {
+                    continue;
+                }
+
+                if (!seen.has(value)) {
+                    seen.add(value);
+                    normalized.push(value);
+                }
+            }
+
+            normalized.sort((a, b) => a - b);
+            sanitized.intake_months = normalized;
         }
 
         if (schoolData.region_id) {

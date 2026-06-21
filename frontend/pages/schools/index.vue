@@ -1,10 +1,11 @@
 <template>
     <div class="schools-container">
         <!-- Page Hero with advanced breadcrumb -->
-        <PageHero title="Danh sách trường Nhật Ngữ" subtitle="Danh sách các trường Nhật ngữ hàng đầu tại Nhật Bản"
-            :breadcrumb-items="[
-                { text: 'Trường Nhật Ngữ' }
-            ]" />
+        <PageHero
+            :title="heroTitle"
+            :subtitle="heroDescription"
+            :breadcrumb-text="pageTitle"
+        />
 
         <!-- Schools List Section -->
         <section class="schools-section">
@@ -148,7 +149,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+
+import { computed, onMounted, ref } from 'vue'
+import { formatDate as formatSystemDate } from '~/utils/date'
+
+const config = useRuntimeConfig()
+const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/schools`, {
+    key: 'public-static-page-schools'
+})
+const staticPage = computed(() => staticPageData.value?.data || {})
+
+const pageTitle = computed(() => staticPage.value.title || 'Trường Nhật Ngữ')
+
+const heroTitle = computed(() => staticPage.value.hero_title || 'Trường Nhật Ngữ Mới Nhất')
+
+const heroDescription = computed(() => {
+    return staticPage.value.hero_description || 'Cập nhật những thông tin mới nhất về các trường Nhật Ngữ'
+})
+
+// SEO
+useHead(() => {
+    const metaTitle = staticPage.value.meta_title || pageTitle.value || 'Trường Nhật Ngữ'
+    const metaDescription = staticPage.value.meta_description || heroDescription.value
+
+    return {
+        title: metaTitle,
+        meta: [
+            { name: 'description', content: metaDescription },
+            { property: 'og:title', content: metaTitle },
+            { property: 'og:description', content: metaDescription }
+        ]
+    }
+})
 
 // Schools data
 const schools = ref([
