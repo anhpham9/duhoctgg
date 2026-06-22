@@ -22,7 +22,7 @@
                                     v-model="formData.phone" required>
                             </div>
                             <div class="form-group">
-                                <input type="text" placeholder="Lời nhắn..." v-model="formData.message">
+                                <input ref="messageInput" type="text" placeholder="Lời nhắn..." v-model="formData.message">
                             </div>
                             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
                                 <span v-if="isSubmitting">Đang gửi...</span>
@@ -37,17 +37,19 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useNotification } from '~/composables/useNotification'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { useNotifications } from '~/composables/useNotifications'
 
 // Composables
-const { showSuccess, showError } = useNotification()
+const { showSuccess, showError } = useNotifications()
+const route = useRoute()
 
 // Form handling
 const contactForm = ref(null)
 const nameInput = ref(null)
 const emailInput = ref(null)
 const phoneInput = ref(null)
+const messageInput = ref(null)
 
 const formData = reactive({
     name: '',
@@ -55,6 +57,50 @@ const formData = reactive({
     phone: '',
     message: ''
 })
+
+const normalizeQueryValue = (value) => {
+    if (Array.isArray(value)) {
+        return String(value[0] || '').trim()
+    }
+    return String(value || '').trim()
+}
+
+const applyDefaultMessageFromQuery = () => {
+    const contactMessage = normalizeQueryValue(route.query.contactMessage)
+    if (!contactMessage) return
+    if (formData.message.trim()) return
+
+    formData.message = contactMessage
+}
+
+const hasRepeatedSingleChar = (value) => /^([a-z0-9])\1{6,}$/i.test(value)
+
+const hasRepeatedChunk = (value) => /^(.{2,4})\1{2,}$/i.test(value)
+
+const isLowQualityAlphabeticText = (value) => {
+    if (!/^[a-z]+$/i.test(value)) return false
+    if (value.length < 8) return false
+
+    const uniqueChars = new Set(value.toLowerCase()).size
+    const vowelCount = (value.match(/[aeiouy]/gi) || []).length
+
+    return uniqueChars <= 3 || vowelCount <= 1
+}
+
+const isSpamLikeMessage = (message) => {
+    const normalized = String(message || '').toLowerCase().trim()
+    if (!normalized) return true
+
+    const compact = normalized.replace(/\s+/g, '')
+    if (!compact) return true
+
+    if (/^\d+$/.test(compact)) return true
+    if (hasRepeatedSingleChar(compact)) return true
+    if (hasRepeatedChunk(compact)) return true
+    if (isLowQualityAlphabeticText(compact)) return true
+
+    return false
+}
 
 // Email validation
 const isValidEmail = (email) => {
@@ -88,6 +134,25 @@ const handleSubmit = async () => {
         return
     }
 
+    const trimmedMessage = formData.message.trim()
+    if (!trimmedMessage) {
+        showError('Vui lòng nhập lời nhắn')
+        messageInput.value?.focus()
+        return
+    }
+
+    if (trimmedMessage.length < 10) {
+        showError('Lời nhắn phải có tối thiểu 10 ký tự')
+        messageInput.value?.focus()
+        return
+    }
+
+    if (isSpamLikeMessage(trimmedMessage)) {
+        showError('Nội dung lời nhắn chưa hợp lệ hoặc có dấu hiệu spam. Vui lòng nhập chi tiết hơn.')
+        messageInput.value?.focus()
+        return
+    }
+
     try {
         isSubmitting.value = true
         
@@ -98,7 +163,7 @@ const handleSubmit = async () => {
                 name: formData.name.trim(),
                 email: formData.email.trim(),
                 phone: formData.phone.trim(),
-                message: formData.message.trim()
+                message: trimmedMessage
             }
         })
 
@@ -129,6 +194,17 @@ const handleSubmit = async () => {
         isSubmitting.value = false
     }
 }
+
+watch(
+    () => route.query.contactMessage,
+    () => {
+        applyDefaultMessageFromQuery()
+    }
+)
+
+onMounted(() => {
+    applyDefaultMessageFromQuery()
+})
 </script>
 
 <style scoped>

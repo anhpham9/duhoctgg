@@ -7,10 +7,40 @@ import validator from 'validator';
 // Roles that can access contacts: superadmin, admin, manager, consultant
 const ALLOWED_CONTACT_ROLES = [1, 2, 3, 5];
 
+const hasRepeatedSingleChar = (value) => /^([a-z0-9])\1{6,}$/i.test(value);
+
+const hasRepeatedChunk = (value) => /^(.{2,4})\1{2,}$/i.test(value);
+
+const isLowQualityAlphabeticText = (value) => {
+    if (!/^[a-z]+$/i.test(value)) return false;
+    if (value.length < 8) return false;
+
+    const uniqueChars = new Set(value.toLowerCase()).size;
+    const vowelCount = (value.match(/[aeiouy]/gi) || []).length;
+
+    return uniqueChars <= 3 || vowelCount <= 1;
+};
+
+const isSpamLikeMessage = (message) => {
+    const normalized = String(message || '').toLowerCase().trim();
+    if (!normalized) return true;
+
+    const compact = normalized.replace(/\s+/g, '');
+    if (!compact) return true;
+
+    if (/^\d+$/.test(compact)) return true;
+    if (hasRepeatedSingleChar(compact)) return true;
+    if (hasRepeatedChunk(compact)) return true;
+    if (isLowQualityAlphabeticText(compact)) return true;
+
+    return false;
+};
+
 // Public contact submission (no authentication required)
 export const submitPublicContact = async (req, res) => {
     try {
         const { name, email, phone, message } = req.body;
+        const normalizedMessage = typeof message === 'string' ? message.trim() : '';
 
         // Comprehensive validation
         const errors = [];
@@ -39,9 +69,18 @@ export const submitPublicContact = async (req, res) => {
             errors.push('Số điện thoại không hợp lệ');
         }
 
-        // Validate message (optional but if provided must be reasonable)
-        if (message && typeof message === 'string' && message.length > 1000) {
+        // Validate message (required + anti-spam)
+        if (!normalizedMessage) {
+            errors.push('Lời nhắn không được để trống');
+        }
+        if (normalizedMessage && normalizedMessage.length < 10) {
+            errors.push('Lời nhắn phải có tối thiểu 10 ký tự');
+        }
+        if (normalizedMessage && normalizedMessage.length > 1000) {
             errors.push('Tin nhắn không được quá 1000 ký tự');
+        }
+        if (normalizedMessage && isSpamLikeMessage(normalizedMessage)) {
+            errors.push('Nội dung lời nhắn chưa hợp lệ hoặc có dấu hiệu spam');
         }
 
         if (errors.length > 0) {
@@ -56,7 +95,7 @@ export const submitPublicContact = async (req, res) => {
         const sanitizedName = InputSanitizer.sanitizeText(name.trim(), { maxLength: 100 });
         const sanitizedEmail = InputSanitizer.sanitizeEmail(email.trim());
         const sanitizedPhone = InputSanitizer.sanitizePhone(phone.trim());
-        const sanitizedMessage = message ? InputSanitizer.sanitizeText(message.trim(), { maxLength: 1000 }) : '';
+        const sanitizedMessage = InputSanitizer.sanitizeText(normalizedMessage, { maxLength: 1000 });
 
         // Check for suspicious patterns (basic spam detection)
         const suspiciousPatterns = [

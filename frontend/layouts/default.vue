@@ -13,6 +13,9 @@
         <!-- Contact Section -->
         <ContactForm />
 
+        <!-- Global Toast Notifications -->
+        <Toast />
+
         <!-- Footer -->
         <Footer />
 

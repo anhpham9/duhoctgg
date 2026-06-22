@@ -48,7 +48,7 @@
                         </div>
 
                         <div class="school-hero-actions">
-                            <a href="#contact" class="btn btn-primary">Tư Vấn Miễn Phí</a>
+                            <a href="#contact" class="btn btn-primary" @click.prevent="goToContactForm">Tư Vấn Miễn Phí</a>
                         </div>
                     </div>
                 </div>
@@ -449,6 +449,20 @@ const reviewMetaText = (review) => {
     const coursePeriod = String(review?.course_period || "").trim();
     const parts = [nationality, coursePeriod].filter(Boolean);
     return parts.length ? parts.join(" | ") : "Thông tin khóa học đang cập nhật";
+};
+
+const goToContactForm = async () => {
+    const schoolName = String(schoolData.value?.name || "trường này").trim() || "trường này";
+    const contactMessage = `tôi muốn biết chi tiết hơn về trường ${schoolName}`;
+
+    await navigateTo({
+        path: route.path,
+        query: {
+            ...route.query,
+            contactMessage
+        },
+        hash: "#contact"
+    });
 };
 
 useHead(() => {
