@@ -49,6 +49,7 @@
                         </a>
                         <ul class="submenu" :class="{ 'open': openSubmenus.includes('schools') }">
                             <li><NuxtLink to="/admin/schools" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/schools') }">Danh sách trường</NuxtLink></li>
+                            <li><NuxtLink to="/admin/schools/reviews" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/schools/reviews') }">Đánh giá trường</NuxtLink></li>
                             <li><NuxtLink to="/admin/schools/regions" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/schools/regions') }">Khu vực</NuxtLink></li>
                             <li><NuxtLink to="/admin/schools/types" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/schools/types') }">Loại trường</NuxtLink></li>
                         </ul>
