@@ -27,6 +27,7 @@ import staticPagesRoutes from "./routes/staticPages.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import socialLinksRoutes from "./routes/socialLinks.routes.js";
 import seoSettingsRoutes from "./routes/seoSettings.routes.js";
+import aboutContentRoutes from "./routes/aboutContent.js";
 import { backupService } from "./services/backup.service.js";
 // Bổ sung các route cho các bảng mở rộng
 import notificationsRoutes from "./routes/notifications.routes.js";
@@ -127,6 +128,9 @@ app.get('/api/public/schools', getPublicSchools);
 app.get('/api/public/schools/:slug', getPublicSchoolBySlug);
 app.get('/api/public/schools/:slug/detail-content', getPublicSchoolDetailContentBySlug);
 app.get('/api/public/schools/:slug/reviews', getPublicSchoolReviewsBySlug);
+app.get('/api/public/about/team-members', (req, res) => res.redirect('/api/about/team-members'));
+app.get('/api/public/about/stats', (req, res) => res.redirect('/api/about/stats'));
+app.get('/api/public/about/reasons', (req, res) => res.redirect('/api/about/reasons'));
 app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 
@@ -183,6 +187,9 @@ app.use("/api/settings/seo", authenticate, seoSettingsRoutes);
 
 // notifications CRUD routes
 app.use("/api/notifications", authenticate, notificationsRoutes);
+
+// about content CRUD routes
+app.use("/api/about", aboutContentRoutes);
 // notification_settings CRUD routes
 // app.use("/api/notification-settings", authenticate, notificationSettingsRoutes);
 // files CRUD routes

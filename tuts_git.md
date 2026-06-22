@@ -49,6 +49,7 @@ feature/news-crud
 feature/schools-crud
 feature/faqs-crud
 feature/school_reviews-crud
+feature/about-crud
 
 
 # frontend

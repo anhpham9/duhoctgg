@@ -1,0 +1,561 @@
+import db from '../config/db.js'
+import { logger, logInfo } from '../utils/logger.js'
+import { cloudinary, isCloudinaryConfigured } from '../config/cloudinary.js'
+
+// ============ Team Members CRUD ============
+
+export const getTeamMembers = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, name, position, description, photo_url, photo_cloudinary_public_id, social_links, sort_order, is_active, created_at FROM team_members WHERE is_active = true ORDER BY sort_order ASC, created_at DESC'
+        )
+        res.json({
+            success: true,
+            data: result.rows || [],
+            message: 'Lấy danh sách thành viên thành công'
+        })
+    } catch (error) {
+        logger.error('Get team members failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy danh sách thành viên',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const getTeamMemberById = async (req, res) => {
+    try {
+        const { id } = req.params
+        const result = await db.query(
+            'SELECT id, name, position, description, photo_url, photo_cloudinary_public_id, social_links, sort_order, is_active, created_at FROM team_members WHERE id = $1',
+            [id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy thành viên',
+                errors: { notFound: `Thành viên ID ${id} không tồn tại` }
+            })
+        }
+
+        res.json({
+            success: true,
+            data: result.rows[0],
+            message: 'Lấy thành viên thành công'
+        })
+    } catch (error) {
+        logger.error('Get team member by id failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy thành viên',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const getTeamMembersAdmin = async (req, res) => {
+    try {
+        // Show all members including inactive ones for admin
+        const result = await db.query(
+            'SELECT id, name, position, description, photo_url, photo_cloudinary_public_id, social_links, sort_order, is_active, created_at, updated_at FROM team_members ORDER BY sort_order ASC, created_at DESC'
+        )
+        res.json({
+            success: true,
+            data: result.rows || [],
+            message: 'Lấy danh sách thành viên thành công'
+        })
+    } catch (error) {
+        logger.error('Get team members admin failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy danh sách thành viên',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const createTeamMember = async (req, res) => {
+    try {
+        const { name, position, description, photoUrl, socialLinks, sortOrder } = req.body
+
+        if (!name || !position) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tên và vị trí là bắt buộc',
+                errors: { validation: 'Tên và vị trí là bắt buộc' }
+            })
+        }
+
+        const result = await db.query(
+            'INSERT INTO team_members (name, position, description, photo_url, social_links, sort_order, is_active) VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING *',
+            [
+                name.trim(),
+                position.trim(),
+                description || '',
+                photoUrl || '',
+                socialLinks ? JSON.stringify(socialLinks) : JSON.stringify({ facebook: '', tiktok: '', email: '' }),
+                sortOrder || 0
+            ]
+        )
+
+        logInfo('TEAM_MEMBER_CREATE', {
+            userId: req.user?.id,
+            memberId: result.rows[0].id,
+            memberName: name
+        })
+
+        res.status(201).json({
+            success: true,
+            data: result.rows[0],
+            message: 'Tạo thành viên thành công'
+        })
+    } catch (error) {
+        logger.error('Create team member failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể tạo thành viên',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const updateTeamMember = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { name, position, description, photoUrl, photoPublicId, socialLinks, sortOrder, isActive } = req.body
+
+        if (!name || !position) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tên và vị trí là bắt buộc',
+                errors: { validation: 'Tên và vị trí là bắt buộc' }
+            })
+        }
+
+        const result = await db.query(
+            'UPDATE team_members SET name = $1, position = $2, description = $3, photo_url = $4, photo_cloudinary_public_id = $5, social_links = $6, sort_order = $7, is_active = $8, updated_at = NOW() WHERE id = $9 RETURNING *',
+            [
+                name.trim(),
+                position.trim(),
+                description || '',
+                photoUrl || '',
+                photoPublicId || '',
+                socialLinks ? JSON.stringify(socialLinks) : JSON.stringify({ facebook: '', tiktok: '', email: '' }),
+                sortOrder || 0,
+                isActive !== undefined ? isActive : true,
+                id
+            ]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy thành viên',
+                errors: { notFound: `Thành viên ID ${id} không tồn tại` }
+            })
+        }
+
+        logInfo('TEAM_MEMBER_UPDATE', {
+            userId: req.user?.id,
+            memberId: id,
+            memberName: name
+        })
+
+        res.json({
+            success: true,
+            data: result.rows[0],
+            message: 'Cập nhật thành viên thành công'
+        })
+    } catch (error) {
+        logger.error('Update team member failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể cập nhật thành viên',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const deleteTeamMember = async (req, res) => {
+    try {
+        const { id } = req.params
+
+        // Get member to retrieve cloudinary public id
+        const getMember = await db.query('SELECT photo_cloudinary_public_id FROM team_members WHERE id = $1', [id])
+        if (getMember.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy thành viên',
+                errors: { notFound: `Thành viên ID ${id} không tồn tại` }
+            })
+        }
+
+        const publicId = getMember.rows[0].photo_cloudinary_public_id
+
+        // Delete from database
+        await db.query('DELETE FROM team_members WHERE id = $1', [id])
+
+        // Delete from cloudinary if exists
+        if (publicId && isCloudinaryConfigured()) {
+            try {
+                await cloudinary.uploader.destroy(publicId)
+            } catch (cloudinaryError) {
+                logger.warn('Failed to delete image from cloudinary', { publicId, error: cloudinaryError })
+            }
+        }
+
+        logInfo('TEAM_MEMBER_DELETE', { userId: req.user?.id, memberId: id, publicId })
+
+        res.json({
+            success: true,
+            message: 'Xóa thành viên thành công'
+        })
+    } catch (error) {
+        logger.error('Delete team member failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể xóa thành viên',
+            errors: { server: error.message }
+        })
+    }
+}
+
+// ============ About Stats CRUD ============
+
+export const getAboutStats = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, icon, number, label, sort_order, is_active, created_at FROM about_stats WHERE is_active = true ORDER BY sort_order ASC'
+        )
+        res.json({
+            success: true,
+            data: result.rows || [],
+            message: 'Lấy thành tích thành công'
+        })
+    } catch (error) {
+        logger.error('Get about stats failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy thành tích',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const getAboutStatsAdmin = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, icon, number, label, sort_order, is_active, created_at, updated_at FROM about_stats ORDER BY sort_order ASC'
+        )
+        res.json({
+            success: true,
+            data: result.rows || [],
+            message: 'Lấy thành tích thành công'
+        })
+    } catch (error) {
+        logger.error('Get about stats admin failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy thành tích',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const createAboutStat = async (req, res) => {
+    try {
+        const { icon, number, label, sortOrder } = req.body
+
+        if (!label || number === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'Label và số là bắt buộc',
+                errors: { validation: 'Label và số là bắt buộc' }
+            })
+        }
+
+        const result = await db.query(
+            'INSERT INTO about_stats (icon, number, label, sort_order, is_active) VALUES ($1, $2, $3, $4, true) RETURNING *',
+            [icon || '', Number(number), label.trim(), sortOrder || 0]
+        )
+
+        logInfo('ABOUT_STAT_CREATE', { userId: req.user?.id, statId: result.rows[0].id, label })
+
+        res.status(201).json({
+            success: true,
+            data: result.rows[0],
+            message: 'Tạo thành tích thành công'
+        })
+    } catch (error) {
+        logger.error('Create about stat failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể tạo thành tích',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const updateAboutStat = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { icon, number, label, sortOrder, isActive } = req.body
+
+        if (!label || number === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'Label và số là bắt buộc',
+                errors: { validation: 'Label và số là bắt buộc' }
+            })
+        }
+
+        const result = await db.query(
+            'UPDATE about_stats SET icon = $1, number = $2, label = $3, sort_order = $4, is_active = $5, updated_at = NOW() WHERE id = $6 RETURNING *',
+            [icon || '', Number(number), label.trim(), sortOrder || 0, isActive !== undefined ? isActive : true, id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy thành tích',
+                errors: { notFound: `Thành tích ID ${id} không tồn tại` }
+            })
+        }
+
+        logInfo('ABOUT_STAT_UPDATE', { userId: req.user?.id, statId: id, label })
+
+        res.json({
+            success: true,
+            data: result.rows[0],
+            message: 'Cập nhật thành tích thành công'
+        })
+    } catch (error) {
+        logger.error('Update about stat failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể cập nhật thành tích',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const deleteAboutStat = async (req, res) => {
+    try {
+        const { id } = req.params
+        await db.query('DELETE FROM about_stats WHERE id = $1', [id])
+
+        logInfo('ABOUT_STAT_DELETE', { userId: req.user?.id, statId: id })
+
+        res.json({
+            success: true,
+            message: 'Xóa thành tích thành công'
+        })
+    } catch (error) {
+        logger.error('Delete about stat failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể xóa thành tích',
+            errors: { server: error.message }
+        })
+    }
+}
+
+// ============ About Reasons CRUD ============
+
+export const getAboutReasons = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, icon, title, description, sort_order, is_active, created_at FROM about_reasons WHERE is_active = true ORDER BY sort_order ASC'
+        )
+        res.json({
+            success: true,
+            data: result.rows || [],
+            message: 'Lấy lý do chọn thành công'
+        })
+    } catch (error) {
+        logger.error('Get about reasons failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy lý do chọn',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const getAboutReasonsAdmin = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, icon, title, description, sort_order, is_active, created_at, updated_at FROM about_reasons ORDER BY sort_order ASC'
+        )
+        res.json({
+            success: true,
+            data: result.rows || [],
+            message: 'Lấy lý do chọn thành công'
+        })
+    } catch (error) {
+        logger.error('Get about reasons admin failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy lý do chọn',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const createAboutReason = async (req, res) => {
+    try {
+        const { icon, title, description, sortOrder } = req.body
+
+        if (!title || !description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tiêu đề và mô tả là bắt buộc',
+                errors: { validation: 'Tiêu đề và mô tả là bắt buộc' }
+            })
+        }
+
+        const result = await db.query(
+            'INSERT INTO about_reasons (icon, title, description, sort_order, is_active) VALUES ($1, $2, $3, $4, true) RETURNING *',
+            [icon || '', title.trim(), description.trim(), sortOrder || 0]
+        )
+
+        logInfo('ABOUT_REASON_CREATE', { userId: req.user?.id, reasonId: result.rows[0].id, title })
+
+        res.status(201).json({
+            success: true,
+            data: result.rows[0],
+            message: 'Tạo lý do chọn thành công'
+        })
+    } catch (error) {
+        logger.error('Create about reason failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể tạo lý do chọn',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const updateAboutReason = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { icon, title, description, sortOrder, isActive } = req.body
+
+        if (!title || !description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tiêu đề và mô tả là bắt buộc',
+                errors: { validation: 'Tiêu đề và mô tả là bắt buộc' }
+            })
+        }
+
+        const result = await db.query(
+            'UPDATE about_reasons SET icon = $1, title = $2, description = $3, sort_order = $4, is_active = $5, updated_at = NOW() WHERE id = $6 RETURNING *',
+            [icon || '', title.trim(), description.trim(), sortOrder || 0, isActive !== undefined ? isActive : true, id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy lý do chọn',
+                errors: { notFound: `Lý do chọn ID ${id} không tồn tại` }
+            })
+        }
+
+        logInfo('ABOUT_REASON_UPDATE', { userId: req.user?.id, reasonId: id, title })
+
+        res.json({
+            success: true,
+            data: result.rows[0],
+            message: 'Cập nhật lý do chọn thành công'
+        })
+    } catch (error) {
+        logger.error('Update about reason failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể cập nhật lý do chọn',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const deleteAboutReason = async (req, res) => {
+    try {
+        const { id } = req.params
+        await db.query('DELETE FROM about_reasons WHERE id = $1', [id])
+
+        logInfo('ABOUT_REASON_DELETE', { userId: req.user?.id, reasonId: id })
+
+        res.json({
+            success: true,
+            message: 'Xóa lý do chọn thành công'
+        })
+    } catch (error) {
+        logger.error('Delete about reason failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể xóa lý do chọn',
+            errors: { server: error.message }
+        })
+    }
+}
+
+// ============ Team Member Image Upload ============
+
+export const uploadTeamMemberImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn ảnh để upload',
+                errors: { file: 'Không tìm thấy file ảnh' }
+            })
+        }
+
+        if (!isCloudinaryConfigured()) {
+            return res.status(500).json({
+                success: false,
+                message: 'Cloudinary chưa được cấu hình',
+                errors: { cloudinary: 'Hệ thống chưa được cấu hình để upload ảnh' }
+            })
+        }
+
+        // Upload to cloudinary
+        const uploadResult = await cloudinary.uploader.upload_stream(
+            {
+                folder: 'duhocnb/team-members',
+                resource_type: 'auto',
+                quality: 'auto',
+                fetch_format: 'auto'
+            },
+            async (error, result) => {
+                if (error) {
+                    logger.error('Cloudinary upload failed', { error })
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Upload ảnh thất bại',
+                        errors: { cloudinary: error.message }
+                    })
+                }
+
+                res.json({
+                    success: true,
+                    data: {
+                        url: result.secure_url,
+                        publicId: result.public_id
+                    },
+                    message: 'Upload ảnh thành công'
+                })
+            }
+        ).end(req.file.buffer)
+    } catch (error) {
+        logger.error('Upload team member image failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể upload ảnh',
+            errors: { server: error.message }
+        })
+    }
+}

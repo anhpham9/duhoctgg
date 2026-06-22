@@ -71,6 +71,12 @@
                             <span>FAQ</span>
                         </NuxtLink>
                     </li>
+                    <li v-if="canAccessContent" class="nav-item" :class="{ active: isActivePage('/admin/team-members') }">
+                        <NuxtLink to="/admin/team-members" class="nav-link" @click="handleNavLinkClick">
+                            <i class="fas fa-user-tie"></i>
+                            <span>Đội ngũ chuyên gia</span>
+                        </NuxtLink>
+                    </li>
                     <li v-if="canAccessContent" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('content') }">
                         <a href="#" class="nav-link" @click="toggleSubmenu('content')">
                             <i class="fas fa-file-alt"></i>
@@ -84,6 +90,17 @@
                             <li><NuxtLink to="/admin/content/conditions" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/conditions') }">Điều kiện</NuxtLink></li>
                             <li><NuxtLink to="/admin/content/news" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/news') }">Tin tức</NuxtLink></li>
                             <li><NuxtLink to="/admin/content/contact" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/content/contact') }">Liên hệ</NuxtLink></li>
+                        </ul>
+                    </li>
+                    <li v-if="canAccessContent" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('other') }">
+                        <a href="#" class="nav-link" @click="toggleSubmenu('other')">
+                            <i class="fas fa-ellipsis-h"></i>
+                            <span>Khác</span>
+                            <i class="fas fa-chevron-down submenu-arrow" :class="{ 'rotated': openSubmenus.includes('other') }"></i>
+                        </a>
+                        <ul class="submenu" :class="{ 'open': openSubmenus.includes('other') }">
+                            <li><NuxtLink to="/admin/other/about-stats" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-stats') }">Thành tích</NuxtLink></li>
+                            <li><NuxtLink to="/admin/other/about-reasons" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-reasons') }">Lý do chọn</NuxtLink></li>
                         </ul>
                     </li>
                     <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
@@ -202,6 +219,7 @@ const getCurrentSubmenu = (path) => {
     if (path.startsWith('/admin/schools')) return 'schools'
     if (path.startsWith('/admin/news')) return 'news'
     if (path.startsWith('/admin/content')) return 'content'
+    if (path.startsWith('/admin/other')) return 'other'
     if (path.startsWith('/admin/settings')) return 'settings'
     return null
 }
