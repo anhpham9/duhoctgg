@@ -132,6 +132,7 @@ app.get('/api/public/schools/:slug/reviews', getPublicSchoolReviewsBySlug);
 app.get('/api/public/about/team-members', (req, res) => res.redirect('/api/about/team-members'));
 app.get('/api/public/about/stats', (req, res) => res.redirect('/api/about/stats'));
 app.get('/api/public/about/reasons', (req, res) => res.redirect('/api/about/reasons'));
+app.get('/api/public/about/missions', (req, res) => res.redirect('/api/about/missions'));
 app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 

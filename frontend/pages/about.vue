@@ -51,42 +51,27 @@
         <section class="vision-mission">
             <div class="container">
                 <div class="vision-mission-grid">
-                    <div class="vision-card">
+                    <article
+                        v-for="mission in missions"
+                        :key="mission.id"
+                        class="about-mission-card"
+                        :class="{ 'list-card': mission.type === 'list' }"
+                    >
                         <div class="vm-icon">
-                            <i class="fas fa-eye"></i>
+                            <i :class="mission.icon || 'fas fa-circle-info'"></i>
                         </div>
-                        <h3>TẦM NHÌN</h3>
-                        <p>
-                            Trở thành công ty tư vấn du học Nhật Bản uy tín hàng đầu Việt Nam,
-                            góp phần nâng cao chất lượng nguồn nhân lực Việt Nam thông qua giáo dục
-                            chất lượng cao tại Nhật Bản.
-                        </p>
-                    </div>
+                        <h3>{{ mission.title }}</h3>
 
-                    <div class="mission-card">
-                        <div class="vm-icon">
-                            <i class="fas fa-bullseye"></i>
-                        </div>
-                        <h3>SỨ MỆNH</h3>
-                        <p>
-                            Cung cấp dịch vụ tư vấn du học chuyên nghiệp, đồng hành cùng học sinh
-                            từ khâu chuẩn bị hồ sơ đến khi định cư thành công tại Nhật Bản.
-                            Chúng tôi cam kết mang đến cơ hội học tập tốt nhất với chi phí hợp lý.
+                        <p v-if="mission.type === 'paragraph'">
+                            {{ mission.description }}
                         </p>
-                    </div>
 
-                    <div class="values-card">
-                        <div class="vm-icon">
-                            <i class="fas fa-heart"></i>
-                        </div>
-                        <h3>GIÁ TRỊ CỐT LÕI</h3>
-                        <ul>
-                            <li><strong>Uy tín:</strong> Minh bạch trong mọi giao dịch</li>
-                            <li><strong>Chất lượng:</strong> Dịch vụ chuyên nghiệp hàng đầu</li>
-                            <li><strong>Tận tâm:</strong> Đặt lợi ích học sinh lên hàng đầu</li>
-                            <li><strong>Đổi mới:</strong> Không ngừng cải tiến dịch vụ</li>
+                        <ul v-else>
+                            <li v-for="(item, index) in parseMissionList(mission.description)" :key="`${mission.id}-${index}`">
+                                <strong>{{ item.key }}:</strong> {{ item.value }}
+                            </li>
                         </ul>
-                    </div>
+                    </article>
                 </div>
             </div>
         </section>
@@ -100,36 +85,12 @@
                 </div>
 
                 <div class="stats-grid">
-                    <div class="stat-item">
+                    <div v-for="stat in stats" :key="stat.id" class="stat-item">
                         <div class="stat-icon">
-                            <i class="fas fa-users"></i>
+                            <i :class="stat.icon || 'fas fa-chart-line'"></i>
                         </div>
-                        <div class="stat-number" data-target="2500">0</div>
-                        <div class="stat-label">Học sinh thành công</div>
-                    </div>
-
-                    <div class="stat-item">
-                        <div class="stat-icon">
-                            <i class="fas fa-handshake"></i>
-                        </div>
-                        <div class="stat-number" data-target="150">0</div>
-                        <div class="stat-label">Trường đối tác</div>
-                    </div>
-
-                    <div class="stat-item">
-                        <div class="stat-icon">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <div class="stat-number" data-target="98">0</div>
-                        <div class="stat-label">Tỷ lệ visa thành công (%)</div>
-                    </div>
-
-                    <div class="stat-item">
-                        <div class="stat-icon">
-                            <i class="fas fa-business-time"></i>
-                        </div>
-                        <div class="stat-number" data-target="6">0</div>
-                        <div class="stat-label">Năm kinh nghiệm</div>
+                        <div class="stat-number" :data-target="Number(stat.number) || 0">0</div>
+                        <div class="stat-label">{{ stat.label }}</div>
                     </div>
                 </div>
             </div>
@@ -144,70 +105,12 @@
                 </div>
 
                 <div class="reasons-grid">
-                    <div class="reason-card">
+                    <div v-for="reason in reasons" :key="reason.id" class="reason-card">
                         <div class="reason-icon">
-                            <i class="fas fa-certificate"></i>
+                            <i :class="reason.icon || 'fas fa-circle-check'"></i>
                         </div>
-                        <h3>Được Chứng Nhận</h3>
-                        <p>
-                            Được cấp phép hoạt động hợp pháp bởi các cơ quan chức năng.
-                            Là đại diện chính thức của nhiều trường danh tiếng tại Nhật Bản.
-                        </p>
-                    </div>
-
-                    <div class="reason-card">
-                        <div class="reason-icon">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <h3>Đội Ngũ Chuyên Nghiệp</h3>
-                        <p>
-                            Tư vấn viên có trình độ cao, từng du học tại Nhật Bản.
-                            Hiểu rõ văn hóa, học bổng và cơ hội việc làm tại Nhật.
-                        </p>
-                    </div>
-
-                    <div class="reason-card">
-                        <div class="reason-icon">
-                            <i class="fas fa-handshake"></i>
-                        </div>
-                        <h3>Cam Kết Rõ Ràng</h3>
-                        <p>
-                            Ký hợp đồng minh bạch, cam kết hoàn tiền 100% nếu visa bị từ chối
-                            do lỗi của công ty. Hỗ trợ trọn đời cho học sinh.
-                        </p>
-                    </div>
-
-                    <div class="reason-card">
-                        <div class="reason-icon">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                        <h3>Chi Phí Hợp Lý</h3>
-                        <p>
-                            Mức phí tư vấn cạnh tranh nhất thị trường. Tư vấn miễn phí,
-                            chỉ thu phí khi học sinh có kết quả tích cực.
-                        </p>
-                    </div>
-
-                    <div class="reason-card">
-                        <div class="reason-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <h3>Tiến Độ Nhanh Chóng</h3>
-                        <p>
-                            Quy trình xử lý hồ sơ nhanh chóng, chuyên nghiệp.
-                            Luôn cập nhật tình hình hồ sơ cho học sinh và phụ huynh.
-                        </p>
-                    </div>
-
-                    <div class="reason-card">
-                        <div class="reason-icon">
-                            <i class="fas fa-life-ring"></i>
-                        </div>
-                        <h3>Hỗ Trợ Toàn Diện</h3>
-                        <p>
-                            Không chỉ tư vấn du học mà còn hỗ trợ việc làm thêm,
-                            tìm chỗ ở, thích ứng văn hóa và định cư lâu dài.
-                        </p>
+                        <h3>{{ reason.title }}</h3>
+                        <p>{{ reason.description }}</p>
                     </div>
                 </div>
             </div>
@@ -222,79 +125,26 @@
                 </div>
 
                 <div class="team-grid">
-                    <div class="team-member">
+                    <div v-for="member in teamMembers" :key="member.id" class="team-member">
                         <div class="member-photo">
-                            <img src="/assets/images/news-2.jpg" alt="CEO Nguyễn Văn A">
+                            <img :src="member.photo_url || '/assets/images/students-group.webp'" :alt="member.name">
                         </div>
                         <div class="member-info">
-                            <h3>Nguyễn Văn A</h3>
-                            <p class="member-position">CEO & Founder</p>
-                            <p class="member-description">
-                                10+ năm kinh nghiệm trong lĩnh vực tư vấn du học.
-                                Cử nhân Đại học Waseda, Nhật Bản.
-                            </p>
-                            <div class="member-social">
-                                <a href="#"><i class="fab fa-facebook"></i></a>
-                                <a href="#"><i class="fab fa-tiktok"></i></a>
-                                <a href="#"><i class="fas fa-envelope"></i></a>
+                            <h3>{{ member.name }}</h3>
+                            <p class="member-position">{{ member.position }}</p>
+                            <p class="member-description">{{ member.description }}</p>
+                            <div v-if="hasAnySocial(member.social_links)" class="member-social">
+                                <a v-if="member.social_links.facebook" :href="member.social_links.facebook" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                                    <i class="fab fa-facebook"></i>
+                                </a>
+                                <a v-if="member.social_links.tiktok" :href="member.social_links.tiktok" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                                    <i class="fab fa-tiktok"></i>
+                                </a>
+                                <a v-if="member.social_links.email" :href="`mailto:${member.social_links.email}`" aria-label="Email">
+                                    <i class="fas fa-envelope"></i>
+                                </a>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="team-member">
-                        <div class="member-photo">
-                            <img src="/assets/images/news-3.jpg" alt="Trần Thị B">
-                        </div>
-                        <div class="member-info">
-                            <h3>Trần Thị B</h3>
-                            <p class="member-position">Giám đốc Tư vấn</p>
-                            <p class="member-description">
-                                Chuyên gia tư vấn với 8 năm kinh nghiệm.
-                                Thạc sĩ Đại học Tokyo, chuyên ngành Giáo dục.
-                            </p>
-                            <div class="member-social">
-                                <a href="#"><i class="fab fa-facebook"></i></a>
-                                <a href="#"><i class="fab fa-tiktok"></i></a>
-                                <a href="#"><i class="fas fa-envelope"></i></a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="team-member">
-                        <div class="member-photo">
-                            <img src="/assets/images/school-1.jpg" alt="Lê Văn C">
-                        </div>
-                        <div class="member-info">
-                            <h3>Lê Văn C</h3>
-                            <p class="member-position">Trưởng phòng Visa</p>
-                            <p class="member-description">
-                                Chuyên gia xử lý hồ sơ visa với tỷ lệ thành công 99%.
-                                Cử nhân Đại học Keio, chuyên ngành Luật.
-                            </p>
-                            <div class="member-social">
-                                <a href="#"><i class="fab fa-facebook"></i></a>
-                                <a href="#"><i class="fab fa-tiktok"></i></a>
-                                <a href="#"><i class="fas fa-envelope"></i></a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="team-member">
-                        <div class="member-photo">
-                            <img src="/assets/images/school-2.jpg" alt="Phạm Thị D">
-                        </div>
-                        <div class="member-info">
-                            <h3>Phạm Thị D</h3>
-                            <p class="member-position">Tư vấn viên Senior</p>
-                            <p class="member-description">
-                                Tư vấn viên giàu kinh nghiệm, đã hỗ trợ 500+ học sinh thành công.
-                                Thạc sĩ Đại học Osaka, chuyên ngành Kinh tế.
-                            </p>
-                            <div class="member-social">
-                                <a href="#"><i class="fab fa-facebook"></i></a>
-                                <a href="#"><i class="fab fa-tiktok"></i></a>
-                                <a href="#"><i class="fas fa-envelope"></i></a>
-                            </div>
+                            <p v-else class="member-social-empty">Thông tin liên hệ đang được cập nhật.</p>
                         </div>
                     </div>
                 </div>
@@ -365,12 +215,172 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-// Template refs
+const config = useRuntimeConfig()
+const API_BASE = config.public.apiBase
+
+const fallbackMissions = [
+    {
+        id: 'fallback-vision',
+        icon: 'fas fa-eye',
+        title: 'TẦM NHÌN',
+        type: 'paragraph',
+        description: 'Trở thành công ty tư vấn du học Nhật Bản uy tín hàng đầu Việt Nam, góp phần nâng cao chất lượng nguồn nhân lực Việt Nam thông qua giáo dục chất lượng cao tại Nhật Bản.'
+    },
+    {
+        id: 'fallback-mission',
+        icon: 'fas fa-bullseye',
+        title: 'SỨ MỆNH',
+        type: 'paragraph',
+        description: 'Cung cấp dịch vụ tư vấn du học chuyên nghiệp, đồng hành cùng học sinh từ khâu chuẩn bị hồ sơ đến khi định cư thành công tại Nhật Bản với chi phí hợp lý và lộ trình rõ ràng.'
+    },
+    {
+        id: 'fallback-values',
+        icon: 'fas fa-heart',
+        title: 'GIÁ TRỊ CỐT LÕI',
+        type: 'list',
+        description: JSON.stringify([
+            { key: 'Uy tín', value: 'Minh bạch trong mọi giao dịch' },
+            { key: 'Chất lượng', value: 'Dịch vụ chuyên nghiệp hàng đầu' },
+            { key: 'Tận tâm', value: 'Đặt lợi ích học sinh lên hàng đầu' },
+            { key: 'Đổi mới', value: 'Không ngừng cải tiến dịch vụ' }
+        ])
+    }
+]
+
+const fallbackStats = [
+    { id: 'fallback-stat-1', icon: 'fas fa-users', number: 2500, label: 'Học sinh thành công' },
+    { id: 'fallback-stat-2', icon: 'fas fa-handshake', number: 150, label: 'Trường đối tác' },
+    { id: 'fallback-stat-3', icon: 'fas fa-percentage', number: 98, label: 'Tỷ lệ visa thành công (%)' },
+    { id: 'fallback-stat-4', icon: 'fas fa-business-time', number: 6, label: 'Năm kinh nghiệm' }
+]
+
+const fallbackReasons = [
+    {
+        id: 'fallback-reason-1',
+        icon: 'fas fa-certificate',
+        title: 'Được Chứng Nhận',
+        description: 'Được cấp phép hoạt động hợp pháp bởi các cơ quan chức năng và là đại diện chính thức của nhiều trường danh tiếng tại Nhật Bản.'
+    },
+    {
+        id: 'fallback-reason-2',
+        icon: 'fas fa-user-tie',
+        title: 'Đội Ngũ Chuyên Nghiệp',
+        description: 'Tư vấn viên có trình độ cao, từng du học tại Nhật Bản và hiểu rõ văn hóa, học bổng, cơ hội việc làm.'
+    },
+    {
+        id: 'fallback-reason-3',
+        icon: 'fas fa-handshake',
+        title: 'Cam Kết Rõ Ràng',
+        description: 'Ký hợp đồng minh bạch, hỗ trợ trọn đời cho học sinh và đồng hành xuyên suốt quá trình du học.'
+    },
+    {
+        id: 'fallback-reason-4',
+        icon: 'fas fa-dollar-sign',
+        title: 'Chi Phí Hợp Lý',
+        description: 'Mức phí tư vấn cạnh tranh, minh bạch và tối ưu theo từng lộ trình hồ sơ.'
+    },
+    {
+        id: 'fallback-reason-5',
+        icon: 'fas fa-clock',
+        title: 'Tiến Độ Nhanh Chóng',
+        description: 'Quy trình xử lý hồ sơ nhanh, cập nhật thường xuyên cho học sinh và phụ huynh.'
+    },
+    {
+        id: 'fallback-reason-6',
+        icon: 'fas fa-life-ring',
+        title: 'Hỗ Trợ Toàn Diện',
+        description: 'Hỗ trợ từ chọn trường, làm hồ sơ, xin visa đến ổn định cuộc sống và việc làm tại Nhật.'
+    }
+]
+
+const fallbackTeamMembers = [
+    {
+        id: 'fallback-member-1',
+        name: 'Nguyễn Văn A',
+        position: 'CEO & Founder',
+        description: '10+ năm kinh nghiệm trong lĩnh vực tư vấn du học. Cử nhân Đại học Waseda, Nhật Bản.',
+        photo_url: '/assets/images/news-2.jpg',
+        social_links: {}
+    },
+    {
+        id: 'fallback-member-2',
+        name: 'Trần Thị B',
+        position: 'Giám đốc Tư vấn',
+        description: 'Chuyên gia tư vấn với 8 năm kinh nghiệm. Thạc sĩ Đại học Tokyo, chuyên ngành Giáo dục.',
+        photo_url: '/assets/images/news-3.jpg',
+        social_links: {}
+    },
+    {
+        id: 'fallback-member-3',
+        name: 'Lê Văn C',
+        position: 'Trưởng phòng Visa',
+        description: 'Chuyên gia xử lý hồ sơ visa với tỷ lệ thành công cao. Cử nhân Đại học Keio, chuyên ngành Luật.',
+        photo_url: '/assets/images/school-1.jpg',
+        social_links: {}
+    },
+    {
+        id: 'fallback-member-4',
+        name: 'Phạm Thị D',
+        position: 'Tư vấn viên Senior',
+        description: 'Tư vấn viên giàu kinh nghiệm, đã hỗ trợ hàng trăm học sinh thành công. Thạc sĩ Đại học Osaka.',
+        photo_url: '/assets/images/school-2.jpg',
+        social_links: {}
+    }
+]
+
+const fetchPublicCollection = async (path, fallback, transform = (rows) => rows) => {
+    try {
+        const response = await $fetch(`${API_BASE}${path}`)
+        const rows = Array.isArray(response?.data) ? response.data : []
+        return rows.length ? transform(rows) : fallback
+    } catch {
+        return fallback
+    }
+}
+
+const normalizeSocialLinks = (socialLinks) => {
+    if (socialLinks && typeof socialLinks === 'object' && !Array.isArray(socialLinks)) {
+        return {
+            facebook: String(socialLinks.facebook || '').trim(),
+            tiktok: String(socialLinks.tiktok || '').trim(),
+            email: String(socialLinks.email || '').trim()
+        }
+    }
+
+    return { facebook: '', tiktok: '', email: '' }
+}
+
+const [missions, stats, reasons, teamMembers] = await Promise.all([
+    fetchPublicCollection('/public/about/missions', fallbackMissions),
+    fetchPublicCollection('/public/about/stats', fallbackStats),
+    fetchPublicCollection('/public/about/reasons', fallbackReasons),
+    fetchPublicCollection('/public/about/team-members', fallbackTeamMembers, (rows) => rows.map((member) => ({
+        ...member,
+        social_links: normalizeSocialLinks(member.social_links)
+    })))
+])
+
+const parseMissionList = (description) => {
+    if (!description) return []
+
+    try {
+        const parsed = typeof description === 'string' ? JSON.parse(description) : description
+        return Array.isArray(parsed)
+            ? parsed.filter((item) => item && (item.key || item.value))
+            : []
+    } catch {
+        return []
+    }
+}
+
+const hasAnySocial = (socialLinks = {}) => {
+    return Boolean(socialLinks.facebook || socialLinks.tiktok || socialLinks.email)
+}
+
 const companyStats = ref(null)
 
-// Animation function for statistics numbers
 const animateValue = (element, start, end, duration) => {
     const startTime = performance.now()
 
@@ -389,7 +399,6 @@ const animateValue = (element, start, end, duration) => {
     window.requestAnimationFrame(step)
 }
 
-// Intersection Observer for triggering animation
 let observer = null
 
 const setupStatsAnimation = () => {
@@ -401,31 +410,28 @@ const setupStatsAnimation = () => {
                 const statNumbers = entry.target.querySelectorAll('.stat-number[data-target]')
 
                 statNumbers.forEach((el) => {
-                    const target = parseInt(el.getAttribute('data-target'))
-                    if (!isNaN(target)) {
+                    const target = parseInt(el.getAttribute('data-target') || '0', 10)
+                    if (!Number.isNaN(target)) {
                         animateValue(el, 0, target, 2000)
                     }
                 })
 
-                // Unobserve after animation starts
-                observer.unobserve(entry.target)
+                observer?.unobserve(entry.target)
             }
         })
     }, {
-        threshold: 0.3, // Trigger when 30% of element is visible
-        rootMargin: '0px 0px -50px 0px' // Small offset for better timing
+        threshold: 0.3,
+        rootMargin: '0px 0px -50px 0px'
     })
 
     observer.observe(companyStats.value)
 }
 
 onMounted(() => {
-    // Setup stats animation after component mounts
     setupStatsAnimation()
 })
 
 onBeforeUnmount(() => {
-    // Cleanup observer
     if (observer) {
         observer.disconnect()
     }
@@ -504,7 +510,8 @@ onBeforeUnmount(() => {
 
 .vision-card,
 .mission-card,
-.values-card {
+.values-card,
+.about-mission-card {
     background: white;
     padding: 40px 30px;
     border-radius: 20px;
@@ -518,7 +525,8 @@ onBeforeUnmount(() => {
 
 .vision-card:hover,
 .mission-card:hover,
-.values-card:hover {
+.values-card:hover,
+.about-mission-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 20px 40px rgba(211, 47, 47, 0.2);
 }
@@ -564,7 +572,8 @@ onBeforeUnmount(() => {
 
 .vision-card h3,
 .mission-card h3,
-.values-card h3 {
+.values-card h3,
+.about-mission-card h3 {
     font-size: 1.5rem;
     color: #333;
     margin-bottom: 20px;
@@ -572,21 +581,24 @@ onBeforeUnmount(() => {
 }
 
 .vision-card p,
-.mission-card p {
+.mission-card p,
+.about-mission-card p {
     color: #666;
     line-height: 1.7;
     font-size: 1rem;
     margin: 0;
 }
 
-.values-card ul {
+.values-card ul,
+.about-mission-card.list-card ul {
     list-style: none;
     text-align: left;
     margin: 0;
     padding: 0;
 }
 
-.values-card ul li {
+.values-card ul li,
+.about-mission-card.list-card ul li {
     display: flex;
     align-items: flex-start;
     gap: 15px;
@@ -597,12 +609,14 @@ onBeforeUnmount(() => {
     transition: all 0.3s ease;
 }
 
-.values-card ul li:hover {
+.values-card ul li:hover,
+.about-mission-card.list-card ul li:hover {
     background: #fff5f5;
     transform: translateX(5px);
 }
 
-.values-card ul li:before {
+.values-card ul li:before,
+.about-mission-card.list-card ul li:before {
     content: '✓';
     width: 25px;
     height: 25px;
@@ -618,7 +632,8 @@ onBeforeUnmount(() => {
     margin-top: 2px;
 }
 
-.values-card ul li strong {
+.values-card ul li strong,
+.about-mission-card.list-card ul li strong {
     color: #d32f2f;
     font-weight: 600;
 }
@@ -885,6 +900,12 @@ onBeforeUnmount(() => {
     display: flex;
     justify-content: center;
     gap: 15px;
+}
+
+.member-social-empty {
+    margin: 0;
+    color: #9aa0a6;
+    font-size: 0.9rem;
 }
 
 .member-social a {
