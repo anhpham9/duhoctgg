@@ -120,20 +120,6 @@
                     </div>
                 </div>
 
-                <div v-if="!isDynamicPage" class="content-section">
-                    <div class="section-header">
-                        <h3><i class="fas fa-pen"></i> Nội dung chính</h3>
-                        <p>Nội dung lưu trong bảng page_contents</p>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Content</label>
-                            <textarea v-model="form.content" class="form-control content-editor" rows="16" placeholder="Nhập nội dung trang About..."></textarea>
-                            <small class="field-hint">{{ form.content.length }} ký tự</small>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="form-actions">
                     <button class="btn btn-secondary" :disabled="saving" @click="restoreSnapshot">
                         <i class="fas fa-undo"></i>
@@ -189,11 +175,8 @@ const form = reactive({
     meta_title: '',
     meta_description: '',
     type: '',
-    status: 'published',
-    content: ''
+    status: 'published'
 })
-
-const isDynamicPage = computed(() => form.type === 'dynamic')
 
 const snapshot = ref(null)
 
@@ -209,8 +192,7 @@ const normalizePayload = (payload = {}) => ({
     meta_title: payload.meta_title || '',
     meta_description: payload.meta_description || '',
     type: payload.type || 'static',
-    status: payload.status || 'published',
-    content: payload.content || ''
+    status: payload.status || 'published'
 })
 
 const hasChanges = computed(() => {
@@ -268,8 +250,7 @@ const loadPageData = async () => {
                     meta_title: 'Về chúng tôi - DuhocNB',
                     meta_description: 'Giới thiệu về DuhocNB, đội ngũ sáng lập và giá trị cốt lõi.',
                     type: 'static',
-                    status: 'published',
-                    content: ''
+                    status: 'published'
                 })
                 showWarning('Chưa có dữ liệu trang about trên hệ thống. Đang sử dụng giá trị mặc định.')
                 return
@@ -299,8 +280,7 @@ const savePageData = async () => {
             hero_description: form.hero_description || '',
             meta_title: (form.meta_title || '').trim(),
             meta_description: form.meta_description || '',
-            status: form.status,
-            content: form.content || ''
+            status: form.status
         }
 
         const response = await fetch(`${API_BASE}/static-pages/${PAGE_SLUG}`, {
@@ -520,11 +500,6 @@ onMounted(async () => {
 .form-control.is-invalid {
     border-color: #dc3545;
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
-}
-
-.content-editor {
-    min-height: 320px;
-    line-height: 1.5;
 }
 
 .field-hint {
