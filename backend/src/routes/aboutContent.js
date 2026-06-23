@@ -19,7 +19,13 @@ import {
     getAboutReasonsAdmin,
     createAboutReason,
     updateAboutReason,
-    deleteAboutReason
+    deleteAboutReason,
+    // About Missions
+    getAboutMissions,
+    getAboutMissionsAdmin,
+    createAboutMission,
+    updateAboutMission,
+    deleteAboutMission
 } from '../controllers/aboutContent.controller.js'
 import multer from 'multer'
 import { authenticate } from '../middlewares/auth.middleware.js'
@@ -67,5 +73,13 @@ router.get('/reasons/admin', authenticate, authorizeRole([1, 2, 3]), getAboutRea
 router.post('/reasons', authenticate, authorizeRole([1, 2, 3]), createAboutReason)
 router.put('/reasons/:id', authenticate, authorizeRole([1, 2, 3]), updateAboutReason)
 router.delete('/reasons/:id', authenticate, authorizeRole([1, 2]), deleteAboutReason)
+
+// ============ About Missions ============
+
+router.get('/missions', getAboutMissions)
+router.get('/missions/admin', authenticate, authorizeRole([1, 2, 3]), getAboutMissionsAdmin)
+router.post('/missions', authenticate, authorizeRole([1, 2, 3]), createAboutMission)
+router.put('/missions/:id', authenticate, authorizeRole([1, 2, 3]), updateAboutMission)
+router.delete('/missions/:id', authenticate, authorizeRole([1, 2]), deleteAboutMission)
 
 export default router

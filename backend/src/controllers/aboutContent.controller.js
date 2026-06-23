@@ -559,3 +559,145 @@ export const uploadTeamMemberImage = async (req, res) => {
         })
     }
 }
+
+// ============ About Missions CRUD ============
+
+/**
+ * Serialize description before saving:
+ *   type=paragraph → plain text string
+ *   type=list      → JSON.stringify([{key, value}, ...])
+ */
+const serializeDescription = (type, description) => {
+    if (type === 'list') {
+        // Accept either an already-stringified JSON or a JS array
+        if (typeof description === 'string') {
+            try {
+                JSON.parse(description) // validate it's valid JSON
+                return description
+            } catch {
+                return '[]'
+            }
+        }
+        return JSON.stringify(description)
+    }
+    return String(description || '')
+}
+
+export const getAboutMissions = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, icon, title, type, description, sort_order, is_active, created_at FROM about_missions WHERE is_active = true ORDER BY sort_order ASC'
+        )
+        res.json({ success: true, data: result.rows || [], message: 'Lấy tầm nhìn thành công' })
+    } catch (error) {
+        logger.error('Get about missions failed', { error })
+        res.status(500).json({ success: false, message: 'Không thể lấy tầm nhìn', errors: { server: error.message } })
+    }
+}
+
+export const getAboutMissionsAdmin = async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT id, icon, title, type, description, sort_order, is_active, created_at, updated_at FROM about_missions ORDER BY sort_order ASC'
+        )
+        res.json({ success: true, data: result.rows || [], message: 'Lấy tầm nhìn thành công' })
+    } catch (error) {
+        logger.error('Get about missions admin failed', { error })
+        res.status(500).json({ success: false, message: 'Không thể lấy tầm nhìn', errors: { server: error.message } })
+    }
+}
+
+export const createAboutMission = async (req, res) => {
+    try {
+        const { icon, title, type, description, sortOrder } = req.body
+
+        if (!title || !description || !type) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tiêu đề, loại và mô tả là bắt buộc',
+                errors: { validation: 'Tiêu đề, loại và mô tả là bắt buộc' }
+            })
+        }
+
+        if (!['paragraph', 'list'].includes(type)) {
+            return res.status(400).json({
+                success: false,
+                message: 'type phải là "paragraph" hoặc "list"',
+                errors: { validation: 'type không hợp lệ' }
+            })
+        }
+
+        const serialized = serializeDescription(type, description)
+
+        const result = await db.query(
+            'INSERT INTO about_missions (icon, title, type, description, sort_order, is_active) VALUES ($1, $2, $3, $4, $5, true) RETURNING *',
+            [icon || '', title.trim(), type, serialized, sortOrder ?? 0]
+        )
+
+        logInfo('ABOUT_MISSION_CREATE', { userId: req.user?.id, missionId: result.rows[0].id, title })
+
+        res.status(201).json({ success: true, data: result.rows[0], message: 'Tạo tầm nhìn thành công' })
+    } catch (error) {
+        logger.error('Create about mission failed', { error })
+        res.status(500).json({ success: false, message: 'Không thể tạo tầm nhìn', errors: { server: error.message } })
+    }
+}
+
+export const updateAboutMission = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { icon, title, type, description, sortOrder, isActive } = req.body
+
+        if (!title || !description || !type) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tiêu đề, loại và mô tả là bắt buộc',
+                errors: { validation: 'Tiêu đề, loại và mô tả là bắt buộc' }
+            })
+        }
+
+        if (!['paragraph', 'list'].includes(type)) {
+            return res.status(400).json({
+                success: false,
+                message: 'type phải là "paragraph" hoặc "list"',
+                errors: { validation: 'type không hợp lệ' }
+            })
+        }
+
+        const serialized = serializeDescription(type, description)
+
+        const result = await db.query(
+            'UPDATE about_missions SET icon = $1, title = $2, type = $3, description = $4, sort_order = $5, is_active = $6, updated_at = NOW() WHERE id = $7 RETURNING *',
+            [icon || '', title.trim(), type, serialized, sortOrder ?? 0, isActive !== undefined ? isActive : true, id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: `Tầm nhìn ID ${id} không tồn tại` })
+        }
+
+        logInfo('ABOUT_MISSION_UPDATE', { userId: req.user?.id, missionId: id, title })
+
+        res.json({ success: true, data: result.rows[0], message: 'Cập nhật tầm nhìn thành công' })
+    } catch (error) {
+        logger.error('Update about mission failed', { error })
+        res.status(500).json({ success: false, message: 'Không thể cập nhật tầm nhìn', errors: { server: error.message } })
+    }
+}
+
+export const deleteAboutMission = async (req, res) => {
+    try {
+        const { id } = req.params
+        const check = await db.query('SELECT id FROM about_missions WHERE id = $1', [id])
+        if (check.rows.length === 0) {
+            return res.status(404).json({ success: false, message: `Tầm nhìn ID ${id} không tồn tại` })
+        }
+
+        await db.query('DELETE FROM about_missions WHERE id = $1', [id])
+        logInfo('ABOUT_MISSION_DELETE', { userId: req.user?.id, missionId: id })
+
+        res.json({ success: true, message: 'Xóa tầm nhìn thành công' })
+    } catch (error) {
+        logger.error('Delete about mission failed', { error })
+        res.status(500).json({ success: false, message: 'Không thể xóa tầm nhìn', errors: { server: error.message } })
+    }
+}

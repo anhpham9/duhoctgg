@@ -46,6 +46,7 @@ import {
 import { trackNewsView } from "./controllers/news.controller.js";
 import { ensureSettingsKeysExist } from "./services/settings.service.js";
 import { ensureMediaAssetTableExists } from "./services/mediaAsset.service.js";
+import { ensureAboutMissionsTableExists } from "./services/aboutContent.service.js";
 
 
 // RBAC/permission middleware mẫu
@@ -216,6 +217,7 @@ app.listen(PORT, async () => {
     // Initialize settings keys in database
     await ensureMediaAssetTableExists();
     await ensureSettingsKeysExist();
+    await ensureAboutMissionsTableExists();
     
     backupService.startBackupScheduler();
 

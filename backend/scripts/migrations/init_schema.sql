@@ -476,3 +476,78 @@ CREATE TABLE IF NOT EXISTS social_links (
 
 CREATE INDEX IF NOT EXISTS idx_social_links_order ON social_links(display_order ASC);
 CREATE INDEX IF NOT EXISTS idx_social_links_active ON social_links(is_active);
+
+-- Table: team_members (for expert team section)
+-- Stores team member information with profile images and social links
+CREATE TABLE IF NOT EXISTS team_members (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    position VARCHAR(255) NOT NULL,
+    description TEXT,
+    photo_url VARCHAR(500),
+    photo_cloudinary_public_id VARCHAR(255),
+    social_links JSONB DEFAULT '{
+        "facebook": "",
+        "tiktok": "",
+        "email": ""
+    }'::jsonb,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create index for sorting and status filtering
+CREATE INDEX IF NOT EXISTS idx_team_members_sort ON team_members(sort_order, is_active);
+CREATE INDEX IF NOT EXISTS idx_team_members_active ON team_members(is_active);
+
+-- Table: about_stats (for company achievements section)
+-- Stores statistics to be animated on the about page
+CREATE TABLE IF NOT EXISTS about_stats (
+    id SERIAL PRIMARY KEY,
+    icon VARCHAR(100),
+    number INT NOT NULL,
+    label VARCHAR(255) NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create index for sorting and status filtering
+CREATE INDEX IF NOT EXISTS idx_about_stats_sort ON about_stats(sort_order, is_active);
+CREATE INDEX IF NOT EXISTS idx_about_stats_active ON about_stats(is_active);
+
+-- Table: about_reasons (for why choose us section)
+-- Stores reason cards to be displayed on the about page
+CREATE TABLE IF NOT EXISTS about_reasons (
+    id SERIAL PRIMARY KEY,
+    icon VARCHAR(100),
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create index for sorting and status filtering
+CREATE INDEX IF NOT EXISTS idx_about_reasons_sort ON about_reasons(sort_order, is_active);
+CREATE INDEX IF NOT EXISTS idx_about_reasons_active ON about_reasons(is_active);
+
+-- Table: about_missions (for company missions section)
+-- Stores mission statements to be displayed on the about page
+CREATE TABLE IF NOT EXISTS about_missions (
+    id          SERIAL PRIMARY KEY,
+    icon        VARCHAR(100),
+    title       VARCHAR(255)  NOT NULL,
+    type        VARCHAR(20)   NOT NULL DEFAULT 'paragraph' CHECK (type IN ('paragraph', 'list')),
+    description TEXT          NOT NULL,   -- plain text OR JSON string (for list type)
+    sort_order  INT           NOT NULL DEFAULT 0,
+    is_active   BOOLEAN       NOT NULL DEFAULT true,
+    created_at  TIMESTAMP     NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_about_missions_sort   ON about_missions(sort_order, is_active);
+CREATE INDEX IF NOT EXISTS idx_about_missions_active ON about_missions(is_active);
