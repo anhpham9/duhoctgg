@@ -701,3 +701,304 @@ export const deleteAboutMission = async (req, res) => {
         res.status(500).json({ success: false, message: 'Không thể xóa tầm nhìn', errors: { server: error.message } })
     }
 }
+
+// ============ About Content CRUD ============
+
+const ABOUT_CONTENT_KEYS = ['content', 'history']
+
+const normalizeTimelineItems = (timelineItems) => {
+    if (!timelineItems) return []
+
+    const rows = Array.isArray(timelineItems)
+        ? timelineItems
+        : typeof timelineItems === 'string'
+            ? JSON.parse(timelineItems)
+            : []
+
+    return rows
+        .filter((item) => item && (item.year || item.title || item.content))
+        .map((item) => ({
+            year: String(item.year || '').trim(),
+            title: String(item.title || item.content || '').trim(),
+            content: String(item.content || '').trim()
+        }))
+        .filter((item) => item.year && item.content)
+}
+
+const mapAboutContentRow = (row) => ({
+    ...row,
+    timeline_items: normalizeTimelineItems(row.timeline_items)
+})
+
+export const getAboutContent = async (req, res) => {
+    try {
+        const result = await db.query(
+            "SELECT id, section_key, title, subtitle, type, content, timeline_items, image_url, sort_order, is_active, created_at FROM about_content WHERE is_active = true AND section_key = ANY($1) ORDER BY CASE section_key WHEN 'content' THEN 1 WHEN 'history' THEN 2 ELSE 99 END",
+            [ABOUT_CONTENT_KEYS]
+        )
+        res.json({
+            success: true,
+            data: (result.rows || []).map(mapAboutContentRow),
+            message: 'Lấy nội dung về chúng tôi thành công'
+        })
+    } catch (error) {
+        logger.error('Get about content failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy nội dung',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const getAboutContentAdmin = async (req, res) => {
+    try {
+        const result = await db.query(
+            "SELECT id, section_key, title, subtitle, type, content, timeline_items, image_url, image_cloudinary_public_id, sort_order, is_active, created_at, updated_at FROM about_content WHERE section_key = ANY($1) ORDER BY CASE section_key WHEN 'content' THEN 1 WHEN 'history' THEN 2 ELSE 99 END",
+            [ABOUT_CONTENT_KEYS]
+        )
+        res.json({
+            success: true,
+            data: (result.rows || []).map(mapAboutContentRow),
+            message: 'Lấy nội dung về chúng tôi thành công'
+        })
+    } catch (error) {
+        logger.error('Get about content admin failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể lấy nội dung',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const createAboutContent = async (req, res) => {
+    try {
+        const { sectionKey, title, subtitle, type, content, timelineItems, imageUrl, sortOrder } = req.body
+        const normalizedSectionKey = String(sectionKey || '').trim()
+        const normalizedType = String(type || '').trim()
+
+        if (!ABOUT_CONTENT_KEYS.includes(normalizedSectionKey)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Section key chỉ được phép là content hoặc history',
+                errors: { validation: 'Section key chỉ được phép là content hoặc history' }
+            })
+        }
+
+        const existed = await db.query('SELECT id FROM about_content WHERE section_key = $1', [normalizedSectionKey])
+        if (existed.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: 'Section này đã tồn tại, chỉ được chỉnh sửa',
+                errors: { validation: 'Section này đã tồn tại, chỉ được chỉnh sửa' }
+            })
+        }
+
+        if (!['paragraph', 'timeline'].includes(normalizedType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Type chỉ được phép là paragraph hoặc timeline',
+                errors: { validation: 'Type chỉ được phép là paragraph hoặc timeline' }
+            })
+        }
+
+        if (normalizedType === 'timeline' && normalizedSectionKey !== 'history') {
+            return res.status(400).json({
+                success: false,
+                message: 'Type timeline chỉ dùng cho section history',
+                errors: { validation: 'Type timeline chỉ dùng cho section history' }
+            })
+        }
+
+        if (normalizedType === 'paragraph' && normalizedSectionKey !== 'content') {
+            return res.status(400).json({
+                success: false,
+                message: 'Type paragraph chỉ dùng cho section content',
+                errors: { validation: 'Type paragraph chỉ dùng cho section content' }
+            })
+        }
+
+        if (String(subtitle || '').trim().length > 255) {
+            return res.status(400).json({
+                success: false,
+                message: 'Subtitle tối đa 255 ký tự',
+                errors: { validation: 'Subtitle tối đa 255 ký tự' }
+            })
+        }
+
+        const normalizedTimelineItems = normalizedType === 'timeline' ? normalizeTimelineItems(timelineItems) : []
+        const normalizedContent = normalizedType === 'timeline'
+            ? ''
+            : String(content || '').trim()
+
+        if (normalizedType === 'paragraph' && !normalizedContent) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nội dung là bắt buộc với type paragraph',
+                errors: { validation: 'Nội dung là bắt buộc với type paragraph' }
+            })
+        }
+
+        if (normalizedType === 'timeline' && normalizedTimelineItems.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Timeline phải có ít nhất một mốc',
+                errors: { validation: 'Timeline phải có ít nhất một mốc' }
+            })
+        }
+
+        const result = await db.query(
+            'INSERT INTO about_content (section_key, title, subtitle, type, content, timeline_items, image_url, sort_order, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) RETURNING *',
+            [normalizedSectionKey, String(title || '').trim(), String(subtitle || '').trim(), normalizedType, normalizedContent, JSON.stringify(normalizedTimelineItems), imageUrl || '', sortOrder || 0]
+        )
+
+        logInfo('ABOUT_CONTENT_CREATE', { userId: req.user?.id, contentId: result.rows[0].id, sectionKey: normalizedSectionKey })
+
+        res.status(201).json({
+            success: true,
+            data: mapAboutContentRow(result.rows[0]),
+            message: 'Tạo nội dung thành công'
+        })
+    } catch (error) {
+        logger.error('Create about content failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể tạo nội dung',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const updateAboutContent = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { title, subtitle, type, content, timelineItems, imageUrl, imagePublicId, sortOrder, isActive } = req.body
+
+        const existing = await db.query('SELECT id, section_key FROM about_content WHERE id = $1', [id])
+        if (existing.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy nội dung',
+                errors: { notFound: `Nội dung ID ${id} không tồn tại` }
+            })
+        }
+
+        const normalizedSectionKey = String(existing.rows[0].section_key || '').trim()
+        const normalizedType = String(type || '').trim() || (normalizedSectionKey === 'history' ? 'timeline' : 'paragraph')
+
+        if (!['paragraph', 'timeline'].includes(normalizedType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Type chỉ được phép là paragraph hoặc timeline',
+                errors: { validation: 'Type chỉ được phép là paragraph hoặc timeline' }
+            })
+        }
+
+        if (String(subtitle || '').trim().length > 255) {
+            return res.status(400).json({
+                success: false,
+                message: 'Subtitle tối đa 255 ký tự',
+                errors: { validation: 'Subtitle tối đa 255 ký tự' }
+            })
+        }
+
+        if (normalizedSectionKey === 'content' && normalizedType !== 'paragraph') {
+            return res.status(400).json({
+                success: false,
+                message: 'Section content chỉ cho phép type paragraph',
+                errors: { validation: 'Section content chỉ cho phép type paragraph' }
+            })
+        }
+
+        if (normalizedSectionKey === 'history' && normalizedType !== 'timeline') {
+            return res.status(400).json({
+                success: false,
+                message: 'Section history chỉ cho phép type timeline',
+                errors: { validation: 'Section history chỉ cho phép type timeline' }
+            })
+        }
+
+        const normalizedTimelineItems = normalizedType === 'timeline' ? normalizeTimelineItems(timelineItems) : []
+        const normalizedContent = normalizedType === 'timeline'
+            ? ''
+            : String(content || '').trim()
+
+        if (normalizedType === 'paragraph' && !normalizedContent) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nội dung là bắt buộc với type paragraph',
+                errors: { validation: 'Nội dung là bắt buộc với type paragraph' }
+            })
+        }
+
+        if (normalizedType === 'timeline' && normalizedTimelineItems.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Timeline phải có ít nhất một mốc',
+                errors: { validation: 'Timeline phải có ít nhất một mốc' }
+            })
+        }
+
+        const result = await db.query(
+            'UPDATE about_content SET title = $1, subtitle = $2, type = $3, content = $4, timeline_items = $5, image_url = $6, image_cloudinary_public_id = $7, sort_order = $8, is_active = $9, updated_at = NOW() WHERE id = $10 RETURNING *',
+            [String(title || '').trim(), String(subtitle || '').trim(), normalizedType, normalizedContent, JSON.stringify(normalizedTimelineItems), imageUrl || '', imagePublicId || '', sortOrder || 0, isActive !== undefined ? isActive : true, id]
+        )
+
+        logInfo('ABOUT_CONTENT_UPDATE', { userId: req.user?.id, contentId: id, sectionKey: normalizedSectionKey })
+
+        res.json({
+            success: true,
+            data: mapAboutContentRow(result.rows[0]),
+            message: 'Cập nhật nội dung thành công'
+        })
+    } catch (error) {
+        logger.error('Update about content failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể cập nhật nội dung',
+            errors: { server: error.message }
+        })
+    }
+}
+
+export const deleteAboutContent = async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const getMember = await db.query('SELECT image_cloudinary_public_id FROM about_content WHERE id = $1', [id])
+        if (getMember.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy nội dung',
+                errors: { notFound: `Nội dung ID ${id} không tồn tại` }
+            })
+        }
+
+        const publicId = getMember.rows[0].image_cloudinary_public_id
+
+        await db.query('DELETE FROM about_content WHERE id = $1', [id])
+
+        if (publicId && isCloudinaryConfigured()) {
+            try {
+                await cloudinary.uploader.destroy(publicId)
+            } catch (cloudinaryError) {
+                logger.warn('Failed to delete image from cloudinary', { publicId, error: cloudinaryError })
+            }
+        }
+
+        logInfo('ABOUT_CONTENT_DELETE', { userId: req.user?.id, contentId: id, publicId })
+
+        res.json({
+            success: true,
+            message: 'Xóa nội dung thành công'
+        })
+    } catch (error) {
+        logger.error('Delete about content failed', { error })
+        res.status(500).json({
+            success: false,
+            message: 'Không thể xóa nội dung',
+            errors: { server: error.message }
+        })
+    }
+}

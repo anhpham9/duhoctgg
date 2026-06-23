@@ -102,6 +102,7 @@
                             <li><NuxtLink to="/admin/other/about-stats" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-stats') }">Thành tích</NuxtLink></li>
                             <li><NuxtLink to="/admin/other/about-reasons" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-reasons') }">Lý do chọn</NuxtLink></li>
                             <li><NuxtLink to="/admin/other/about-mission" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-mission') }">Tầm nhìn / Sứ mệnh</NuxtLink></li>
+                            <li><NuxtLink to="/admin/other/about-content" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-content') }">Về chúng tôi</NuxtLink></li>
                         </ul>
                     </li>
                     <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">

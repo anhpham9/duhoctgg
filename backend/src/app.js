@@ -46,7 +46,7 @@ import {
 import { trackNewsView } from "./controllers/news.controller.js";
 import { ensureSettingsKeysExist } from "./services/settings.service.js";
 import { ensureMediaAssetTableExists } from "./services/mediaAsset.service.js";
-import { ensureAboutMissionsTableExists } from "./services/aboutContent.service.js";
+import { ensureAboutMissionsTableExists, ensureAboutContentTableExists } from "./services/aboutContent.service.js";
 
 
 // RBAC/permission middleware mẫu
@@ -133,6 +133,7 @@ app.get('/api/public/about/team-members', (req, res) => res.redirect('/api/about
 app.get('/api/public/about/stats', (req, res) => res.redirect('/api/about/stats'));
 app.get('/api/public/about/reasons', (req, res) => res.redirect('/api/about/reasons'));
 app.get('/api/public/about/missions', (req, res) => res.redirect('/api/about/missions'));
+app.get('/api/public/about/content', (req, res) => res.redirect('/api/about/content'));
 app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 
@@ -219,6 +220,7 @@ app.listen(PORT, async () => {
     await ensureMediaAssetTableExists();
     await ensureSettingsKeysExist();
     await ensureAboutMissionsTableExists();
+    await ensureAboutContentTableExists();
     
     backupService.startBackupScheduler();
 

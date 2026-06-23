@@ -8,40 +8,15 @@
         <section class="about-company">
             <div class="container">
                 <div class="section-header">
-                    <h2>VỀ CHÚNG TÔI</h2>
-                    <p>Chuyên gia tư vấn du học Nhật Bản hàng đầu Việt Nam</p>
+                    <h2>{{ aboutIntro?.title || 'VỀ CHÚNG TÔI' }}</h2>
+                    <p>{{ aboutIntro?.subtitle || 'Chuyên gia tư vấn du học Nhật Bản hàng đầu Việt Nam' }}</p>
                 </div>
                 <div class="about-content">
                     <div class="about-text">
-
-                        <div class="about-description">
-                            <p>
-                                <strong>Du Học NB</strong> được thành lập từ năm 2020 với sứ mệnh giúp các bạn trẻ Việt
-                                Nam
-                                thực hiện ước mơ du học tại đất nước mặt trời mọc. Với đội ngũ chuyên gia giàu kinh
-                                nghiệm
-                                và mạng lưới đối tác rộng khắp, chúng tôi đã đồng hành thành công cùng hàng nghìn học
-                                sinh
-                                trên con đường chinh phục tri thức tại Nhật Bản.
-                            </p>
-
-                            <p>
-                                Chúng tôi hiểu rằng mỗi học sinh đều có những mong muốn, khả năng và hoàn cảnh khác
-                                nhau.
-                                Vì vậy, chúng tôi cam kết cung cấp dịch vụ tư vấn cá nhân hóa, từ khâu chọn trường,
-                                chuẩn bị hồ sơ cho đến hỗ trợ cuộc sống tại Nhật Bản.
-                            </p>
-
-                            <p>
-                                Với phương châm <em>"Uy tín - Chất lượng - Tận tâm"</em>, Du Học NB không chỉ là
-                                nơi cung cấp dịch vụ mà còn là người bạn đồng hành đáng tin cậy của các bạn trẻ
-                                trên hành trình khám phá và phát triển bản thân tại xứ sở anh đào.
-                            </p>
-                        </div>
+                        <div class="about-description" v-html="formatContent(aboutIntro?.content)"></div>
                     </div>
-
                     <div class="about-image">
-                        <img src="/assets/images/students-group.webp" alt="Du Học NB Office">
+                        <img :src="aboutIntro?.image_url || '/assets/images/students-group.webp'" alt="Du Học NB">
                     </div>
                 </div>
             </div>
@@ -155,57 +130,16 @@
         <section class="company-history">
             <div class="container">
                 <div class="section-header">
-                    <h2>LỊCH SỬ PHÁT TRIỂN</h2>
-                    <p>Những cột mốc quan trọng trong hành trình phát triển của Du Học NB</p>
+                    <h2>{{ companyHistoryTitle }}</h2>
+                    <p>{{ companyHistorySubtitle }}</p>
                 </div>
 
                 <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-year">2020</div>
+                    <div v-for="item in historyItems" :key="item.id" class="timeline-item">
+                        <div class="timeline-year">{{ item.year }}</div>
                         <div class="timeline-content">
-                            <h3>Thành Lập Công Ty</h3>
-                            <p>Du Học NB được thành lập với đội ngũ 5 nhân viên và văn phòng đầu tiên tại TP.HCM.</p>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <div class="timeline-year">2021</div>
-                        <div class="timeline-content">
-                            <h3>Mở Rộng Hoạt Động</h3>
-                            <p>Ký kết hợp tác với 50+ trường Nhật ngữ và gửi đi các lứa học sinh đầu tiên.</p>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <div class="timeline-year">2022</div>
-                        <div class="timeline-content">
-                            <h3>Đạt Mốc 500 Học Sinh</h3>
-                            <p>Đạt mốc 500 học sinh du học thành công với tỷ lệ visa 97%. Mở chi nhánh tại Hà Nội.</p>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <div class="timeline-year">2023</div>
-                        <div class="timeline-content">
-                            <h3>Mở Rộng Dịch Vụ</h3>
-                            <p>Ra mắt thêm dịch vụ tư vấn học bổng và hỗ trợ việc làm tại Nhật Bản.</p>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <div class="timeline-year">2024</div>
-                        <div class="timeline-content">
-                            <h3>Cột Mốc 1000 Học Sinh</h3>
-                            <p>Đạt mốc 1000+ học sinh thành công. Nhận giải thưởng "Công ty tư vấn du học uy tín 2024".
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <div class="timeline-year">2026</div>
-                        <div class="timeline-content">
-                            <h3>Hiện Tại</h3>
-                            <p>Đã hỗ trợ 2500+ học sinh du học thành công với đội ngũ 30+ nhân viên chuyên nghiệp.</p>
+                            <h3>{{ item.title }}</h3>
+                            <p>{{ item.description }}</p>
                         </div>
                     </div>
                 </div>
@@ -215,128 +149,18 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const config = useRuntimeConfig()
 const API_BASE = config.public.apiBase
 
-const fallbackMissions = [
-    {
-        id: 'fallback-vision',
-        icon: 'fas fa-eye',
-        title: 'TẦM NHÌN',
-        type: 'paragraph',
-        description: 'Trở thành công ty tư vấn du học Nhật Bản uy tín hàng đầu Việt Nam, góp phần nâng cao chất lượng nguồn nhân lực Việt Nam thông qua giáo dục chất lượng cao tại Nhật Bản.'
-    },
-    {
-        id: 'fallback-mission',
-        icon: 'fas fa-bullseye',
-        title: 'SỨ MỆNH',
-        type: 'paragraph',
-        description: 'Cung cấp dịch vụ tư vấn du học chuyên nghiệp, đồng hành cùng học sinh từ khâu chuẩn bị hồ sơ đến khi định cư thành công tại Nhật Bản với chi phí hợp lý và lộ trình rõ ràng.'
-    },
-    {
-        id: 'fallback-values',
-        icon: 'fas fa-heart',
-        title: 'GIÁ TRỊ CỐT LÕI',
-        type: 'list',
-        description: JSON.stringify([
-            { key: 'Uy tín', value: 'Minh bạch trong mọi giao dịch' },
-            { key: 'Chất lượng', value: 'Dịch vụ chuyên nghiệp hàng đầu' },
-            { key: 'Tận tâm', value: 'Đặt lợi ích học sinh lên hàng đầu' },
-            { key: 'Đổi mới', value: 'Không ngừng cải tiến dịch vụ' }
-        ])
-    }
-]
-
-const fallbackStats = [
-    { id: 'fallback-stat-1', icon: 'fas fa-users', number: 2500, label: 'Học sinh thành công' },
-    { id: 'fallback-stat-2', icon: 'fas fa-handshake', number: 150, label: 'Trường đối tác' },
-    { id: 'fallback-stat-3', icon: 'fas fa-percentage', number: 98, label: 'Tỷ lệ visa thành công (%)' },
-    { id: 'fallback-stat-4', icon: 'fas fa-business-time', number: 6, label: 'Năm kinh nghiệm' }
-]
-
-const fallbackReasons = [
-    {
-        id: 'fallback-reason-1',
-        icon: 'fas fa-certificate',
-        title: 'Được Chứng Nhận',
-        description: 'Được cấp phép hoạt động hợp pháp bởi các cơ quan chức năng và là đại diện chính thức của nhiều trường danh tiếng tại Nhật Bản.'
-    },
-    {
-        id: 'fallback-reason-2',
-        icon: 'fas fa-user-tie',
-        title: 'Đội Ngũ Chuyên Nghiệp',
-        description: 'Tư vấn viên có trình độ cao, từng du học tại Nhật Bản và hiểu rõ văn hóa, học bổng, cơ hội việc làm.'
-    },
-    {
-        id: 'fallback-reason-3',
-        icon: 'fas fa-handshake',
-        title: 'Cam Kết Rõ Ràng',
-        description: 'Ký hợp đồng minh bạch, hỗ trợ trọn đời cho học sinh và đồng hành xuyên suốt quá trình du học.'
-    },
-    {
-        id: 'fallback-reason-4',
-        icon: 'fas fa-dollar-sign',
-        title: 'Chi Phí Hợp Lý',
-        description: 'Mức phí tư vấn cạnh tranh, minh bạch và tối ưu theo từng lộ trình hồ sơ.'
-    },
-    {
-        id: 'fallback-reason-5',
-        icon: 'fas fa-clock',
-        title: 'Tiến Độ Nhanh Chóng',
-        description: 'Quy trình xử lý hồ sơ nhanh, cập nhật thường xuyên cho học sinh và phụ huynh.'
-    },
-    {
-        id: 'fallback-reason-6',
-        icon: 'fas fa-life-ring',
-        title: 'Hỗ Trợ Toàn Diện',
-        description: 'Hỗ trợ từ chọn trường, làm hồ sơ, xin visa đến ổn định cuộc sống và việc làm tại Nhật.'
-    }
-]
-
-const fallbackTeamMembers = [
-    {
-        id: 'fallback-member-1',
-        name: 'Nguyễn Văn A',
-        position: 'CEO & Founder',
-        description: '10+ năm kinh nghiệm trong lĩnh vực tư vấn du học. Cử nhân Đại học Waseda, Nhật Bản.',
-        photo_url: '/assets/images/news-2.jpg',
-        social_links: {}
-    },
-    {
-        id: 'fallback-member-2',
-        name: 'Trần Thị B',
-        position: 'Giám đốc Tư vấn',
-        description: 'Chuyên gia tư vấn với 8 năm kinh nghiệm. Thạc sĩ Đại học Tokyo, chuyên ngành Giáo dục.',
-        photo_url: '/assets/images/news-3.jpg',
-        social_links: {}
-    },
-    {
-        id: 'fallback-member-3',
-        name: 'Lê Văn C',
-        position: 'Trưởng phòng Visa',
-        description: 'Chuyên gia xử lý hồ sơ visa với tỷ lệ thành công cao. Cử nhân Đại học Keio, chuyên ngành Luật.',
-        photo_url: '/assets/images/school-1.jpg',
-        social_links: {}
-    },
-    {
-        id: 'fallback-member-4',
-        name: 'Phạm Thị D',
-        position: 'Tư vấn viên Senior',
-        description: 'Tư vấn viên giàu kinh nghiệm, đã hỗ trợ hàng trăm học sinh thành công. Thạc sĩ Đại học Osaka.',
-        photo_url: '/assets/images/school-2.jpg',
-        social_links: {}
-    }
-]
-
-const fetchPublicCollection = async (path, fallback, transform = (rows) => rows) => {
+const fetchPublicCollection = async (path, transform = (rows) => rows) => {
     try {
         const response = await $fetch(`${API_BASE}${path}`)
         const rows = Array.isArray(response?.data) ? response.data : []
-        return rows.length ? transform(rows) : fallback
+        return rows.length ? transform(rows) : []
     } catch {
-        return fallback
+        return []
     }
 }
 
@@ -352,15 +176,79 @@ const normalizeSocialLinks = (socialLinks) => {
     return { facebook: '', tiktok: '', email: '' }
 }
 
-const [missions, stats, reasons, teamMembers] = await Promise.all([
-    fetchPublicCollection('/public/about/missions', fallbackMissions),
-    fetchPublicCollection('/public/about/stats', fallbackStats),
-    fetchPublicCollection('/public/about/reasons', fallbackReasons),
-    fetchPublicCollection('/public/about/team-members', fallbackTeamMembers, (rows) => rows.map((member) => ({
+const [missions, stats, reasons, teamMembers, aboutContentRows] = await Promise.all([
+    fetchPublicCollection('/public/about/missions'),
+    fetchPublicCollection('/public/about/stats'),
+    fetchPublicCollection('/public/about/reasons'),
+    fetchPublicCollection('/public/about/team-members', (rows) => rows.map((member) => ({
         ...member,
         social_links: normalizeSocialLinks(member.social_links)
-    })))
+    }))),
+    fetchPublicCollection('/public/about/content')
 ])
+
+const aboutContentByKey = Array.isArray(aboutContentRows)
+    ? aboutContentRows.reduce((acc, row) => {
+        const key = String(row?.section_key || '').trim()
+        if (key) acc[key] = row
+        return acc
+    }, {})
+    : {}
+
+const parseTimelineItems = (value) => {
+    const rows = Array.isArray(value)
+        ? value
+        : typeof value === 'string'
+            ? (() => {
+                try {
+                    const parsed = JSON.parse(value)
+                    return Array.isArray(parsed) ? parsed : []
+                } catch {
+                    return []
+                }
+            })()
+            : []
+
+    return rows
+        .map((item, index) => ({
+            id: item?.id || `${index}-${String(item?.year || '').trim()}`,
+            year: String(item?.year || '').trim(),
+            title: String(item?.title || '').trim(),
+            description: String(item?.content || '').trim()
+        }))
+        .filter((item) => item.year && item.title && item.description)
+}
+
+const aboutIntro = aboutContentByKey.content
+const historySection = aboutContentByKey.history
+const historyItems = parseTimelineItems(historySection?.timeline_items)
+
+const companyHistoryTitle = historySection?.title || 'LỊCH SỬ PHÁT TRIỂN'
+const companyHistorySubtitle = historySection?.subtitle || 'Những cột mốc quan trọng trong hành trình phát triển của Du Học NB'
+
+const aboutPageMetaTitle = computed(() => {
+    return aboutIntro?.title || 'Giới Thiệu Du Học NB'
+})
+
+const aboutPageMetaDescription = computed(() => {
+    return aboutIntro?.subtitle || companyHistorySubtitle || 'Đồng hành cùng ước mơ du học Nhật Bản của bạn'
+})
+
+useHead(() => {
+    const metaTitle = aboutPageMetaTitle.value
+    const metaDescription = aboutPageMetaDescription.value
+
+    return {
+        title: metaTitle,
+        meta: [
+            { name: 'description', content: metaDescription },
+            { property: 'og:title', content: metaTitle },
+            { property: 'og:description', content: metaDescription }
+        ]
+    }
+})
+
+
 
 const parseMissionList = (description) => {
     if (!description) return []
@@ -377,6 +265,11 @@ const parseMissionList = (description) => {
 
 const hasAnySocial = (socialLinks = {}) => {
     return Boolean(socialLinks.facebook || socialLinks.tiktok || socialLinks.email)
+}
+
+const formatContent = (text) => {
+    if (!text) return ''
+    return String(text).replace(/\n/g, '<br>')
 }
 
 const companyStats = ref(null)
