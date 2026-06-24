@@ -15,6 +15,7 @@
                                 <span v-if="index < breadcrumbItems.length - 1"> / </span>
                             </template>
                         </span>
+                        <NuxtLink v-else-if="breadcrumbLink" :to="breadcrumbLink">{{ breadcrumbText }}</NuxtLink>
                         <span v-else>{{ breadcrumbText }}</span>
                     </nav>
 
@@ -72,6 +73,10 @@ const props = defineProps({
         default: true
     },
     breadcrumbText: {
+        type: String,
+        default: ''
+    },
+    breadcrumbLink: {
         type: String,
         default: ''
     },

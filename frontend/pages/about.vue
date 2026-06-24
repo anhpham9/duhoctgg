@@ -1,8 +1,12 @@
 <template>
     <div class="about-container">
         <!-- Page Hero Section -->
-        <PageHero title="Giới Thiệu Du Học NB" subtitle="Đồng hành cùng ước mơ du học Nhật Bản của bạn"
-            breadcrumb-text="Giới thiệu" />
+        <PageHero
+            :title="heroTitle"
+            :subtitle="heroDescription"
+            :breadcrumb-text="pageTitle"
+            :breadcrumb-link="pageLink"
+        />
 
         <!-- About Company Section -->
         <section class="about-company">
@@ -154,6 +158,38 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 const config = useRuntimeConfig()
 const API_BASE = config.public.apiBase
 
+const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/about`, {
+    key: 'public-static-page-about'
+})
+
+console.log('staticPageData', staticPageData.value)
+
+const staticPage = computed(() => staticPageData.value?.data || {})
+
+const pageTitle = computed(() => staticPage.value.title || 'Giới Thiệu')
+
+const pageLink = computed(() => staticPage.value.slug || '/about')
+
+const heroTitle = computed(() => staticPage.value.hero_title || 'Giới Thiệu Du Học NB')
+
+const heroDescription = computed(() => {
+    return staticPage.value.hero_description || 'Đồng hành cùng ước mơ du học Nhật Bản của bạn'
+})
+
+useHead(() => {
+    const metaTitle = staticPage.value.meta_title
+    const metaDescription = staticPage.value.meta_description
+
+    return {
+        title: metaTitle,
+        meta: [
+            { name: 'description', content: metaDescription },
+            { property: 'og:title', content: metaTitle },
+            { property: 'og:description', content: metaDescription }
+        ]
+    }
+})
+
 const fetchPublicCollection = async (path, transform = (rows) => rows) => {
     try {
         const response = await $fetch(`${API_BASE}${path}`)
@@ -233,21 +269,6 @@ const aboutPageMetaTitle = computed(() => {
 const aboutPageMetaDescription = computed(() => {
     return aboutIntro?.subtitle || companyHistorySubtitle || 'Đồng hành cùng ước mơ du học Nhật Bản của bạn'
 })
-
-useHead(() => {
-    const metaTitle = aboutPageMetaTitle.value
-    const metaDescription = aboutPageMetaDescription.value
-
-    return {
-        title: metaTitle,
-        meta: [
-            { name: 'description', content: metaDescription },
-            { property: 'og:title', content: metaTitle },
-            { property: 'og:description', content: metaDescription }
-        ]
-    }
-})
-
 
 
 const parseMissionList = (description) => {

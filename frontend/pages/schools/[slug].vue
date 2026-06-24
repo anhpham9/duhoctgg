@@ -7,7 +7,7 @@
                     <nav class="breadcrumb">
                         <NuxtLink to="/">Trang chủ</NuxtLink>
                         <span>/</span>
-                        <NuxtLink to="/schools">Trường Nhật Ngữ</NuxtLink>
+                        <NuxtLink :to="`/${parentLink}`">{{ parentName }}</NuxtLink>
                     </nav>
 
                     <div class="school-hero-main">
@@ -277,6 +277,8 @@ const route = useRoute();
 const config = useRuntimeConfig();
 const slug = computed(() => String(route.params.slug || "").trim());
 
+
+
 const { getFAQData } = useFAQ();
 const myFaqData = getFAQData("school");
 
@@ -465,11 +467,23 @@ const goToContactForm = async () => {
     });
 };
 
+const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/schools`, {
+    key: 'public-static-page-schools'
+})
+
+const staticPage = computed(() => staticPageData.value?.data || {})
+
+// console.log('Contact Info Data:', contactInfo.value)
+
+const parentLink = computed(() => staticPage.value.slug || '/schools')
+
+const parentName = computed(() => staticPage.value.title || 'Liên Hệ Với Chúng Tôi')
+
 useHead(() => {
     const title = schoolData.value
-        ? `${schoolData.value.name} - Du Hoc NB`
-        : "School details - Du Hoc NB";
-    const description = heroDescription.value || "School detail information";
+        ? `${schoolData.value.name}`
+        : "Chi tiết trường";
+    const description = heroDescription.value || "Thông tin chi tiết về trường";
 
     return {
         title,

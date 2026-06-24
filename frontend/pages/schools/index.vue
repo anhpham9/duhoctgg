@@ -1,7 +1,8 @@
 <template>
     <div class="schools-container">
         <!-- Page Hero with advanced breadcrumb -->
-        <PageHero :title="heroTitle" :subtitle="heroDescription" :breadcrumb-text="pageTitle" />
+        <PageHero :title="heroTitle" :subtitle="heroDescription" :breadcrumb-text="pageTitle" 
+            :breadcrumb-link="`/${pageLink}`" />
 
         <!-- Schools List Section -->
         <section class="schools-section">
@@ -165,6 +166,8 @@ const currentPage = ref(1)
 const PAGE_SIZE = 6
 
 const pageTitle = computed(() => staticPage.value.title || 'Trường Nhật Ngữ')
+
+const pageLink = computed(() => staticPage.value.slug || '/schools')
 
 const heroTitle = computed(() => staticPage.value.hero_title || 'Trường Nhật Ngữ Mới Nhất')
 
