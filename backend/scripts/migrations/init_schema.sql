@@ -575,3 +575,32 @@ CREATE TABLE IF NOT EXISTS about_content (
 CREATE INDEX IF NOT EXISTS idx_about_content_section_key ON about_content(section_key);
 CREATE INDEX IF NOT EXISTS idx_about_content_sort ON about_content(sort_order, is_active);
 
+-- ======================== HOMEPAGE_SECTIONS ========================
+
+CREATE TABLE IF NOT EXISTS homepage_sections (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    subtitle VARCHAR(255),
+    type VARCHAR(20) NOT NULL DEFAULT 'paragraph' CHECK (type IN ('paragraph', 'list', 'card')),
+    description TEXT NOT NULL,
+    contact_btn_show BOOLEAN NOT NULL DEFAULT false,
+    contact_btn_text VARCHAR(100),
+    paragraph_text TEXT,
+    image_url TEXT,
+    image_cloudinary_public_id VARCHAR(255),
+    list_icon VARCHAR(100),
+    list_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    card_layout VARCHAR(20) CHECK (card_layout IN ('bg-red', 'bg-white', 'border-top')) DEFAULT 'bg-red',
+    card_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_homepage_sections_sort ON homepage_sections(sort_order, is_active);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_homepage_sections_sort_unique ON homepage_sections(sort_order);
+
+
+
+

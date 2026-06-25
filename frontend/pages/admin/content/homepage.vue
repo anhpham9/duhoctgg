@@ -42,95 +42,124 @@
                 </div>
             </div>
 
+            <div class="tab-nav top-tabs">
+                <button v-for="tab in contentTabs" :key="tab.key" type="button" class="tab-btn"
+                    :class="{ active: activeContentTab === tab.key }" @click="activeContentTab = tab.key">
+                    {{ tab.label }}
+                </button>
+            </div>
+
             <div v-if="loading" class="loading-state">
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>Đang tải nội dung...</p>
             </div>
 
-            <div v-else class="form-layout">
-                <div class="content-section">
-                    <div class="section-header">
-                        <h3><i class="fas fa-info-circle"></i> Thông tin trang</h3>
-                        <p>Thông tin tổng quan của trang Homepage</p>
-                    </div>
-                    <div class="form-grid two-columns">
-                        <div class="form-group">
-                            <label>Tiêu đề trang <span class="required">*</span></label>
-                            <input
-                                v-model.trim="form.title"
-                                @input="clearFieldError('title')"
-                                type="text"
-                                class="form-control"
-                                :class="{ 'is-invalid': !!formErrors.title }"
-                                placeholder="Ví dụ: Liên hệ"
-                            >
-                            <p v-if="formErrors.title" class="field-error">{{ formErrors.title }}</p>
+            <div v-else>
+                <div v-if="activeContentTab === 'main'" class="form-layout">
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-info-circle"></i> Thông tin trang</h3>
+                            <p>Thông tin tổng quan của trang Homepage</p>
                         </div>
-                        <div class="form-group">
-                            <label>Slug</label>
-                            <input type="text" class="form-control" :value="form.slug" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label>Trạng thái</label>
-                            <select v-model="form.status" class="form-control">
-                                <option value="draft">draft</option>
-                                <option value="published">published</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Loại trang</label>
-                            <input type="text" class="form-control" :value="form.type" disabled>
+                        <div class="form-grid two-columns">
+                            <div class="form-group">
+                                <label>Tiêu đề trang <span class="required">*</span></label>
+                                <input v-model.trim="form.title" @input="clearFieldError('title')" type="text"
+                                    class="form-control" :class="{ 'is-invalid': !!formErrors.title }"
+                                    placeholder="Ví dụ: Liên hệ">
+                                <p v-if="formErrors.title" class="field-error">{{ formErrors.title }}</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Slug</label>
+                                <input type="text" class="form-control" :value="form.slug" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Trạng thái</label>
+                                <select v-model="form.status" class="form-control">
+                                    <option value="draft">draft</option>
+                                    <option value="published">published</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Loại trang</label>
+                                <input type="text" class="form-control" :value="form.type" disabled>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="content-section">
-                    <div class="section-header">
-                        <h3><i class="fas fa-heading"></i> Hero</h3>
-                        <p>Nội dung hiển thị phần đầu trang</p>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Hero title</label>
-                            <input v-model.trim="form.hero_title" type="text" class="form-control" placeholder="Nhập hero title">
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-heading"></i> Hero</h3>
+                            <p>Nội dung hiển thị phần đầu trang</p>
                         </div>
-                        <div class="form-group">
-                            <label>Hero description</label>
-                            <textarea v-model="form.hero_description" class="form-control" rows="3" placeholder="Nhập mô tả hero"></textarea>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Hero title</label>
+                                <input v-model.trim="form.hero_title" type="text" class="form-control"
+                                    placeholder="Nhập hero title">
+                            </div>
+                            <div class="form-group">
+                                <label>Hero description</label>
+                                <textarea v-model="form.hero_description" class="form-control" rows="3"
+                                    placeholder="Nhập mô tả hero"></textarea>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="content-section">
-                    <div class="section-header">
-                        <h3><i class="fas fa-search"></i> SEO</h3>
-                        <p>Tiêu đề và mô tả metadata</p>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Meta title</label>
-                            <input v-model.trim="form.meta_title" type="text" class="form-control" maxlength="255" placeholder="Nhập meta title">
-                            <small class="field-hint">{{ form.meta_title.length }}/255 ký tự</small>
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-search"></i> SEO</h3>
+                            <p>Tiêu đề và mô tả metadata</p>
                         </div>
-                        <div class="form-group">
-                            <label>Meta description</label>
-                            <textarea v-model="form.meta_description" class="form-control" rows="3" maxlength="500" placeholder="Nhập meta description"></textarea>
-                            <small class="field-hint">{{ form.meta_description.length }}/500 ký tự</small>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Meta title</label>
+                                <input v-model.trim="form.meta_title" type="text" class="form-control" maxlength="255"
+                                    placeholder="Nhập meta title">
+                                <small class="field-hint">{{ form.meta_title.length }}/255 ký tự</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Meta description</label>
+                                <textarea v-model="form.meta_description" class="form-control" rows="3" maxlength="500"
+                                    placeholder="Nhập meta description"></textarea>
+                                <small class="field-hint">{{ form.meta_description.length }}/500 ký tự</small>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="form-actions">
-                    <button class="btn btn-secondary" :disabled="saving" @click="restoreSnapshot">
-                        <i class="fas fa-undo"></i>
-                        Khôi phục
-                    </button>
-                    <button class="btn btn-primary" :disabled="saving || !hasChanges" @click="savePageData">
-                        <i v-if="saving" class="fas fa-spinner fa-spin"></i>
-                        <i v-else class="fas fa-save"></i>
-                        {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
-                    </button>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" :disabled="saving" @click="restoreSnapshot">
+                            <i class="fas fa-undo"></i>
+                            Khôi phục
+                        </button>
+                        <button class="btn btn-primary" :disabled="saving || !hasChanges" @click="savePageData">
+                            <i v-if="saving" class="fas fa-spinner fa-spin"></i>
+                            <i v-else class="fas fa-save"></i>
+                            {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
+                        </button>
+                    </div>
                 </div>
+                <!-- end main -->
+
+                <div v-if="activeContentTab === 'sections'" class="form-layout">
+                    day la sections
+                </div>
+                <!-- end sections -->
+
+                <div v-if="activeContentTab === 'roadmap'" class="form-layout">
+                    day la roadmap
+                </div>
+                <!-- end roadmap -->
+
+                <div v-if="activeContentTab === 'banner'" class="form-layout">
+                    day la banner
+                </div>
+                <!-- end banner -->
+
+                <div v-if="activeContentTab === 'ads'" class="form-layout">
+                    day la ads
+                </div>
+                <!-- end ads -->
             </div>
         </div>
 
@@ -155,6 +184,8 @@ useHead({
 })
 
 const PAGE_SLUG = 'home'
+
+const activeContentTab = ref('main')
 
 const config = useRuntimeConfig()
 const API_BASE = config.public.apiBase
@@ -198,6 +229,14 @@ const normalizePayload = (payload = {}) => ({
     type: payload.type || 'static',
     status: payload.status || 'published'
 })
+
+const contentTabs = [
+    { key: 'main', label: 'Meta & SEO' },
+    { key: 'sections', label: 'Sections' },
+    { key: 'roadmap', label: 'Lộ trình du học' },
+    { key: 'banner', label: 'Banner' },
+    { key: 'ads', label: 'Quảng cáo' }
+]
 
 const hasChanges = computed(() => {
     if (!snapshot.value) return false
@@ -574,6 +613,38 @@ onMounted(async () => {
 
 .btn-outline:hover:not(:disabled) {
     background: #e8f1fb;
+}
+
+.tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.top-tabs {
+    margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+    border: 1px solid #cdd8ea;
+    background: #f7faff;
+    color: #214165;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tab-btn.active {
+    background: #1976d2;
+    border-color: #1976d2;
+    color: #fff;
+}
+
+.tab-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 @media (max-width: 992px) {

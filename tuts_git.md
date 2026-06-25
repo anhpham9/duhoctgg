@@ -50,6 +50,7 @@ feature/schools-crud
 feature/faqs-crud
 feature/school_reviews-crud
 feature/about-crud
+feature/hompage-crud
 
 
 # frontend
