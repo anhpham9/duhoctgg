@@ -580,9 +580,9 @@ CREATE INDEX IF NOT EXISTS idx_about_content_sort ON about_content(sort_order, i
 CREATE TABLE IF NOT EXISTS homepage_sections (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    subtitle VARCHAR(255),
+    subtitle VARCHAR(255) NOT NULL,
     type VARCHAR(20) NOT NULL DEFAULT 'paragraph' CHECK (type IN ('paragraph', 'list', 'card')),
-    description TEXT NOT NULL,
+    description TEXT,
     contact_btn_show BOOLEAN NOT NULL DEFAULT false,
     contact_btn_text VARCHAR(100),
     paragraph_text TEXT,
@@ -596,6 +596,26 @@ CREATE TABLE IF NOT EXISTS homepage_sections (
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE homepage_sections
+ADD COLUMN IF NOT EXISTS card_desktop_columns SMALLINT NOT NULL DEFAULT 4,
+ADD COLUMN IF NOT EXISTS card_tablet_columns SMALLINT NOT NULL DEFAULT 2;
+
+ALTER TABLE homepage_sections
+ADD CONSTRAINT chk_homepage_card_desktop_columns
+CHECK (card_desktop_columns BETWEEN 1 AND 6);
+
+ALTER TABLE homepage_sections
+ADD CONSTRAINT chk_homepage_card_tablet_columns
+CHECK (card_tablet_columns BETWEEN 1 AND 4);
+
+ALTER TABLE homepage_sections
+ADD CONSTRAINT chk_homepage_card_columns_by_type
+CHECK (
+(type = 'card' AND card_desktop_columns BETWEEN 1 AND 6 AND card_tablet_columns BETWEEN 1 AND 4)
+OR
+(type <> 'card')
 );
 
 CREATE INDEX IF NOT EXISTS idx_homepage_sections_sort ON homepage_sections(sort_order, is_active);

@@ -28,6 +28,7 @@ import settingsRoutes from "./routes/settings.routes.js";
 import socialLinksRoutes from "./routes/socialLinks.routes.js";
 import seoSettingsRoutes from "./routes/seoSettings.routes.js";
 import aboutContentRoutes from "./routes/aboutContent.js";
+import homepageSectionsRoutes from "./routes/homepageSections.routes.js";
 import { backupService } from "./services/backup.service.js";
 // Bổ sung các route cho các bảng mở rộng
 import notificationsRoutes from "./routes/notifications.routes.js";
@@ -47,6 +48,8 @@ import { trackNewsView } from "./controllers/news.controller.js";
 import { ensureSettingsKeysExist } from "./services/settings.service.js";
 import { ensureMediaAssetTableExists } from "./services/mediaAsset.service.js";
 import { ensureAboutMissionsTableExists, ensureAboutContentTableExists } from "./services/aboutContent.service.js";
+import { ensureHomepageSectionsTableExists } from "./services/homepageSections.service.js";
+import { getHomepageSectionsPublic } from "./controllers/homepageSections.controller.js";
 
 
 // RBAC/permission middleware mẫu
@@ -134,6 +137,7 @@ app.get('/api/public/about/stats', (req, res) => res.redirect('/api/about/stats'
 app.get('/api/public/about/reasons', (req, res) => res.redirect('/api/about/reasons'));
 app.get('/api/public/about/missions', (req, res) => res.redirect('/api/about/missions'));
 app.get('/api/public/about/content', (req, res) => res.redirect('/api/about/content'));
+app.get('/api/public/homepage-sections', getHomepageSectionsPublic);
 app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 
@@ -193,6 +197,9 @@ app.use("/api/notifications", authenticate, notificationsRoutes);
 
 // about content CRUD routes
 app.use("/api/about", aboutContentRoutes);
+
+// homepage sections CRUD routes
+app.use("/api/homepage-sections", authenticate, homepageSectionsRoutes);
 // notification_settings CRUD routes
 // app.use("/api/notification-settings", authenticate, notificationSettingsRoutes);
 // files CRUD routes
@@ -221,6 +228,7 @@ app.listen(PORT, async () => {
     await ensureSettingsKeysExist();
     await ensureAboutMissionsTableExists();
     await ensureAboutContentTableExists();
+    await ensureHomepageSectionsTableExists();
     
     backupService.startBackupScheduler();
 

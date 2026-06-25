@@ -8,57 +8,6 @@
             <div class="container">
                 <div class="section-header">
                     <h2>{{ section.title }}</h2>
-                    <p>{{ section.subtitle }}</p>
-                </div>
-
-                <div class="section-grid" v-if="section.type === 'card'">
-                    <article v-for="(card, index) in normalizeCards(section.card_items)"
-                        :key="`${section.id}-card-${index}`" class="dynamic-card"
-                        :class="`${section.card_layout || 'bg-red'}`">
-                        <div class="card-icon">
-                            <i :class="card.icon"></i>
-                        </div>
-                        <h3>{{ card.title }}</h3>
-                        <p>{{ card.content }}</p>
-                    </article>
-                </div>
-
-                <div :class="`section-list ${section.image_url ? 'has-image' : ''}`"
-                    v-else-if="section.type === 'list'">
-                    <div class="section-list-text">
-                        <ul class="section-list-items">
-                            <li v-for="(item, index) in normalizeList(section.list_items)"
-                                :key="`${section.id}-${index}`">
-                                <i :class="section.list_icon || 'fas fa-check'"></i>
-                                <span>{{ item }}</span>
-                            </li>
-                        </ul>
-                        <a v-if="section.contact_btn_show && section.contact_btn_text" href="#contact"
-                            class="btn btn-primary">{{ section.contact_btn_text }}</a>
-                    </div>
-                    <div v-if="section.image_url" class="section-list-image">
-                        <img :src="section.image_url" :alt="section.title">
-                    </div>
-                </div>
-
-                <div :class="`section-paragraph ${section.image_url ? 'has-image' : ''}`"
-                    v-else-if="section.type === 'paragraph'">
-                    <div class="section-paragraph-text">
-                        <div class="paragraph-text">{{ section.paragraph_text }}</div>
-                        <a v-if="section.contact_btn_show && section.contact_btn_text" href="#contact"
-                            class="btn btn-primary">{{ section.contact_btn_text }}</a>
-                    </div>
-                    <div v-if="section.image_url" class="section-paragraph-image">
-                        <img :src="section.image_url" :alt="section.title">
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- <div class="container">
-                <div class="section-header">
-                    <h2>{{ section.title }}</h2>
                     <p v-if="section.subtitle">{{ section.subtitle }}</p>
                 </div>
 
@@ -71,8 +20,7 @@
                     </div>
                 </div>
 
-                <div v-else-if="section.type === 'list'" class="list-block"
-                    :class="{ 'list-block-with-image': !!section.image_url }">
+                <div v-else-if="section.type === 'list'" class="list-block" :class="{ 'list-block-with-image': !!section.image_url }">
                     <div class="paragraph-image" v-if="section.image_url">
                         <img :src="section.image_url" :alt="section.title">
                     </div>
@@ -85,20 +33,18 @@
                 </div>
 
                 <div v-else-if="section.type === 'card'" class="dynamic-card-grid">
-                    <article v-for="(card, index) in normalizeCards(section.card_items)"
-                        :key="`${section.id}-card-${index}`" class="dynamic-card"
-                        :class="`layout-${section.card_layout || 'bg-red'}`">
+                    <article v-for="(card, index) in normalizeCards(section.card_items)" :key="`${section.id}-card-${index}`"
+                        class="dynamic-card" :class="`layout-${section.card_layout || 'bg-red'}`">
                         <i :class="card.icon"></i>
                         <h3>{{ card.title }}</h3>
                         <p>{{ card.content }}</p>
                     </article>
                 </div>
 
-                <NuxtLink v-if="section.contact_btn_show && section.contact_btn_text" to="/contact"
-                    class="btn btn-primary">
+                <NuxtLink v-if="section.contact_btn_show && section.contact_btn_text" to="/contact" class="btn btn-primary">
                     {{ section.contact_btn_text }}
                 </NuxtLink>
-            </div> -->
+            </div>
         </section>
 
         <FAQ title="Câu Hỏi Thường Gặp" subtitle="Thắc mắc về dịch vụ du học" :faq-data="myFaqData" />
@@ -187,10 +133,10 @@ const normalizeCards = (value) => {
 }
 </script>
 
-<<style scoped>
+<style scoped>
 /* ===================
-    index style
-    ==================== */
+index style
+==================== */
 /* Hero Section */
 .hero {
     padding: 0;
@@ -207,90 +153,151 @@ const normalizeCards = (value) => {
     object-fit: cover;
 }
 
-/* Services Section */
 .home-dynamic-section {
-    padding: 80px 0;
-}
-
-.home-dynamic-section:nth-child(odd) {
+    padding: 72px 0;
     background: #fff;
 }
 
-.home-dynamic-section:nth-child(even) {
+.home-dynamic-section:nth-of-type(odd) {
+    background: #f8f9fa;
+}
+
+.section-description {
+    max-width: 880px;
+    margin: 0 auto 1.5rem;
+    text-align: center;
+    color: #5f6672;
+    line-height: 1.75;
+}
+
+.paragraph-block {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.paragraph-text {
+    color: #464f5d;
+    line-height: 1.8;
+    white-space: pre-line;
+}
+
+.paragraph-image img {
+    width: 100%;
+    border-radius: 14px;
+    object-fit: cover;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.list-block {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.list-block-with-image {
+    grid-template-columns: 0.9fr 1.1fr;
+    align-items: start;
+}
+
+.dynamic-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.8rem;
+}
+
+.dynamic-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.dynamic-list i {
+    margin-top: 0.15rem;
+    color: #d32f2f;
+}
+
+.dynamic-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.dynamic-card {
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid #e4e8ef;
+}
+
+.dynamic-card i {
+    font-size: 1.25rem;
+    margin-bottom: 0.55rem;
+}
+
+.dynamic-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.dynamic-card p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.dynamic-card.layout-bg-red {
+    background: #d32f2f;
+    color: #fff;
+    border-color: #d32f2f;
+}
+
+.dynamic-card.layout-bg-white {
+    background: #fff;
+    color: #333;
+}
+
+.dynamic-card.layout-border-top {
+    background: #fff;
+    color: #333;
+    border-top: 4px solid #d32f2f;
+}
+
+/* Services Section */
+.services {
+    padding: 80px 0;
     background: #f8f9fa;
 }
 
 /* Services Grid */
-.section-grid {
+.services-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
 }
 
-.section-list,
-.section-paragraph {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-}
-
-.section-list.has-image,
-.section-paragraph.has-image {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas: "content image";
-}
-
-.section-paragraph-text,
-.section-list-text {
-    grid-area: content;
-}
-
-.section-paragraph-image,
-.section-list-image {
-    grid-area: image;
-}
-
-.paragraph-text {
-    line-height: 1.6;
-    font-size: 1rem;
-    color: #555;
-    padding-bottom: 20px;
-}
-
-.dynamic-card {
+.service-card {
+    background: #d32f2f;
+    color: white;
     padding: 40px 30px;
     border-radius: 15px;
     text-align: center;
     transition: all 0.3s ease;
-}
-
-.dynamic-card:hover {
-    transform: translateY(-10px);
-}
-
-.dynamic-card.bg-red {
-    background: #d32f2f;
-    color: white;
     box-shadow: 0 5px 20px rgba(211, 47, 47, 0.2);
 }
 
-.dynamic-card.bg-red:hover {
+.service-card:hover {
+    transform: translateY(-10px);
     box-shadow: 0 15px 35px rgba(211, 47, 47, 0.4);
 }
 
-.dynamic-card.border-top {
-    background: white;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-    border-top: 4px solid #d32f2f;
-}
-
-.dynamic-card.border-top:hover {
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-}
-
-.card-icon {
+.service-icon {
     width: 80px;
     height: 80px;
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -298,143 +305,87 @@ const normalizeCards = (value) => {
     margin: 0 auto 20px;
 }
 
-.bg-red .card-icon {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.border-top .card-icon {
-    background: linear-gradient(135deg, #d32f2f, #f44336);
-}
-
-.card-icon i {
+.service-icon i {
     font-size: 2rem;
     color: #fff;
 }
 
-.dynamic-card h3 {
+.service-card h3 {
     font-size: 1.5rem;
     margin-bottom: 15px;
     font-weight: 600;
-}
-
-.bg-red.dynamic-card h3 {
     color: #feef01;
 }
 
-.border-top .dynamic-card h3 {
-    color: #333;
-}
-
-.dynamic-card p {
+.service-card p {
     line-height: 1.6;
-}
-
-.bg-red.dynamic-card p {
     opacity: 0.9;
 }
 
-.border-top.dynamic-card p {
-    color: #666;
-    font-size: 0.95rem;
-}
-
-.section-paragraph-image img,
-.section-list-image img {
-    width: 100%;
-    height: auto;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    display: block;
-}
-
-.section-list-items {
-    list-style: none;
-    margin-bottom: 30px;
-}
-
-.section-list-items li {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 20px;
-    padding: 15px 0;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.section-list-items li i {
-    color: #4caf50;
-    margin-right: 15px;
-    margin-top: 5px;
-    font-size: 1.2rem;
-}
-
-
 /* Why Choose Section */
-
-/*
-
-    .why-choose {
+.why-choose {
     padding: 80px 0;
     background: #fff;
-    }
+}
 
-    .why-choose-content {
+.why-choose-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 60px;
     align-items: center;
-    }
+}
 
-    .why-choose-list {
+.why-choose-list {
     list-style: none;
     margin-bottom: 30px;
-    }
+}
 
-    .why-choose-list li {
+.why-choose-list li {
     display: flex;
     align-items: flex-start;
     margin-bottom: 20px;
     padding: 15px 0;
     border-bottom: 1px solid #e0e0e0;
-    }
+}
 
-    .why-choose-list li:last-child {
+.why-choose-list li:last-child {
     border-bottom: none;
-    }
+}
 
-    .why-choose-list li i {
+.why-choose-list li i {
     color: #4caf50;
     margin-right: 15px;
     margin-top: 5px;
     font-size: 1.2rem;
-    }
+}
 
-    .why-choose-list li span {
+.why-choose-list li span {
     font-size: 1.1rem;
     line-height: 1.6;
     color: #555;
-    }
+}
 
-    .why-choose-image img {
+.why-choose-image img {
     width: 100%;
     height: auto;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    } */
+}
 
 /* Schools Section - Điều Kiện Du Học */
-/* .conditions {
+.conditions {
     padding: 80px 0;
     background: #f8f9fa;
-    }
+}
 
-    .conditions-grid {
+.conditions-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 30px;
     margin-top: 50px;
-    } */
+}
 
-/* .condition-card {
+.condition-card {
     background: white;
     padding: 40px 30px;
     border-radius: 15px;
@@ -442,14 +393,14 @@ const normalizeCards = (value) => {
     transition: all 0.3s ease;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
     border-top: 4px solid #d32f2f;
-    }
+}
 
-    .condition-card:hover {
+.condition-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-    }
+}
 
-    .condition-icon {
+.condition-icon {
     width: 80px;
     height: 80px;
     background: linear-gradient(135deg, #d32f2f, #f44336);
@@ -458,25 +409,25 @@ const normalizeCards = (value) => {
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    } */
-/*
-    .condition-icon i {
+}
+
+.condition-icon i {
     font-size: 2rem;
     color: #fff;
-    }
+}
 
-    .condition-card h4 {
+.condition-card h4 {
     font-size: 1.3rem;
     margin-bottom: 15px;
     color: #333;
     font-weight: 600;
-    }
+}
 
-    .condition-card p {
+.condition-card p {
     color: #666;
     line-height: 1.6;
     font-size: 0.95rem;
-    } */
+}
 
 /* Fee Info Section */
 .fee-info {
@@ -650,14 +601,9 @@ const normalizeCards = (value) => {
     /* ===================
     index style
     ==================== */
-    /* .section-grid {
+    .services-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
-    } */
-
-    .section-list.has-image,
-    .section-paragraph.has-image {
-        grid-template-columns: 3fr 2fr;
     }
 
     .why-choose-content,
@@ -710,7 +656,12 @@ const normalizeCards = (value) => {
 
 @media (max-width: 768px) {
 
-    .home-dynamic-section,
+    .paragraph-block {
+        grid-template-columns: 1fr;
+    }
+
+
+    .services,
     .conditions,
     .fee-info,
     .why-choose,
@@ -718,20 +669,12 @@ const normalizeCards = (value) => {
         padding: 60px 0;
     }
 
-    /* .section-grid {
+    .services-grid {
         grid-template-columns: 1fr;
         gap: 12px;
-    } */
-
-    .section-list.has-image,
-    .section-paragraph.has-image {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-            "image"
-            "content";
     }
 
-    .dynamic-card {
+    .service-card {
         padding: 30px 20px;
     }
 
@@ -801,7 +744,7 @@ const normalizeCards = (value) => {
 @media (max-width: 480px) {
 
 
-    .dynamic-card {
+    .service-card {
         padding: 25px 15px;
     }
 }
