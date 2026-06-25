@@ -4,7 +4,7 @@ import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
 
 const MANAGE_HOMEPAGE_SECTION_ROLES = [1, 2, 3];
-const ALLOWED_TYPES = ["paragraph", "list", "card"];
+const ALLOWED_TYPES = ["paragraph", "list", "card", "roadmap"];
 const ALLOWED_CARD_LAYOUTS = ["bg-red", "bg-white", "border-top"];
 
 const toJsonArray = (value) => {
@@ -49,6 +49,17 @@ const normalizeCardItems = (value) => {
         .filter((item) => item.icon && item.title && item.content);
 };
 
+const normalizeRoadmapItems = (value) => {
+    const rows = toJsonArray(value);
+
+    return rows
+        .map((step) => ({
+            title: InputSanitizer.sanitizeText(step?.title || "", { maxLength: 255, escapeHtml: false }).trim(),
+            content: InputSanitizer.sanitizeText(step?.content || "", { maxLength: 2000, escapeHtml: false }).trim()
+        }))
+        .filter((step) => step.title && step.content);
+};
+
 const parseBool = (value, fallback = false) => {
     if (typeof value === "boolean") return value;
     if (typeof value === "string") {
@@ -62,7 +73,8 @@ const parseBool = (value, fallback = false) => {
 const mapHomepageSectionRow = (row) => ({
     ...row,
     list_items: toJsonArray(row?.list_items),
-    card_items: toJsonArray(row?.card_items)
+    card_items: toJsonArray(row?.card_items),
+    roadmap_items: toJsonArray(row?.roadmap_items)
 });
 
 const sanitizeHomepageSectionPayload = (payload = {}) => {
@@ -92,6 +104,7 @@ const sanitizeHomepageSectionPayload = (payload = {}) => {
             ? String(payload.card_layout || "").trim()
             : "bg-red",
         card_items: normalizeCardItems(payload.card_items),
+        roadmap_items: normalizeRoadmapItems(payload.roadmap_items),
         sort_order: Number.isFinite(Number(payload.sort_order)) ? Number(payload.sort_order) : 0,
         is_active: parseBool(payload.is_active, true)
     };
@@ -126,6 +139,10 @@ const validateHomepageSectionPayload = (payload) => {
         if (!payload.card_items.length) return "Section card phải có ít nhất 1 card";
     }
 
+    if (payload.type === "roadmap") {
+        if (!payload.roadmap_items.length) return "Section roadmap phải có ít nhất 1 bước";
+    }
+
     return null;
 };
 
@@ -141,13 +158,14 @@ const buildTypeSpecificData = (payload) => {
             card_desktop_columns: payload.card_desktop_columns,
             card_tablet_columns: payload.card_tablet_columns,
             card_layout: payload.card_layout,
-            card_items: []
+            card_items: [],
+            roadmap_items: []
         };
     }
 
     if (payload.type === "list") {
         return {
-            paragraph_text: payload.paragraph_text,
+            paragraph_text: "",
             image_url: payload.image_url,
             image_cloudinary_public_id: payload.image_cloudinary_public_id,
             image_position: payload.image_position,
@@ -156,7 +174,24 @@ const buildTypeSpecificData = (payload) => {
             card_desktop_columns: payload.card_desktop_columns,
             card_tablet_columns: payload.card_tablet_columns,
             card_layout: payload.card_layout,
-            card_items: []
+            card_items: [],
+            roadmap_items: []
+        };
+    }
+
+    if (payload.type === "roadmap") {
+        return {
+            paragraph_text: "",
+            image_url: "",
+            image_cloudinary_public_id: "",
+            image_position: payload.image_position,
+            list_icon: "",
+            list_items: [],
+            card_desktop_columns: payload.card_desktop_columns,
+            card_tablet_columns: payload.card_tablet_columns,
+            card_layout: payload.card_layout,
+            card_items: [],
+            roadmap_items: payload.roadmap_items
         };
     }
 
@@ -170,7 +205,8 @@ const buildTypeSpecificData = (payload) => {
         card_desktop_columns: payload.card_desktop_columns,
         card_tablet_columns: payload.card_tablet_columns,
         card_layout: payload.card_layout,
-        card_items: payload.card_items
+        card_items: payload.card_items,
+        roadmap_items: []
     };
 };
 
@@ -194,7 +230,7 @@ export const getHomepageSectionsAdmin = async (req, res) => {
         const result = await db.query(
             `SELECT id, title, subtitle, type, description, contact_btn_show, contact_btn_text,
                     paragraph_text, image_url, image_cloudinary_public_id, image_position, list_icon, list_items,
-                    card_desktop_columns, card_tablet_columns, card_layout, card_items, sort_order, is_active, created_at, updated_at
+                    card_desktop_columns, card_tablet_columns, card_layout, card_items, roadmap_items, sort_order, is_active, created_at, updated_at
              FROM homepage_sections
              ORDER BY sort_order ASC, id ASC`
         );
@@ -215,7 +251,7 @@ export const getHomepageSectionsPublic = async (_req, res) => {
         const result = await db.query(
             `SELECT id, title, subtitle, type, description, contact_btn_show, contact_btn_text,
                     paragraph_text, image_url, image_position, list_icon, list_items,
-                    card_desktop_columns, card_tablet_columns, card_layout, card_items, sort_order
+                    card_desktop_columns, card_tablet_columns, card_layout, card_items, roadmap_items, sort_order
              FROM homepage_sections
              WHERE is_active = true
              ORDER BY sort_order ASC, id ASC`
@@ -264,6 +300,7 @@ export const createHomepageSection = async (req, res) => {
                 paragraph_text, image_url, image_cloudinary_public_id, image_position,
                 list_icon, list_items,
                 card_desktop_columns, card_tablet_columns, card_layout, card_items,
+                roadmap_items,
                 sort_order, is_active
             ) VALUES (
                 $1, $2, $3, $4,
@@ -271,7 +308,8 @@ export const createHomepageSection = async (req, res) => {
                 $7, $8, $9, $10,
                 $11, $12,
                 $13, $14, $15, $16,
-                $17, $18
+                $17,
+                $18, $19
             ) RETURNING *`,
             [
                 normalized.title,
@@ -290,6 +328,7 @@ export const createHomepageSection = async (req, res) => {
                 typeData.card_tablet_columns,
                 typeData.card_layout,
                 JSON.stringify(typeData.card_items),
+                JSON.stringify(typeData.roadmap_items),
                 normalized.sort_order,
                 normalized.is_active
             ]
@@ -361,10 +400,11 @@ export const updateHomepageSection = async (req, res) => {
                 card_tablet_columns = $14,
                 card_layout = $15,
                 card_items = $16,
-                sort_order = $17,
-                is_active = $18,
+                roadmap_items = $17,
+                sort_order = $18,
+                is_active = $19,
                 updated_at = NOW()
-             WHERE id = $19
+             WHERE id = $20
              RETURNING *`,
             [
                 normalized.title,
@@ -383,6 +423,7 @@ export const updateHomepageSection = async (req, res) => {
                 typeData.card_tablet_columns,
                 typeData.card_layout,
                 JSON.stringify(typeData.card_items),
+                JSON.stringify(typeData.roadmap_items),
                 normalized.sort_order,
                 normalized.is_active,
                 sectionId

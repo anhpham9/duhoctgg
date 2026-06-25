@@ -26,7 +26,7 @@ import {
 } from "../services/cmsAsset.service.js";
 
 const MANAGE_SETTINGS_ROLES = [1, 2];
-const ALLOWED_GENERAL_IMAGE_TYPES = new Set(["logo", "favicon"]);
+const ALLOWED_GENERAL_IMAGE_TYPES = new Set(["logo", "favicon", "homepage-banner"]);
 const ALLOWED_IMAGE_MIME_TYPES = DEFAULT_IMAGE_MIME_TYPES;
 const ALLOWED_FAVICON_MIME_TYPES = new Set([
     ...ALLOWED_IMAGE_MIME_TYPES,
@@ -48,6 +48,48 @@ const ALLOWED_SITE_TIMEZONES = ["Asia/Ho_Chi_Minh", "Asia/Tokyo", "UTC"];
 const ALLOWED_DATE_FORMATS = ["dd/mm/yyyy", "mm/dd/yyyy", "yyyy-mm-dd"];
 
 const hasIcoExtension = (fileName = "") => String(fileName).trim().toLowerCase().endsWith(".ico");
+
+const isValidImageUrlInput = (value) => {
+    if (!value) return true;
+
+    const normalized = String(value).trim();
+    if (!normalized) return true;
+
+    if (normalized.startsWith("/") || normalized.startsWith("./") || normalized.startsWith("../")) {
+        return true;
+    }
+
+    try {
+        const parsed = new URL(normalized);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+        return false;
+    }
+};
+
+const sanitizeHomepageBannerPayload = (payload = {}) => {
+    const rawBannerUrl = InputSanitizer.sanitizeText(payload.bannerUrl || "", {
+        maxLength: 2000,
+        escapeHtml: false
+    }).trim();
+    const bannerAssetPublicId = InputSanitizer.sanitizeText(payload.bannerAssetPublicId || "", {
+        maxLength: 255,
+        escapeHtml: false
+    }).trim();
+
+    if (rawBannerUrl && !isValidImageUrlInput(rawBannerUrl)) {
+        return {
+            error: "URL banner không hợp lệ"
+        };
+    }
+
+    return {
+        payload: {
+            bannerUrl: rawBannerUrl,
+            bannerAssetPublicId
+        }
+    };
+};
 
 
 export const getGeneralSettings = async (req, res) => {
@@ -80,6 +122,167 @@ export const getGeneralSettings = async (req, res) => {
         });
 
         res.status(500).json({
+            success: false,
+            message: "Lỗi máy chủ nội bộ"
+        });
+    }
+};
+
+export const getHomepageBannerSettings = async (req, res) => {
+    try {
+        const currentUserRole = req.user?.role_id;
+        const currentUserId = req.user?.id;
+
+        if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                "/api/settings/homepage-banner",
+                "GET",
+                "settings.homepage_banner.view"
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: "Truy cập bị từ chối. Bạn không thể xem banner homepage."
+            });
+        }
+
+        const settingsData = await getGeneralSettingsData([
+            GENERAL_SETTINGS_KEYS.homepageBannerUrl,
+            GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId
+        ]);
+
+        return res.json({
+            success: true,
+            data: {
+                bannerUrl: String(settingsData.homepageBannerUrl || ""),
+                bannerAssetPublicId: String(settingsData.homepageBannerAssetPublicId || "")
+            }
+        });
+    } catch (error) {
+        logError("Get homepage banner settings failed", error, {
+            requesterId: req.user?.id
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi máy chủ nội bộ"
+        });
+    }
+};
+
+export const updateHomepageBannerSettings = async (req, res) => {
+    const currentUserRole = req.user?.role_id;
+    const currentUserId = req.user?.id;
+    const publicIdsToDelete = [];
+
+    try {
+        if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
+            SecurityLogger.logPermissionViolation(
+                currentUserId,
+                req.ip,
+                "/api/settings/homepage-banner",
+                "PUT",
+                "settings.homepage_banner.update"
+            );
+
+            return res.status(403).json({
+                success: false,
+                message: "Truy cập bị từ chối. Bạn không thể cập nhật banner homepage."
+            });
+        }
+
+        const sanitizeResult = sanitizeHomepageBannerPayload(req.body || {});
+        if (sanitizeResult.error) {
+            return res.status(400).json({
+                success: false,
+                message: sanitizeResult.error
+            });
+        }
+
+        const payload = sanitizeResult.payload;
+        const incomingAssetPublicIds = {
+            [MEDIA_FIELD_NAMES.homepageBannerUrl]: payload.bannerAssetPublicId
+        };
+
+        await db.query("BEGIN");
+
+        const settingsEntries = [
+            [GENERAL_SETTINGS_KEYS.homepageBannerUrl, payload.bannerUrl],
+            [GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId, payload.bannerAssetPublicId]
+        ];
+
+        const placeholders = settingsEntries
+            .map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
+            .join(",\n                ");
+
+        const values = settingsEntries.flatMap(([key, value]) => [
+            key,
+            value,
+            GENERAL_SETTINGS_DESCRIPTIONS[key] || "",
+            "general"
+        ]);
+
+        await db.query(
+            `INSERT INTO settings (key, value, description, group_name)
+             VALUES
+                ${placeholders}
+             ON CONFLICT (key)
+             DO UPDATE SET
+                value = EXCLUDED.value,
+                description = EXCLUDED.description,
+                group_name = EXCLUDED.group_name`,
+            values
+        );
+
+        const ownershipSyncResult = await syncMediaAssetOwnership({
+            ownerType: MEDIA_OWNER_TYPES.settings,
+            ownerKey: MEDIA_OWNER_KEYS.general,
+            fieldMappings: [
+                {
+                    fieldName: MEDIA_FIELD_NAMES.homepageBannerUrl,
+                    payloadKey: "bannerUrl"
+                }
+            ],
+            payload,
+            incomingAssetPublicIds,
+            userId: currentUserId,
+            client: db
+        });
+        publicIdsToDelete.push(...ownershipSyncResult.publicIdsToDelete);
+
+        await db.query("COMMIT");
+
+        await deleteCloudinaryAssetsSafely(publicIdsToDelete, logError, {
+            requesterId: currentUserId
+        });
+
+        auditLog("UPDATE_HOMEPAGE_BANNER_SETTINGS", currentUserId, {
+            hasBannerUrl: Boolean(payload.bannerUrl),
+            hasBannerAssetPublicId: Boolean(payload.bannerAssetPublicId)
+        }, req);
+
+        return res.json({
+            success: true,
+            message: "Đã cập nhật banner homepage thành công",
+            data: payload
+        });
+    } catch (error) {
+        try {
+            await db.query("ROLLBACK");
+        } catch (rollbackError) {
+            logError("Rollback failed after update homepage banner settings error", rollbackError, {
+                requesterId: currentUserId
+            });
+        }
+
+        logError("Update homepage banner settings failed", error, {
+            requesterId: currentUserId,
+            targetData: req.body || {}
+        });
+
+        return res.status(500).json({
             success: false,
             message: "Lỗi máy chủ nội bộ"
         });

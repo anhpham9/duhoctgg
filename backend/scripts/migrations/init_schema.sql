@@ -581,7 +581,7 @@ CREATE TABLE IF NOT EXISTS homepage_sections (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     subtitle VARCHAR(255) NOT NULL,
-    type VARCHAR(20) NOT NULL DEFAULT 'paragraph' CHECK (type IN ('paragraph', 'list', 'card')),
+    type VARCHAR(20) NOT NULL DEFAULT 'paragraph' CHECK (type IN ('paragraph', 'list', 'card', 'roadmap')),
     description TEXT,
     contact_btn_show BOOLEAN NOT NULL DEFAULT false,
     contact_btn_text VARCHAR(100),
@@ -595,6 +595,7 @@ CREATE TABLE IF NOT EXISTS homepage_sections (
     card_tablet_columns SMALLINT NOT NULL DEFAULT 2,
     card_layout VARCHAR(20) CHECK (card_layout IN ('bg-red', 'bg-white', 'border-top')) DEFAULT 'bg-red',
     card_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    roadmap_items JSONB NOT NULL DEFAULT '[]'::jsonb,
     sort_order INT NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT true,
     CONSTRAINT chk_homepage_card_columns_by_type CHECK (

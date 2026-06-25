@@ -13,6 +13,7 @@ export const MEDIA_OWNER_KEYS = {
 export const MEDIA_FIELD_NAMES = {
     siteLogoUrl: "siteLogoUrl",
     siteFaviconUrl: "siteFaviconUrl",
+    homepageBannerUrl: "homepageBannerUrl",
     schoolLogoUrl: "schoolLogoUrl",
     schoolThumbnailUrl: "schoolThumbnailUrl",
     schoolReviewAvatarUrl: "schoolReviewAvatarUrl"

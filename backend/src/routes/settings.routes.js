@@ -2,7 +2,14 @@ import express from "express";
 import multer from "multer";
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.js";
-import { getGeneralSettings, updateGeneralSettings, uploadGeneralImage, deleteGeneralImage } from "../controllers/settings.controller.js";
+import {
+	getGeneralSettings,
+	updateGeneralSettings,
+	uploadGeneralImage,
+	deleteGeneralImage,
+	getHomepageBannerSettings,
+	updateHomepageBannerSettings
+} from "../controllers/settings.controller.js";
 import { getContactSettings, updateContactSettings } from "../controllers/settings.controller.js";
 import {
 	getBackupHistory,
@@ -40,6 +47,8 @@ router.use(rateLimiter.settingsLimiter);
 
 router.get("/general", getGeneralSettings);
 router.put("/general", updateGeneralSettings);
+router.get("/homepage-banner", getHomepageBannerSettings);
+router.put("/homepage-banner", updateHomepageBannerSettings);
 router.post("/general/upload-image", rateLimiter.uploadLimiter, generalImageUpload.single("image"), uploadGeneralImage);
 router.delete("/general/upload-image", deleteGeneralImage);
 router.get("/contact", getContactSettings);

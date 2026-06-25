@@ -26,7 +26,7 @@
                     <p>Cập nhật SEO, hero và nội dung chi tiết cho trang Homepage.</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-secondary" :disabled="loading" @click="loadPageData">
+                    <button class="btn btn-secondary" :disabled="loading || sectionLoading || bannerLoading" @click="reloadAllData">
                         <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
                         Làm mới
                     </button>
@@ -191,7 +191,7 @@
                                             <td>{{ section.sort_order }}</td>
                                             <td>
                                                 <span :class="['status-dot', section.is_active ? 'active' : 'inactive']">
-                                                    {{ section.is_active ? 'active' : 'inactive' }}
+                                                    {{ section.is_active ? 'Hoạt động' : 'Không hoạt động' }}
                                                 </span>
                                             </td>
                                             <td>
@@ -239,6 +239,7 @@
                                     <option value="paragraph">Đoạn văn</option>
                                     <option value="list">Danh sách</option>
                                     <option value="card">Thẻ</option>
+                                    <option value="roadmap">Lộ trình</option>
                                 </select>
                             </div>
 
@@ -389,6 +390,27 @@
                             </div>
                         </div>
 
+                        <div v-if="sectionForm.type === 'roadmap'" class="form-grid two-columns section-extra-grid">
+                            
+                            <div class="card-editor-list full-width-block">
+                                <div v-for="(step, idx) in sectionForm.roadmap_items" :key="idx" class="card-editor-item">
+                                    
+                                    <input v-model.trim="step.title" type="text" class="form-control" placeholder="Tiêu đề bước">
+                                    
+                                    <textarea v-model="step.content" class="form-control" rows="3" placeholder="Nội dung bước"></textarea>
+                                    <button class="btn btn-secondary btn-sm btn-danger justify-start" @click="removeRoadmapItem(idx)">
+                                        <i class="fas fa-trash"></i>
+                                        Xóa bước
+                                    </button>
+                                </div>
+
+                                <button class="btn btn-outline justify-start" @click="addRoadmapItem">
+                                    <i class="fas fa-plus"></i>
+                                    Thêm bước
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="form-actions">
                             <button class="btn btn-secondary" :disabled="sectionSaving" @click="cancelSectionForm">
                                 <i class="fas fa-rotate-left"></i>
@@ -401,12 +423,83 @@
                             </button>
                         </div>
                     </div>
-
-                    <!-- <div v-else class="content-section compact-placeholder">
-                        <p class="empty-row">Nhấn "Thêm section" hoặc "Sửa" để mở form.</p>
-                    </div> -->
                 </div>
                 <!-- end sections -->
+
+                <div v-if="activeContentTab === 'banner'" class="form-layout">
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-image"></i> Banner trang chủ</h3>
+                            <p>Quản lý duy nhất 1 ảnh banner cho homepage.</p>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nguồn ảnh banner</label>
+                                <div class="input-mode-switch">
+                                    <button type="button" class="mode-btn" :class="{ active: bannerImageMode === 'url' }" @click="setBannerImageMode('url')">
+                                        Nhập link ảnh
+                                    </button>
+                                    <button type="button" class="mode-btn" :class="{ active: bannerImageMode === 'upload' }" @click="setBannerImageMode('upload')">
+                                        Upload lên Cloudinary
+                                    </button>
+                                </div>
+
+                                <div v-if="bannerImageMode === 'url'" class="image-input-url">
+                                    <input
+                                        v-model.trim="bannerForm.banner_url"
+                                        type="text"
+                                        class="form-control"
+                                        placeholder="https://example.com/banner.jpg hoặc /assets/images/banner.jpg"
+                                    >
+                                </div>
+
+                                <div v-else class="upload-actions">
+                                    <input
+                                        ref="bannerImageFileInput"
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp,image/gif"
+                                        class="hidden-file-input"
+                                        @change="onBannerImageFileChange"
+                                    >
+                                    <button type="button" class="btn btn-secondary" :disabled="bannerImageUploading || bannerSaving" @click="triggerBannerImagePicker">
+                                        <i class="fas" :class="bannerImageUploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                                        {{ bannerImageUploading ? 'Đang upload...' : 'Chọn ảnh' }}
+                                    </button>
+                                    <span class="upload-inline-hint">PNG/JPG/WEBP/GIF</span>
+                                </div>
+
+                                <small class="field-hint">Banner sẽ hiển thị ở đầu trang chủ public.</small>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="image-preview-card">
+                                    <p class="image-preview-title">Xem trước banner</p>
+                                    <div class="image-preview-surface">
+                                        <img v-if="bannerPreviewSrc" :src="bannerPreviewSrc" alt="Homepage banner preview" class="image-preview">
+                                        <div v-else class="image-preview-empty">
+                                            <i class="fas fa-image"></i>
+                                            <p>Chưa có banner để xem trước</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-secondary" :disabled="bannerSaving || bannerLoading" @click="loadBannerData">
+                                <i class="fas fa-sync-alt" :class="{ 'fa-spin': bannerLoading }"></i>
+                                Tải lại banner
+                            </button>
+                            <button class="btn btn-primary" :disabled="bannerSaving || bannerLoading" @click="saveBannerData">
+                                <i v-if="bannerSaving" class="fas fa-spinner fa-spin"></i>
+                                <i v-else class="fas fa-save"></i>
+                                {{ bannerSaving ? 'Đang lưu...' : 'Lưu banner' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- end banner -->
             </div>
         </div>
 
@@ -447,6 +540,9 @@ const saving = ref(false)
 const sectionLoading = ref(false)
 const sectionSaving = ref(false)
 const sectionImageUploading = ref(false)
+const bannerLoading = ref(false)
+const bannerSaving = ref(false)
+const bannerImageUploading = ref(false)
 const sections = ref([])
 const editingSectionId = ref(null)
 const showSectionForm = ref(false)
@@ -454,6 +550,10 @@ const sectionImageMode = ref('url')
 const sectionImageFileInput = ref(null)
 const pendingSectionImageFile = ref(null)
 const sectionImagePreviewTempUrl = ref('')
+const bannerImageMode = ref('url')
+const bannerImageFileInput = ref(null)
+const pendingBannerImageFile = ref(null)
+const bannerImagePreviewTempUrl = ref('')
 
 const form = reactive({
     title: '',
@@ -476,6 +576,11 @@ const formErrors = reactive({
     meta_description: ''
 })
 
+const bannerForm = reactive({
+    banner_url: '',
+    banner_asset_public_id: ''
+})
+
 const createEmptySectionForm = () => ({
     title: '',
     subtitle: '',
@@ -493,6 +598,7 @@ const createEmptySectionForm = () => ({
     card_tablet_columns: 2,
     card_layout: 'bg-red',
     card_items: [{ icon: '', title: '', content: '' }],
+    roadmap_items: [{ title: '', content: '' }],
     sort_order: 0,
     is_active: true
 })
@@ -514,13 +620,15 @@ const normalizePayload = (payload = {}) => ({
 
 const contentTabs = [
     { key: 'main', label: 'Meta & SEO' },
+    { key: 'banner', label: 'Ảnh banner' },
     { key: 'sections', label: 'Sections' }
 ]
 
 const SECTION_TYPE_LABELS = {
     paragraph: 'Đoạn văn',
     list: 'Danh sách',
-    card: 'Thẻ'
+    card: 'Thẻ',
+    roadmap: 'Lộ trình'
 }
 
 const getTypeLabel = (type) => SECTION_TYPE_LABELS[type] || type
@@ -562,6 +670,19 @@ const normalizeCardItems = (value) => {
     return rows.length ? rows : [{ icon: '', title: '', content: '' }]
 }
 
+const normalizeRoadmapItems = (value) => {
+    if (!Array.isArray(value)) return [{ title: '', content: '' }]
+
+    const rows = value
+        .map((step) => ({
+            title: String(step?.title || '').trim(),
+            content: String(step?.content || '').trim()
+        }))
+        .filter((step) => step.title || step.content)
+
+    return rows.length ? rows : [{ title: '', content: '' }]
+}
+
 const isValidImageUrlInput = (value) => {
     if (!value) return true
 
@@ -584,6 +705,7 @@ const isValidImageUrlInput = (value) => {
 const previewIconClass = (value, fallback = 'fas fa-circle') => String(value || '').trim() || fallback
 
 const sectionImagePreviewSrc = computed(() => String(sectionImagePreviewTempUrl.value || sectionForm.image_url || '').trim())
+const bannerPreviewSrc = computed(() => String(bannerImagePreviewTempUrl.value || bannerForm.banner_url || '').trim())
 
 const resetSectionImagePreview = () => {
     if (sectionImagePreviewTempUrl.value) {
@@ -603,6 +725,50 @@ const setSectionImageMode = (mode) => {
 
 const triggerSectionImagePicker = () => {
     sectionImageFileInput.value?.click()
+}
+
+const resetBannerImagePreview = () => {
+    if (bannerImagePreviewTempUrl.value) {
+        URL.revokeObjectURL(bannerImagePreviewTempUrl.value)
+        bannerImagePreviewTempUrl.value = ''
+    }
+}
+
+const setBannerImageMode = (mode) => {
+    if (!['url', 'upload'].includes(mode)) return
+    bannerImageMode.value = mode
+    if (mode === 'url') {
+        pendingBannerImageFile.value = null
+        resetBannerImagePreview()
+    }
+}
+
+const triggerBannerImagePicker = () => {
+    bannerImageFileInput.value?.click()
+}
+
+const onBannerImageFileChange = (event) => {
+    const file = event?.target?.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(String(file.type || '').toLowerCase())) {
+        showError('Định dạng file ảnh không hợp lệ (chỉ nhận PNG/JPG/WEBP/GIF)')
+        return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        showError('File ảnh vượt quá 5MB')
+        return
+    }
+
+    pendingBannerImageFile.value = file
+    bannerForm.banner_url = file.name
+    bannerForm.banner_asset_public_id = ''
+
+    resetBannerImagePreview()
+    bannerImagePreviewTempUrl.value = URL.createObjectURL(file)
 }
 
 const onSectionImageFileChange = (event) => {
@@ -655,6 +821,33 @@ const uploadSectionImageToCloudinary = async (file) => {
     }
 }
 
+const uploadBannerImageToCloudinary = async (file) => {
+    const uploadFormData = new FormData()
+    uploadFormData.append('image', file)
+    uploadFormData.append('type', 'homepage-banner')
+
+    const response = await fetch(`${API_BASE}/settings/general/upload-image`, {
+        method: 'POST',
+        credentials: 'include',
+        body: uploadFormData
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+        throw new Error(data?.message || 'Upload ảnh banner thất bại')
+    }
+
+    const uploadedUrl = String(data?.data?.url || '').trim()
+    if (!uploadedUrl) {
+        throw new Error('Không nhận được URL banner từ server')
+    }
+
+    return {
+        uploadedUrl,
+        uploadedPublicId: String(data?.data?.publicId || '').trim()
+    }
+}
+
 const parseListItems = (rawText = '') => {
     return String(rawText || '')
         .split('\n')
@@ -670,6 +863,17 @@ const removeCardItem = (index) => {
     sectionForm.card_items.splice(index, 1)
     if (!sectionForm.card_items.length) {
         sectionForm.card_items.push({ icon: '', title: '', content: '' })
+    }
+}
+
+const addRoadmapItem = () => {
+    sectionForm.roadmap_items.push({ title: '', content: '' })
+}
+
+const removeRoadmapItem = (index) => {
+    sectionForm.roadmap_items.splice(index, 1)
+    if (!sectionForm.roadmap_items.length) {
+        sectionForm.roadmap_items.push({ title: '', content: '' })
     }
 }
 
@@ -709,6 +913,7 @@ const startEditSection = (section) => {
         card_tablet_columns: Number(section.card_tablet_columns || 2),
         card_layout: section.card_layout || 'bg-red',
         card_items: normalizeCardItems(section.card_items),
+        roadmap_items: normalizeRoadmapItems(section.roadmap_items),
         sort_order: Number(section.sort_order || 0),
         is_active: Boolean(section.is_active)
     })
@@ -737,6 +942,83 @@ const loadSections = async () => {
         showError(error.message || 'Không thể tải danh sách sections')
     } finally {
         sectionLoading.value = false
+    }
+}
+
+const applyBannerPayload = (payload = {}) => {
+    bannerForm.banner_url = String(payload?.bannerUrl || '').trim()
+    bannerForm.banner_asset_public_id = String(payload?.bannerAssetPublicId || '').trim()
+    bannerImageMode.value = bannerForm.banner_asset_public_id ? 'upload' : 'url'
+    pendingBannerImageFile.value = null
+    resetBannerImagePreview()
+}
+
+const loadBannerData = async () => {
+    bannerLoading.value = true
+
+    try {
+        const response = await fetch(`${API_BASE}/settings/homepage-banner`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        })
+
+        const data = await response.json()
+        if (!response.ok) throw new Error(data?.message || `HTTP ${response.status}`)
+
+        applyBannerPayload(data?.data || {})
+    } catch (error) {
+        showError(error.message || 'Không thể tải banner homepage')
+    } finally {
+        bannerLoading.value = false
+    }
+}
+
+const saveBannerData = async () => {
+    if (bannerImageMode.value === 'url' && bannerForm.banner_url.trim() && !isValidImageUrlInput(bannerForm.banner_url.trim())) {
+        showError('URL banner không hợp lệ')
+        return
+    }
+
+    bannerSaving.value = true
+
+    try {
+        let bannerUrl = bannerForm.banner_url.trim()
+        let bannerAssetPublicId = String(bannerForm.banner_asset_public_id || '').trim()
+
+        if (bannerImageMode.value === 'upload' && pendingBannerImageFile.value) {
+            bannerImageUploading.value = true
+            const uploadResult = await uploadBannerImageToCloudinary(pendingBannerImageFile.value)
+            bannerUrl = uploadResult.uploadedUrl
+            bannerAssetPublicId = uploadResult.uploadedPublicId
+        }
+
+        if (bannerImageMode.value === 'url') {
+            bannerAssetPublicId = ''
+        }
+
+        const payload = {
+            bannerUrl,
+            bannerAssetPublicId
+        }
+
+        const response = await fetch(`${API_BASE}/settings/homepage-banner`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+
+        const data = await response.json()
+        if (!response.ok) throw new Error(data?.message || `HTTP ${response.status}`)
+
+        showSuccess(data?.message || 'Đã lưu banner homepage thành công')
+        applyBannerPayload(data?.data || payload)
+    } catch (error) {
+        showError(error.message || 'Không thể lưu banner homepage')
+    } finally {
+        bannerSaving.value = false
+        bannerImageUploading.value = false
     }
 }
 
@@ -770,6 +1052,11 @@ const validateSection = () => {
         }
         const validCards = sectionForm.card_items.filter((card) => card.icon?.trim() && card.title?.trim() && card.content?.trim())
         if (!validCards.length) return 'Section card cần ít nhất 1 card hợp lệ (icon, title, content)'
+    }
+
+    if (sectionForm.type === 'roadmap') {
+        const validSteps = sectionForm.roadmap_items.filter((step) => step.title?.trim() && step.content?.trim())
+        if (!validSteps.length) return 'Section roadmap cần ít nhất 1 bước hợp lệ (title, content)'
     }
 
     return null
@@ -819,6 +1106,14 @@ const saveSection = async () => {
                         content: card.content.trim()
                     }))
                     .filter((card) => card.icon && card.title && card.content)
+                : [],
+            roadmap_items: sectionForm.type === 'roadmap'
+                ? sectionForm.roadmap_items
+                    .map((step) => ({
+                        title: step.title.trim(),
+                        content: step.content.trim()
+                    }))
+                    .filter((step) => step.title && step.content)
                 : [],
             sort_order: Number(sectionForm.sort_order || 0),
             is_active: Boolean(sectionForm.is_active)
@@ -943,6 +1238,14 @@ const loadPageData = async () => {
     }
 }
 
+const reloadAllData = async () => {
+    await Promise.all([
+        loadPageData(),
+        loadSections(),
+        loadBannerData()
+    ])
+}
+
 const savePageData = async () => {
     if (!validateForm()) {
         showError('Vui lòng kiểm tra lại thông tin trước khi lưu')
@@ -997,8 +1300,7 @@ const previewPublicPage = () => {
 onMounted(async () => {
     await fetchCurrentUser()
     if (hasPermission.value) {
-        await loadPageData()
-        await loadSections()
+        await reloadAllData()
     }
 })
 </script>
@@ -1450,8 +1752,8 @@ onMounted(async () => {
 
 .section-extra-grid {
     border-top: 1px dashed #e5e7eb;
-    margin-top: 0.4rem;
-    padding-top: 1.25rem;
+    /* margin-top: 0.4rem;
+    padding-top: 1.25rem; */
 }
 
 .checkbox-group {

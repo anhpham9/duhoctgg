@@ -9,6 +9,8 @@ export const GENERAL_SETTINGS_KEYS = {
     siteUrl: `${GENERAL_SETTINGS_PREFIX}site_url`,
     siteLogoUrl: `${GENERAL_SETTINGS_PREFIX}site_logo_url`,
     siteFaviconUrl: `${GENERAL_SETTINGS_PREFIX}site_favicon_url`,
+    homepageBannerUrl: `${GENERAL_SETTINGS_PREFIX}homepage_banner_url`,
+    homepageBannerAssetPublicId: `${GENERAL_SETTINGS_PREFIX}homepage_banner_asset_public_id`,
     siteDescription: `${GENERAL_SETTINGS_PREFIX}site_description`,
     siteCopyright: `${GENERAL_SETTINGS_PREFIX}site_copyright`,
     siteLanguage: `${GENERAL_SETTINGS_PREFIX}site_language`,
@@ -32,6 +34,8 @@ export const GENERAL_SETTINGS_DESCRIPTIONS = {
     [GENERAL_SETTINGS_KEYS.siteUrl]: "General setting: website url",
     [GENERAL_SETTINGS_KEYS.siteLogoUrl]: "General setting: website logo URL",
     [GENERAL_SETTINGS_KEYS.siteFaviconUrl]: "General setting: website favicon URL",
+    [GENERAL_SETTINGS_KEYS.homepageBannerUrl]: "General setting: homepage banner URL",
+    [GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId]: "General setting: homepage banner cloudinary public id",
     [GENERAL_SETTINGS_KEYS.siteDescription]: "General setting: website description",
     [GENERAL_SETTINGS_KEYS.siteCopyright]: "General setting: website copyright",
     [GENERAL_SETTINGS_KEYS.siteLanguage]: "General setting: site language",
@@ -55,6 +59,8 @@ export const getDefaultGeneralSettings = () => ({
     siteUrl: "",
     siteLogoUrl: "",
     siteFaviconUrl: "",
+    homepageBannerUrl: "",
+    homepageBannerAssetPublicId: "",
     siteDescription: "",
     siteCopyright: "",
     siteLanguage: "vi",
@@ -81,6 +87,8 @@ export const mapRowsToGeneralSettings = (rows = []) => {
         if (row.key === GENERAL_SETTINGS_KEYS.siteUrl) data.siteUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteLogoUrl) data.siteLogoUrl = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteFaviconUrl) data.siteFaviconUrl = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.homepageBannerUrl) data.homepageBannerUrl = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId) data.homepageBannerAssetPublicId = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteDescription) data.siteDescription = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteCopyright) data.siteCopyright = row.value || "";
         if (row.key === GENERAL_SETTINGS_KEYS.siteLanguage) data.siteLanguage = row.value || "vi";
@@ -178,6 +186,7 @@ export const getPublicGeneralSettingsData = async () => {
             GENERAL_SETTINGS_KEYS.siteUrl,
             GENERAL_SETTINGS_KEYS.siteLogoUrl,
             GENERAL_SETTINGS_KEYS.siteFaviconUrl,
+            GENERAL_SETTINGS_KEYS.homepageBannerUrl,
             GENERAL_SETTINGS_KEYS.siteDescription,
             GENERAL_SETTINGS_KEYS.siteCopyright,
             GENERAL_SETTINGS_KEYS.siteLanguage,
@@ -192,6 +201,7 @@ export const getPublicGeneralSettingsData = async () => {
         siteUrl: generalData.siteUrl,
         siteLogoUrl: generalData.siteLogoUrl,
         siteFaviconUrl: generalData.siteFaviconUrl,
+        homepageBannerUrl: generalData.homepageBannerUrl,
         siteDescription: generalData.siteDescription,
         siteCopyright: generalData.siteCopyright,
         siteLanguage: generalData.siteLanguage,

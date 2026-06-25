@@ -1,7 +1,7 @@
 <template>
     <div>
         <section class="hero">
-            <img src="/assets/images/banner.jpg" alt="Du học Nhật Bản - Vững bước tương lai" class="hero-banner">
+            <img :src="homepageBannerSrc" :alt="staticPage.meta_description || 'Cùng chúng tôi đồng hành cùng bạn'" class="hero-banner">
         </section>
 
         <section v-for="section in homepageSections" :key="section.id" class="home-dynamic-section">
@@ -53,52 +53,24 @@
                     </div>
                 </div>
 
-            </div>
-
-
-            <!-- <div class="container">
-                <div class="section-header">
-                    <h2>{{ section.title }}</h2>
-                    <p v-if="section.subtitle">{{ section.subtitle }}</p>
-                </div>
-
-                <p v-if="section.description" class="section-description">{{ section.description }}</p>
-
-                <div v-if="section.type === 'paragraph'" class="paragraph-block">
-                    <div class="paragraph-text" v-if="section.paragraph_text">{{ section.paragraph_text }}</div>
-                    <div class="paragraph-image" v-if="section.image_url">
-                        <img :src="section.image_url" :alt="section.title">
-                    </div>
-                </div>
-
-                <div v-else-if="section.type === 'list'" class="list-block"
-                    :class="{ 'list-block-with-image': !!section.image_url }">
-                    <div class="paragraph-image" v-if="section.image_url">
-                        <img :src="section.image_url" :alt="section.title">
-                    </div>
-                    <ul class="dynamic-list">
-                        <li v-for="(item, index) in normalizeList(section.list_items)" :key="`${section.id}-${index}`">
-                            <i :class="section.list_icon || 'fas fa-check'"></i>
-                            <span>{{ item }}</span>
+                <template v-else-if="section.type === 'roadmap'">
+                    <ul class="roadmap-timeline">
+                        <li class="roadmap-step" v-for="(item, index) in normalizeRoadmap(section.roadmap_items)"
+                                :key="`${section.id}-${index}`">
+                            <div class="step-number">BƯỚC <span>{{ String(index + 1).padStart(2, '0') }}</span></div>
+                            <div class="step-line"></div>
+                            <div class="step-content">
+                                <h4>{{ item.title }}</h4>
+                                <p>{{ item.content }}</p>
+                            </div>
                         </li>
                     </ul>
-                </div>
+                    <a v-if="section.contact_btn_show && section.contact_btn_text" href="#contact"
+                            class="btn btn-primary">{{ section.contact_btn_text }}</a>
 
-                <div v-else-if="section.type === 'card'" class="dynamic-card-grid">
-                    <article v-for="(card, index) in normalizeCards(section.card_items)"
-                        :key="`${section.id}-card-${index}`" class="dynamic-card"
-                        :class="`layout-${section.card_layout || 'bg-red'}`">
-                        <i :class="card.icon"></i>
-                        <h3>{{ card.title }}</h3>
-                        <p>{{ card.content }}</p>
-                    </article>
-                </div>
+                </template>
 
-                <NuxtLink v-if="section.contact_btn_show && section.contact_btn_text" to="/contact"
-                    class="btn btn-primary">
-                    {{ section.contact_btn_text }}
-                </NuxtLink>
-            </div> -->
+            </div>
         </section>
 
         <FAQ title="Câu Hỏi Thường Gặp" subtitle="Thắc mắc về dịch vụ du học" :faq-data="myFaqData" />
@@ -118,11 +90,19 @@ const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public
     key: 'public-static-page-home'
 })
 
+const { data: publicGeneralSettingsData } = await useFetch(`${config.public.apiBase}/public/general-settings`, {
+    key: 'public-general-settings'
+})
+
 const { data: homepageSectionsData } = await useFetch(`${config.public.apiBase}/public/homepage-sections`, {
     key: 'public-homepage-sections'
 })
 
 const staticPage = computed(() => staticPageData.value?.data || {})
+const homepageBannerSrc = computed(() => {
+    const configuredBanner = String(publicGeneralSettingsData.value?.data?.homepageBannerUrl || '').trim()
+    return configuredBanner || '/assets/images/banner.jpg'
+})
 
 useHead(() => {
     const metaTitle = staticPage.value.meta_title || staticPage.value.title || 'Trang chủ - Du học NB'
@@ -160,6 +140,7 @@ const homepageSections = computed(() => {
             card_tablet_columns: 2,
             card_items: [],
             card_layout: 'bg-white',
+            roadmap_items: [],
             sort_order: 0
         }
     ]
@@ -199,6 +180,17 @@ const normalizeCards = (value) => {
     return value
         .map((item) => ({
             icon: String(item?.icon || '').trim() || 'fas fa-star',
+            title: String(item?.title || '').trim(),
+            content: String(item?.content || '').trim()
+        }))
+        .filter((item) => item.title && item.content)
+}
+
+const normalizeRoadmap = (value) => {
+    if (!Array.isArray(value)) return []
+
+    return value
+        .map((item) => ({
             title: String(item?.title || '').trim(),
             content: String(item?.content || '').trim()
         }))
@@ -395,55 +387,6 @@ const normalizeCards = (value) => {
 
 /* Why Choose Section */
 
-/* Fee Info Section */
-.fee-info {
-    padding: 80px 0;
-    background: #fff;
-}
-
-.fee-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
-}
-
-.fee-list {
-    list-style: none;
-    margin-bottom: 30px;
-}
-
-.fee-list li {
-    display: flex;
-    align-items: flex-start;
-    /* margin-bottom: 20px; */
-    padding: 10px 0;
-    /* border-bottom: 1px solid #e0e0e0; */
-}
-
-.fee-list li:last-child {
-    border-bottom: none;
-}
-
-.fee-list li i {
-    color: #4caf50;
-    margin-right: 15px;
-    margin-top: 5px;
-    font-size: 1.2rem;
-}
-
-.fee-list li span {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: #555;
-}
-
-.fee-image img {
-    width: 100%;
-    height: auto;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
 
 /* Roadmap Section */
 .roadmap {
@@ -586,7 +529,7 @@ const normalizeCards = (value) => {
         grid-template-columns: 2fr 3fr;
     }
 
-    .why-choose-content,
+    /* .why-choose-content,
     .contact-content,
     .fee-content,
     .about-content {
@@ -596,7 +539,7 @@ const normalizeCards = (value) => {
     .conditions-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 25px;
-    }
+    } */
 
     .roadmap-timeline {
         max-width: 100%;
@@ -637,9 +580,6 @@ const normalizeCards = (value) => {
 @media (max-width: 768px) {
 
     .home-dynamic-section,
-    .conditions,
-    .fee-info,
-    .why-choose,
     .roadmap {
         padding: 60px 0;
     }
@@ -667,7 +607,7 @@ const normalizeCards = (value) => {
         padding: 30px 20px;
     }
 
-    .why-choose-content,
+    /* .why-choose-content,
     .contact-content,
     .fee-content,
     .about-content {
@@ -686,7 +626,7 @@ const normalizeCards = (value) => {
 
     .fee-list li span {
         font-size: 1rem;
-    }
+    } */
 
     .roadmap-timeline {
         max-width: 100%;
