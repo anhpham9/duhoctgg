@@ -11,7 +11,7 @@
                     <p>{{ section.subtitle }}</p>
                 </div>
 
-                <div class="section-grid" v-if="section.type === 'card'">
+                <div class="section-grid" v-if="section.type === 'card'" :style="cardGridStyle(section)">
                     <article v-for="(card, index) in normalizeCards(section.card_items)"
                         :key="`${section.id}-card-${index}`" class="dynamic-card"
                         :class="`${section.card_layout || 'bg-red'}`">
@@ -23,7 +23,7 @@
                     </article>
                 </div>
 
-                <div :class="`section-list ${section.image_url ? 'has-image' : ''}`"
+                <div :class="sectionMediaClass('section-list', section)"
                     v-else-if="section.type === 'list'">
                     <div class="section-list-text">
                         <ul class="section-list-items">
@@ -41,7 +41,7 @@
                     </div>
                 </div>
 
-                <div :class="`section-paragraph ${section.image_url ? 'has-image' : ''}`"
+                <div :class="sectionMediaClass('section-paragraph', section)"
                     v-else-if="section.type === 'paragraph'">
                     <div class="section-paragraph-text">
                         <div class="paragraph-text">{{ section.paragraph_text }}</div>
@@ -153,13 +153,32 @@ const homepageSections = computed(() => {
             image_url: '',
             contact_btn_show: true,
             contact_btn_text: 'Liên hệ tư vấn',
+            image_position: 1,
             list_icon: '',
             list_items: [],
+            card_desktop_columns: 4,
+            card_tablet_columns: 2,
             card_items: [],
             card_layout: 'bg-white',
             sort_order: 0
         }
     ]
+})
+
+const sectionMediaClass = (baseClass, section) => {
+    const hasImage = Boolean(section?.image_url)
+    const isLeft = Number(section?.image_position) === 0
+
+    return [
+        baseClass,
+        hasImage ? 'has-image' : '',
+        hasImage && isLeft ? 'image-left' : 'image-right'
+    ].filter(Boolean).join(' ')
+}
+
+const cardGridStyle = (section) => ({
+    '--desktop-columns': Math.min(Math.max(Number(section?.card_desktop_columns || 4), 1), 6),
+    '--tablet-columns': Math.min(Math.max(Number(section?.card_tablet_columns || 2), 1), 4)
 })
 
 const normalizeList = (value) => {
@@ -223,7 +242,7 @@ const normalizeCards = (value) => {
 /* Services Grid */
 .section-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(var(--desktop-columns, 4), minmax(0, 1fr));
     gap: 20px;
 }
 
@@ -234,10 +253,16 @@ const normalizeCards = (value) => {
     gap: 20px;
 }
 
-.section-list.has-image,
-.section-paragraph.has-image {
+.section-list.has-image.image-right,
+.section-paragraph.has-image.image-right {
     grid-template-columns: 1fr 1fr;
     grid-template-areas: "content image";
+}
+
+.section-list.has-image.image-left,
+.section-paragraph.has-image.image-left {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "image content";
 }
 
 .section-paragraph-text,
@@ -369,114 +394,6 @@ const normalizeCards = (value) => {
 
 
 /* Why Choose Section */
-
-/*
-
-    .why-choose {
-    padding: 80px 0;
-    background: #fff;
-    }
-
-    .why-choose-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
-    }
-
-    .why-choose-list {
-    list-style: none;
-    margin-bottom: 30px;
-    }
-
-    .why-choose-list li {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 20px;
-    padding: 15px 0;
-    border-bottom: 1px solid #e0e0e0;
-    }
-
-    .why-choose-list li:last-child {
-    border-bottom: none;
-    }
-
-    .why-choose-list li i {
-    color: #4caf50;
-    margin-right: 15px;
-    margin-top: 5px;
-    font-size: 1.2rem;
-    }
-
-    .why-choose-list li span {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: #555;
-    }
-
-    .why-choose-image img {
-    width: 100%;
-    height: auto;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    } */
-
-/* Schools Section - Điều Kiện Du Học */
-/* .conditions {
-    padding: 80px 0;
-    background: #f8f9fa;
-    }
-
-    .conditions-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    margin-top: 50px;
-    } */
-
-/* .condition-card {
-    background: white;
-    padding: 40px 30px;
-    border-radius: 15px;
-    text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-    border-top: 4px solid #d32f2f;
-    }
-
-    .condition-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-    }
-
-    .condition-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #d32f2f, #f44336);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    } */
-/*
-    .condition-icon i {
-    font-size: 2rem;
-    color: #fff;
-    }
-
-    .condition-card h4 {
-    font-size: 1.3rem;
-    margin-bottom: 15px;
-    color: #333;
-    font-weight: 600;
-    }
-
-    .condition-card p {
-    color: #666;
-    line-height: 1.6;
-    font-size: 0.95rem;
-    } */
 
 /* Fee Info Section */
 .fee-info {
@@ -655,9 +572,18 @@ const normalizeCards = (value) => {
         gap: 15px;
     } */
 
-    .section-list.has-image,
-    .section-paragraph.has-image {
+    .section-grid {
+        grid-template-columns: repeat(var(--tablet-columns, 2), minmax(0, 1fr));
+    }
+
+    .section-list.has-image.image-right,
+    .section-paragraph.has-image.image-right {
         grid-template-columns: 3fr 2fr;
+    }
+
+    .section-list.has-image.image-left,
+    .section-paragraph.has-image.image-left {
+        grid-template-columns: 2fr 3fr;
     }
 
     .why-choose-content,
@@ -723,8 +649,14 @@ const normalizeCards = (value) => {
         gap: 12px;
     } */
 
-    .section-list.has-image,
-    .section-paragraph.has-image {
+    .section-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-list.has-image.image-right,
+    .section-paragraph.has-image.image-right,
+    .section-list.has-image.image-left,
+    .section-paragraph.has-image.image-left {
         grid-template-columns: 1fr;
         grid-template-areas:
             "image"

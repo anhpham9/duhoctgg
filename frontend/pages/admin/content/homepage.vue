@@ -187,7 +187,7 @@
                                                 <strong>{{ section.title }}</strong>
                                                 <p class="row-subtitle">{{ section.subtitle || 'Không có subtitle' }}</p>
                                             </td>
-                                            <td><span class="type-badge">{{ section.type }}</span></td>
+                                            <td><span class="type-badge">{{ getTypeLabel(section.type) }}</span></td>
                                             <td>{{ section.sort_order }}</td>
                                             <td>
                                                 <span :class="['status-dot', section.is_active ? 'active' : 'inactive']">
@@ -216,7 +216,7 @@
                     <div v-if="showSectionForm" class="content-section">
                         <div class="section-header">
                             <h3><i class="fas fa-pen-ruler"></i> {{ isEditingSection ? 'Chỉnh sửa section' : 'Tạo section mới' }}</h3>
-                            <p>Type quyết định bộ trường nội dung tương ứng.</p>
+                            <p>Phân loại quyết định bộ trường nội dung tương ứng.</p>
                         </div>
 
                         <div class="form-grid two-columns">
@@ -225,51 +225,54 @@
                                 <input v-model.trim="sectionForm.title" type="text" class="form-control" placeholder="Ví dụ: Bạn đang muốn...">
                             </div>
                             <div class="form-group">
-                                <label>Subtitle <span class="required">*</span></label>
+                                <label>Phụ đề <span class="required">*</span></label>
                                 <input v-model.trim="sectionForm.subtitle" type="text" class="form-control" placeholder="Mô tả ngắn cho section">
                             </div>
 
                             <div class="form-group">
-                                <label>Mô tả chung</label>
+                                <label>Ghi chú</label>
                                 <textarea v-model="sectionForm.description" class="form-control" rows="3" placeholder="Mô tả tổng quát section"></textarea>
                             </div>
                             <div class="form-group">
-                                <label>Type <span class="required">*</span></label>
+                                <label>Phân loại <span class="required">*</span></label>
                                 <select v-model="sectionForm.type" class="form-control">
-                                    <option value="paragraph">paragraph</option>
-                                    <option value="list">list</option>
-                                    <option value="card">card</option>
+                                    <option value="paragraph">Đoạn văn</option>
+                                    <option value="list">Danh sách</option>
+                                    <option value="card">Thẻ</option>
                                 </select>
                             </div>
 
                             <div class="form-group">
-                                <label>Sort order</label>
+                                <label>Thứ tự hiển thị</label>
                                 <input v-model.number="sectionForm.sort_order" type="number" class="form-control" min="0">
                             </div>
                             <div class="form-group">
                                 <label>Trạng thái</label>
                                 <select v-model="sectionForm.is_active" class="form-control">
-                                    <option :value="true">active</option>
-                                    <option :value="false">inactive</option>
+                                    <option :value="true">Hoạt động</option>
+                                    <option :value="false">Không hoạt động</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-grid two-columns section-extra-grid">
                             <div class="form-group checkbox-group">
-                                <label>
-                                    <input v-model="sectionForm.contact_btn_show" type="checkbox">
-                                    Hiển thị nút tư vấn
+                                <label class="switch-label">
+                                    <input  class="switch-button"
+                                        v-model="sectionForm.contact_btn_show"
+                                        type="checkbox"
+                                    >
+                                    <span>Hiển thị nút tư vấn</span>
                                 </label>
                             </div>
                             <div class="form-group" v-if="sectionForm.contact_btn_show">
-                                <label>Text nút tư vấn</label>
+                                <label>Tiêu đề nút tư vấn</label>
                                 <input v-model.trim="sectionForm.contact_btn_text" type="text" class="form-control" placeholder="Ví dụ: ĐĂNG KÝ TƯ VẤN">
                             </div>
                         </div>
 
                         <div v-if="sectionForm.type === 'paragraph' || sectionForm.type === 'list'" class="form-grid two-columns section-extra-grid">
-                            <div class="form-group full-width-block">
+                            <div class="form-group">
                                 <label>Hình ảnh</label>
                                 <div class="input-mode-switch">
                                     <button type="button" class="mode-btn" :class="{ active: sectionImageMode === 'url' }" @click="setSectionImageMode('url')">
@@ -292,6 +295,16 @@
                                     </button>
                                     <span class="upload-inline-hint">PNG/JPG/WEBP/GIF</span>
                                 </div>
+
+                                <div class="form-group">
+                                    <label>Vị trí ảnh</label>
+                                    <select v-model.number="sectionForm.image_position" class="form-control">
+                                        <option :value="0">Bên trái</option>
+                                        <option :value="1">Bên phải</option>
+                                    </select>
+                                </div>
+
+
                             </div>
 
                             <div class="form-group">
@@ -310,14 +323,14 @@
 
                         <div v-if="sectionForm.type === 'paragraph'" class="form-grid two-columns section-extra-grid">
                             <div class="form-group full-width-block">
-                                <label>Paragraph text</label>
+                                <label>Nội dung đoạn văn</label>
                                 <textarea v-model="sectionForm.paragraph_text" class="form-control" rows="6" placeholder="Nội dung đoạn văn"></textarea>
                             </div>
                         </div>
 
                         <div v-if="sectionForm.type === 'list'" class="form-grid two-columns section-extra-grid">
                             <div class="form-group">
-                                <label>List icon (class)</label>
+                                <label>Icon danh sách (tên class)</label>
                                 <div class="icon-input-with-preview">
                                     <input v-model.trim="sectionForm.list_icon" type="text" class="form-control" placeholder="fas fa-check">
                                     <span class="icon-preview-chip" :title="sectionForm.list_icon || 'fas fa-check'">
@@ -326,22 +339,32 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>List items (mỗi dòng 1 item)</label>
+                                <label>Các mục danh sách (mỗi dòng 1 mục)</label>
                                 <textarea v-model="sectionForm.list_items_text" class="form-control" rows="8" placeholder="Dòng 1&#10;Dòng 2&#10;Dòng 3"></textarea>
                             </div>
                         </div>
 
-                        <div v-if="sectionForm.type === 'card'" class="form-grid section-extra-grid">
-                            <div class="form-group">
-                                <label>Card layout</label>
+                        <div v-if="sectionForm.type === 'card'" class="form-grid two-columns section-extra-grid">
+                            <div class="form-group full-width-block">
+                                <label>Giao diện thẻ</label>
                                 <select v-model="sectionForm.card_layout" class="form-control">
-                                    <option value="bg-red">bg-red</option>
-                                    <option value="bg-white">bg-white</option>
-                                    <option value="border-top">border-top</option>
+                                    <option value="bg-red">Màu nền đỏ</option>
+                                    <!-- <option value="bg-white">Màu nền trắng</option> -->
+                                    <option value="border-top">Viền trên đỏ - nền trắng</option>
                                 </select>
                             </div>
 
-                            <div class="card-editor-list">
+                            <div class="form-group">
+                                <label>Số thẻ / hàng (màn hình > 1024px)</label>
+                                <input v-model.number="sectionForm.card_desktop_columns" type="number" min="1" max="6" class="form-control">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Số thẻ / hàng (màn hình 768px - 1024px)</label>
+                                <input v-model.number="sectionForm.card_tablet_columns" type="number" min="1" max="4" class="form-control">
+                            </div>
+
+                            <div class="card-editor-list full-width-block">
                                 <div v-for="(card, idx) in sectionForm.card_items" :key="idx" class="card-editor-item">
                                     <div class="card-editor-row">
                                         <div class="icon-input-with-preview">
@@ -353,13 +376,13 @@
                                         <input v-model.trim="card.title" type="text" class="form-control" placeholder="Tiêu đề card">
                                     </div>
                                     <textarea v-model="card.content" class="form-control" rows="3" placeholder="Nội dung card"></textarea>
-                                    <button class="btn btn-secondary btn-sm btn-danger" @click="removeCardItem(idx)">
+                                    <button class="btn btn-secondary btn-sm btn-danger justify-start" @click="removeCardItem(idx)">
                                         <i class="fas fa-trash"></i>
                                         Xóa card
                                     </button>
                                 </div>
 
-                                <button class="btn btn-outline" @click="addCardItem">
+                                <button class="btn btn-outline justify-start" @click="addCardItem">
                                     <i class="fas fa-plus"></i>
                                     Thêm card
                                 </button>
@@ -463,8 +486,11 @@ const createEmptySectionForm = () => ({
     paragraph_text: '',
     image_url: '',
     image_cloudinary_public_id: '',
+    image_position: 1,
     list_icon: '',
     list_items_text: '',
+    card_desktop_columns: 4,
+    card_tablet_columns: 2,
     card_layout: 'bg-red',
     card_items: [{ icon: '', title: '', content: '' }],
     sort_order: 0,
@@ -490,6 +516,14 @@ const contentTabs = [
     { key: 'main', label: 'Meta & SEO' },
     { key: 'sections', label: 'Sections' }
 ]
+
+const SECTION_TYPE_LABELS = {
+    paragraph: 'Đoạn văn',
+    list: 'Danh sách',
+    card: 'Thẻ'
+}
+
+const getTypeLabel = (type) => SECTION_TYPE_LABELS[type] || type
 
 const hasChanges = computed(() => {
     if (!snapshot.value) return false
@@ -668,8 +702,11 @@ const startEditSection = (section) => {
         paragraph_text: section.paragraph_text || '',
         image_url: section.image_url || '',
         image_cloudinary_public_id: section.image_cloudinary_public_id || '',
+        image_position: Number(section.image_position) === 0 ? 0 : 1,
         list_icon: section.list_icon || '',
         list_items_text: normalizeListItemsText(section.list_items),
+        card_desktop_columns: Number(section.card_desktop_columns || 4),
+        card_tablet_columns: Number(section.card_tablet_columns || 2),
         card_layout: section.card_layout || 'bg-red',
         card_items: normalizeCardItems(section.card_items),
         sort_order: Number(section.sort_order || 0),
@@ -708,7 +745,7 @@ const validateSection = () => {
     if (!sectionForm.subtitle.trim()) return 'Subtitle section là bắt buộc'
 
     if (sectionForm.contact_btn_show && !sectionForm.contact_btn_text.trim()) {
-        return 'Bạn cần nhập text nút tư vấn khi bật hiển thị nút'
+        return 'Bạn cần nhập tiêu đề nút tư vấn khi bật hiển thị nút'
     }
 
     if ((sectionForm.type === 'paragraph' || sectionForm.type === 'list') && sectionImageMode.value === 'url' && sectionForm.image_url.trim() && !isValidImageUrlInput(sectionForm.image_url.trim())) {
@@ -725,6 +762,12 @@ const validateSection = () => {
     }
 
     if (sectionForm.type === 'card') {
+        if (Number(sectionForm.card_desktop_columns) < 1 || Number(sectionForm.card_desktop_columns) > 6) {
+            return 'Section card chỉ cho phép desktop columns từ 1 đến 6'
+        }
+        if (Number(sectionForm.card_tablet_columns) < 1 || Number(sectionForm.card_tablet_columns) > 4) {
+            return 'Section card chỉ cho phép tablet columns từ 1 đến 4'
+        }
         const validCards = sectionForm.card_items.filter((card) => card.icon?.trim() && card.title?.trim() && card.content?.trim())
         if (!validCards.length) return 'Section card cần ít nhất 1 card hợp lệ (icon, title, content)'
     }
@@ -762,8 +805,11 @@ const saveSection = async () => {
             paragraph_text: sectionForm.type === 'paragraph' ? sectionForm.paragraph_text : '',
             image_url: (sectionForm.type === 'paragraph' || sectionForm.type === 'list') ? imageUrl : '',
             image_cloudinary_public_id: (sectionForm.type === 'paragraph' || sectionForm.type === 'list') ? imagePublicId : '',
+            image_position: (sectionForm.type === 'paragraph' || sectionForm.type === 'list') ? Number(sectionForm.image_position ?? 1) : 1,
             list_icon: sectionForm.type === 'list' ? sectionForm.list_icon.trim() : '',
             list_items: sectionForm.type === 'list' ? parseListItems(sectionForm.list_items_text) : [],
+            card_desktop_columns: sectionForm.type === 'card' ? Number(sectionForm.card_desktop_columns || 4) : 4,
+            card_tablet_columns: sectionForm.type === 'card' ? Number(sectionForm.card_tablet_columns || 2) : 2,
             card_layout: sectionForm.type === 'card' ? sectionForm.card_layout : 'bg-red',
             card_items: sectionForm.type === 'card'
                 ? sectionForm.card_items
@@ -958,6 +1004,75 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.switch-label { display: flex !important; align-items: center; gap: 0.6rem; cursor: pointer; }
+.switch-button {
+
+    appearance: none;
+
+    width: 52px;
+    height: 28px;
+
+    background: #d1d5db;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+
+    position: relative;
+
+    transition: .25s;
+
+}
+
+.switch-button::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 22px;
+    height: 22px;
+
+    top: 3px;
+    left: 3px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.15);
+
+    transition: .25s;
+
+}
+
+.switch-button:checked {
+
+    background: #22c55e;
+
+}
+
+.switch-button:checked::before {
+
+    transform: translateX(24px);
+
+}
+
+.switch-button:hover {
+
+    filter: brightness(0.97);
+
+}
+
+.switch-button:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+
+}
+.justify-start {justify-self: start;}
 .homepage-content-page {
     padding: 0;
     min-height: 100vh;
@@ -1361,6 +1476,12 @@ onMounted(async () => {
     padding: 0.75rem;
     display: grid;
     gap: 0.6rem;
+}
+
+.card-editor-item:has(> .btn-danger:hover) {
+    background: #fff2f4;
+    border-color: #f3b4bd;
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.08);
 }
 
 .card-editor-row {
