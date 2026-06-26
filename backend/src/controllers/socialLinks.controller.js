@@ -1,14 +1,21 @@
 import db from "../config/db.js";
 import { logError, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
-import { SecurityLogger } from "../utils/securityLogger.js";
+import { NotificationService } from "../services/notification.service.js";
 
 const MANAGE_ROLES = [1, 2];
 
 const checkRole = (req, res) => {
     const role = Number(req.user?.role_id);
     if (MANAGE_ROLES.includes(role)) return true;
-    SecurityLogger.logPermissionViolation(req.user?.id, req.ip, req.originalUrl, req.method, "settings.social");
+    auditLog('SECURITY_PERMISSION_VIOLATION', req.user?.id, {
+        event: 'permission_violation',
+        resource: req.originalUrl,
+        action: req.method,
+        requiredPermission: 'settings.social',
+        ip: req.ip,
+        severity: 'medium'
+    }, req);
     res.status(403).json({ success: false, message: "Truy cập bị từ chối." });
     return false;
 };
@@ -63,6 +70,14 @@ export const createSocialLink = async (req, res) => {
 
         auditLog("CREATE_SOCIAL_LINK", req.user?.id, { linkId: result.rows[0].id, name: link.name }, req);
 
+        // 🔔 NOTIFY: Thông báo cho admin khi thêm mới social link
+        await NotificationService.notifySettingsChanged(
+            `social_link_${result.rows[0].id}`,
+            null,
+            { name: link.name, url: link.url, icon: link.icon },
+            req.user?.id
+        );
+
         return res.status(201).json({ success: true, message: "Tạo liên kết mạng xã hội thành công", data: result.rows[0] });
     } catch (error) {
         logError("Create social link failed", error, { requesterId: req.user?.id });
@@ -107,6 +122,14 @@ export const updateSocialLink = async (req, res) => {
 
         auditLog("UPDATE_SOCIAL_LINK", req.user?.id, { linkId: id, name: link.name }, req);
 
+        // 🔔 NOTIFY: Thông báo cho admin khi thay đổi social link
+        await NotificationService.notifySettingsChanged(
+            `social_link_${id}`,
+            null,
+            { name: link.name, url: link.url, icon: link.icon },
+            req.user?.id
+        );
+
         return res.json({ success: true, message: "Cập nhật thành công", data: result.rows[0] });
     } catch (error) {
         logError("Update social link failed", error, { requesterId: req.user?.id });
@@ -133,6 +156,14 @@ export const deleteSocialLink = async (req, res) => {
         }
 
         auditLog("DELETE_SOCIAL_LINK", req.user?.id, { linkId: id, name: result.rows[0].name }, req);
+
+        // 🔔 NOTIFY: Thông báo cho admin khi xóa social link
+        await NotificationService.notifySettingsChanged(
+            `social_link_${id}`,
+            { name: result.rows[0].name },
+            null,
+            req.user?.id
+        );
 
         return res.json({ success: true, message: "Đã xoá liên kết mạng xã hội" });
     } catch (error) {

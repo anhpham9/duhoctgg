@@ -3,7 +3,6 @@ import db from "../config/db.js";
 import { generateToken } from "../utils/jwt.js";
 import { logInfo, logError, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
-import { SecurityLogger } from "../utils/securityLogger.js";
 import { NotificationService } from "../services/notification.service.js";
 
 export const login = async (req, res) => {
@@ -20,6 +19,13 @@ export const login = async (req, res) => {
                 ip: req.ip,
                 timestamp: new Date().toISOString()
             });
+            auditLog('SECURITY_LOGIN_FAILED', null, {
+                event: 'login_failed',
+                reason: 'missing_credentials',
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+                severity: 'medium'
+            }, req);
             return res.status(400).json({ 
                 success: false,
                 message: "Username and password are required" 
@@ -42,6 +48,14 @@ export const login = async (req, res) => {
                 ip: req.ip,
                 timestamp: new Date().toISOString()
             });
+            auditLog('SECURITY_LOGIN_FAILED', null, {
+                event: 'login_failed',
+                username: sanitizedUsername,
+                reason: 'invalid_username_format',
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+                severity: 'medium'
+            }, req);
             return res.status(400).json({ 
                 success: false,
                 message: "Invalid username format" 
@@ -146,6 +160,16 @@ export const login = async (req, res) => {
                 userAgent: req.get('User-Agent'),
                 timestamp: new Date().toISOString()
             });
+            auditLog('SECURITY_LOGIN_FAILED', user.id, {
+                event: 'login_failed',
+                username: user.username,
+                reason: 'incorrect_password',
+                attemptNumber: newFailedAttempts,
+                accountLocked: !!lockedUntil,
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+                severity: lockedUntil ? 'high' : 'medium'
+            }, req);
 
             return res.status(401).json({
                 success: false,
@@ -190,10 +214,13 @@ export const login = async (req, res) => {
         const token = generateToken(user);
 
         // Audit log successful login
-        auditLog('LOGIN', user.id, {
+        auditLog('LOGIN_SUCCESS', user.id, {
             username: user.username,
             role: user.role_id,
-            loginMethod: 'password'
+            loginMethod: 'password',
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            severity: 'low'
         }, req);
 
         // logInfo('User logged in successfully', {
@@ -229,6 +256,14 @@ export const login = async (req, res) => {
             userAgent: req.get('User-Agent'),
             timestamp: new Date().toISOString()
         });
+        auditLog('SECURITY_LOGIN_FAILED', null, {
+            event: 'login_failed',
+            reason: 'system_error',
+            errorName: error?.name,
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            severity: 'high'
+        }, req);
         
         return res.status(500).json({
             success: false,
@@ -241,8 +276,11 @@ export const logout = (req, res) => {
     try {
         // Audit log successful logout (if user is authenticated)
         if (req.user) {
-            auditLog('LOGOUT', req.user.id, {
-                username: req.user.username
+            auditLog('LOGOUT_SUCCESS', req.user.id, {
+                username: req.user.username,
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+                severity: 'low'
             }, req);
 
             logInfo('User logged out successfully', {
@@ -262,6 +300,12 @@ export const logout = (req, res) => {
             userId: req.user?.id,
             ip: req.ip
         });
+        auditLog('LOGOUT_FAILED', req.user?.id, {
+            reason: 'logout_error',
+            errorName: error?.name,
+            ip: req.ip,
+            severity: 'medium'
+        }, req);
         
         // Still clear cookie even if logging fails
         res.clearCookie('authToken');
@@ -288,10 +332,16 @@ export const getAuthStatus = async (req, res) => {
         );
         
         if (result.rows.length === 0) {
-            logError('Auth status check failed - User not found', new Error('User not found in database'), {
+            logError('Auth status check failed - User not found', null, {
                 userId: req.user.id,
                 ip: req.ip
             });
+            auditLog('SECURITY_AUTH_STATUS_FAILED', req.user.id, {
+                event: 'auth_status_check_failed',
+                reason: 'user_not_found',
+                ip: req.ip,
+                severity: 'high'
+            }, req);
             return res.status(404).json({
                 success: false,
                 authenticated: false,
@@ -320,6 +370,13 @@ export const getAuthStatus = async (req, res) => {
             userId: req.user?.id,
             ip: req.ip
         });
+        auditLog('SECURITY_AUTH_STATUS_FAILED', req.user?.id, {
+            event: 'auth_status_check_failed',
+            reason: 'system_error',
+            errorName: error?.name,
+            ip: req.ip,
+            severity: 'high'
+        }, req);
         
         res.status(500).json({
             success: false,

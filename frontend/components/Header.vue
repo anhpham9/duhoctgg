@@ -95,16 +95,16 @@ const currentLogoIndex = ref(0)
 
 // Image debugging (simplified)
 const handleImageError = (event) => {
-    console.error('Header Logo failed to load:', event.target.src)
+    // console.error('Header Logo failed to load:', event.target.src)
     // Try next logo source
     currentLogoIndex.value++
     if (currentLogoIndex.value <= logoSources.length) {
-        console.log('Trying alternative logo:', logoSrc.value)
+        // console.log('Trying alternative logo:', logoSrc.value)
     }
 }
 
 const handleImageLoad = (event) => {
-    console.log('✅ Header Logo loaded successfully:', event.target.src)
+    // console.log('✅ Header Logo loaded successfully:', event.target.src)
 }
 
 // Header scroll effect
@@ -156,7 +156,7 @@ const handleKeydown = (event) => {
 }
 
 onMounted(() => {
-    console.log('Header component mounted - Logo working!')
+    // console.log('Header component mounted - Logo working!')
 
     window.addEventListener('scroll', requestTick, { passive: true })
     document.addEventListener('click', handleClickOutside)

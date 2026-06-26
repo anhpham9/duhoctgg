@@ -166,9 +166,13 @@ export const submitPublicContact = async (req, res) => {
              RETURNING id, created_at`,
             [sanitizedName, sanitizedEmail, sanitizedPhone, sanitizedMessage]
         );
-
-        const contact = result.rows[0];
-        const contactId = contact.id;
+        
+        const contactId = result.rows[0].id;
+        const contact = {
+            id: contactId,
+            name: sanitizedName,
+            email: sanitizedEmail
+        }
 
         // Log successful submission for audit
         logInfo('Public contact form submitted successfully', {
@@ -177,7 +181,7 @@ export const submitPublicContact = async (req, res) => {
             email: sanitizedEmail,
             ip: req.ip,
             userAgent: req.get('User-Agent'),
-            timestamp: contact.created_at
+            timestamp: result.rows[0].created_at
         });
 
         // Audit log for compliance
@@ -204,7 +208,7 @@ export const submitPublicContact = async (req, res) => {
             message: 'Cảm ơn bạn! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.',
             data: {
                 id: contactId,
-                submitted_at: contact.created_at
+                submitted_at: result.rows[0].created_at
             }
         });
 

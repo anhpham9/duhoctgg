@@ -1,17 +1,17 @@
 export default defineNuxtRouteMiddleware((to) => {
-    console.log('🔍 Auth middleware called for:', to.path);
+    // console.log('🔍 Auth middleware called for:', to.path);
     
     // Chỉ chạy trên client side và sau khi hydration
     if (import.meta.server) {
-        console.log('🚫 Skipping auth middleware on server');
+        // console.log('🚫 Skipping auth middleware on server');
         return;
     }
     if (!process.client) {
-        console.log('🚫 Not on client side');
+        // console.log('🚫 Not on client side');
         return;
     }
 
-    console.log('🔄 Running auth middleware on client');
+    // console.log('🔄 Running auth middleware on client');
 
     // Đợi cho Vue hydration hoàn thành
     return new Promise((resolve) => {
@@ -34,16 +34,16 @@ export default defineNuxtRouteMiddleware((to) => {
                 
                 clearTimeout(timeoutId);
                 const isAuthenticated = response.ok;
-                console.log('🔑 Auth status:', isAuthenticated ? '✅ Authenticated' : '❌ Not authenticated');
+                // console.log('🔑 Auth status:', isAuthenticated ? '✅ Authenticated' : '❌ Not authenticated');
                 
                 // 👇 XỬ LÝ LOGIN PAGE
                 if (to.path === "/login") {
                     if (isAuthenticated) {
-                        console.log('🔄 User already logged in, redirecting to admin');
+                        // console.log('🔄 User already logged in, redirecting to admin');
                         resolve(navigateTo("/admin"));
                         return;
                     } else {
-                        console.log('✅ Not authenticated, allowing access to login page');
+                        // console.log('✅ Not authenticated, allowing access to login page');
                         resolve();
                         return;
                     }
@@ -51,34 +51,34 @@ export default defineNuxtRouteMiddleware((to) => {
                 
                 // 👇 XỬ LÝ ADMIN PAGES
                 if (!isAuthenticated) {
-                    console.log('🚫 Not authenticated, redirecting to login');
+                    // console.log('🚫 Not authenticated, redirecting to login');
                     resolve(navigateTo("/login"));
                     return;
                 }
                 
-                console.log('✅ Authenticated, allowing access to:', to.path);
+                // console.log('✅ Authenticated, allowing access to:', to.path);
                 resolve();
             } catch (error) {
-                console.error('❌ Auth middleware error:', error);
+                // console.error('❌ Auth middleware error:', error);
                 
                 // Handle different types of errors
                 if (error.name === 'AbortError') {
-                    console.log('⏰ Auth check timed out');
+                    // console.log('⏰ Auth check timed out');
                 } else if (error.message.includes('Failed to fetch') || error.message.includes('CONNECTION_REFUSED')) {
-                    console.log('🌐 Backend server not available');
+                    // console.log('🌐 Backend server not available');
                 } else {
-                    console.log('🔧 Other auth error:', error.message);
+                    // console.log('🔧 Other auth error:', error.message);
                 }
                 
                 // 👇 XỬ LÝ KHI BACKEND KHÔNG AVAILABLE
                 if (to.path === "/login") {
                     // Cho phép access login page ngay cả khi backend down
-                    console.log('✅ Allowing login page access despite backend issues');
+                    // console.log('✅ Allowing login page access despite backend issues');
                     resolve();
                     return;
                 } else {
                     // Redirect về login cho admin pages
-                    console.log('🚫 Backend unavailable, redirecting to login');
+                    // console.log('🚫 Backend unavailable, redirecting to login');
                     resolve(navigateTo("/login"));
                     return;
                 }

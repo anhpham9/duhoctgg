@@ -1,7 +1,6 @@
 import db from "../config/db.js";
 import { logError, logInfo, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
-import { SecurityLogger } from "../utils/securityLogger.js";
 import {
     GENERAL_SETTINGS_KEYS,
     GENERAL_SETTINGS_DESCRIPTIONS,
@@ -99,13 +98,14 @@ export const getGeneralSettings = async (req, res) => {
         const currentUserId = req.user?.id;
 
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/general",
-                "GET",
-                "settings.general.view"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/general',
+                action: 'GET',
+                requiredPermission: 'settings.general.view',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -135,13 +135,14 @@ export const getHomepageBannerSettings = async (req, res) => {
         const currentUserId = req.user?.id;
 
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/homepage-banner",
-                "GET",
-                "settings.homepage_banner.view"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/homepage-banner',
+                action: 'GET',
+                requiredPermission: 'settings.homepage_banner.view',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -180,13 +181,14 @@ export const updateHomepageBannerSettings = async (req, res) => {
 
     try {
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/homepage-banner",
-                "PUT",
-                "settings.homepage_banner.update"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/homepage-banner',
+                action: 'PUT',
+                requiredPermission: 'settings.homepage_banner.update',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -223,8 +225,44 @@ export const updateHomepageBannerSettings = async (req, res) => {
             oldSettingsMap[row.key] = row.value;
         });
 
+        // Build settings entries for later notification
+        const settingsEntries = [
+            [GENERAL_SETTINGS_KEYS.homepageBannerUrl, String(payload.bannerUrl)],
+            [GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId, String(payload.bannerAssetPublicId)]
+        ];
+
+        // Update homepage banner settings in DB
+        const placeholders = settingsEntries
+            .map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
+            .join(",\n                ");
+
+        const values = settingsEntries.flatMap(([key, value]) => [
+            key,
+            value,
+            GENERAL_SETTINGS_DESCRIPTIONS[key] || "",
+            "general"
+        ]);
+
+        await db.query(
+            `INSERT INTO settings (key, value, description, group_name)
+             VALUES
+                ${placeholders}
+             ON CONFLICT (key)
+             DO UPDATE SET
+                value = EXCLUDED.value,
+                description = EXCLUDED.description,
+                group_name = EXCLUDED.group_name`,
+            values
+        );
+
+        // Sync media asset ownership
+        const ownershipSyncResult = await syncMediaAssetOwnership({
+            ownerType: MEDIA_OWNER_TYPES.settings,
+            ownerKey: MEDIA_OWNER_KEYS.general,
+            fieldMappings: [
+                {
                     fieldName: MEDIA_FIELD_NAMES.homepageBannerUrl,
-                    payloadKey: "bannerUrl"
+                    payloadKey: "bannerAssetPublicId"
                 }
             ],
             payload,
@@ -245,7 +283,7 @@ export const updateHomepageBannerSettings = async (req, res) => {
             hasBannerAssetPublicId: Boolean(payload.bannerAssetPublicId)
         }, req);
 
-        // 🔔 NOTIFY: Settings changed for each modified setting
+        // 🔔 NOTIFY: Thông báo cho admin khi homepage banner settings thay đổi
         for (const [key, newValue] of settingsEntries) {
             const oldValue = oldSettingsMap[key] || null;
             if (oldValue !== newValue) {
@@ -286,13 +324,14 @@ export const updateGeneralSettings = async (req, res) => {
 
     try {
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/general",
-                "PUT",
-                "settings.general.update"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/general',
+                action: 'PUT',
+                requiredPermission: 'settings.general.update',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -347,6 +386,27 @@ export const updateGeneralSettings = async (req, res) => {
         }
 
         await db.query("BEGIN");
+
+        // Fetch old values for notification comparison
+        const oldSettingsResult = await db.query(
+            `SELECT key, value FROM settings 
+             WHERE key = ANY($1::text[])`,
+            [[
+                GENERAL_SETTINGS_KEYS.siteName,
+                GENERAL_SETTINGS_KEYS.siteUrl,
+                GENERAL_SETTINGS_KEYS.siteLogoUrl,
+                GENERAL_SETTINGS_KEYS.siteFaviconUrl,
+                GENERAL_SETTINGS_KEYS.siteDescription,
+                GENERAL_SETTINGS_KEYS.siteCopyright,
+                GENERAL_SETTINGS_KEYS.siteLanguage,
+                GENERAL_SETTINGS_KEYS.siteTimezone,
+                GENERAL_SETTINGS_KEYS.dateFormat
+            ]]
+        );
+        const oldSettingsMap = {};
+        oldSettingsResult.rows.forEach(row => {
+            oldSettingsMap[row.key] = row.value;
+        });
 
         const settingsEntries = [
             [GENERAL_SETTINGS_KEYS.siteName,              String(payload.siteName)],
@@ -411,6 +471,14 @@ export const updateGeneralSettings = async (req, res) => {
             requesterId: currentUserId
         });
 
+        // 🔔 NOTIFY: Thông báo cho admin khi general settings thay đổi
+        for (const [key, newValue] of settingsEntries) {
+            const oldValue = oldSettingsMap[key] || null;
+            if (oldValue !== newValue) {
+                await NotificationService.notifySettingsChanged(key, oldValue, newValue, currentUserId);
+            }
+        }
+
         auditLog("UPDATE_GENERAL_SETTINGS", currentUserId, {
             updatedFields: Object.keys(payload)
         }, req);
@@ -451,13 +519,14 @@ export const uploadGeneralImage = async (req, res) => {
 
     try {
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/general/upload-image",
-                "POST",
-                "settings.general.upload"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/general/upload-image',
+                action: 'POST',
+                requiredPermission: 'settings.general.upload',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -542,13 +611,14 @@ export const deleteGeneralImage = async (req, res) => {
 
     try {
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/general/upload-image",
-                "DELETE",
-                "settings.general.delete_upload"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/general/upload-image',
+                action: 'DELETE',
+                requiredPermission: 'settings.general.delete_upload',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -600,13 +670,14 @@ export const getContactSettings = async (req, res) => {
         const currentUserId = req.user?.id;
 
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/contact",
-                "GET",
-                "settings.contact.view"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/contact',
+                action: 'GET',
+                requiredPermission: 'settings.contact.view',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -636,13 +707,14 @@ export const updateContactSettings = async (req, res) => {
 
     try {
         if (!MANAGE_SETTINGS_ROLES.includes(currentUserRole)) {
-            SecurityLogger.logPermissionViolation(
-                currentUserId,
-                req.ip,
-                "/api/settings/contact",
-                "PUT",
-                "settings.contact.update"
-            );
+            auditLog('SECURITY_PERMISSION_VIOLATION', currentUserId, {
+                event: 'permission_violation',
+                resource: '/api/settings/contact',
+                action: 'PUT',
+                requiredPermission: 'settings.contact.update',
+                ip: req.ip,
+                severity: 'medium'
+            }, req);
 
             return res.status(403).json({
                 success: false,
@@ -673,6 +745,26 @@ export const updateContactSettings = async (req, res) => {
         }
 
         await db.query("BEGIN");
+
+        // Fetch old values for notification comparison
+        const oldSettingsResult = await db.query(
+            `SELECT key, value FROM settings 
+             WHERE key = ANY($1::text[])`,
+            [[
+                CONTACT_SETTINGS_KEYS.companyFullName,
+                CONTACT_SETTINGS_KEYS.companyShortName,
+                CONTACT_SETTINGS_KEYS.contactEmail,
+                CONTACT_SETTINGS_KEYS.phone,
+                CONTACT_SETTINGS_KEYS.hotline,
+                CONTACT_SETTINGS_KEYS.address,
+                CONTACT_SETTINGS_KEYS.googleMapEmbedUrl,
+                CONTACT_SETTINGS_KEYS.workingHours
+            ]]
+        );
+        const oldSettingsMap = {};
+        oldSettingsResult.rows.forEach(row => {
+            oldSettingsMap[row.key] = row.value;
+        });
 
         const settingsEntries = [
             [CONTACT_SETTINGS_KEYS.companyFullName, String(payload.companyFullName)],
@@ -709,6 +801,14 @@ export const updateContactSettings = async (req, res) => {
         );
 
         await db.query("COMMIT");
+
+        // 🔔 NOTIFY: Thông báo cho admin khi contact settings thay đổi
+        for (const [key, newValue] of settingsEntries) {
+            const oldValue = oldSettingsMap[key] || null;
+            if (oldValue !== newValue) {
+                await NotificationService.notifySettingsChanged(key, oldValue, newValue, currentUserId);
+            }
+        }
 
         auditLog("UPDATE_CONTACT_SETTINGS", currentUserId, {
             updatedFields: Object.keys(payload)

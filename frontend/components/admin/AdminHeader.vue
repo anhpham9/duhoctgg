@@ -197,7 +197,7 @@ const recentNotifications = computed(() => {
 const loadNotifications = async () => {
     try {
         const config = useRuntimeConfig()
-        const response = await fetch(`${config.public.apiBase}/api/notifications?limit=6`, {
+        const response = await fetch(`${config.public.apiBase}/notifications?limit=6`, {
             credentials: 'include'
         })
         const result = await response.json()
@@ -229,7 +229,7 @@ const loadNotifications = async () => {
 const refreshUnreadCount = async () => {
     try {
         const config = useRuntimeConfig()
-        const response = await fetch(`${config.public.apiBase}/api/notifications/unread-count`, {
+        const response = await fetch(`${config.public.apiBase}/notifications/unread-count`, {
             credentials: 'include'
         })
         const result = await response.json()
@@ -308,7 +308,7 @@ const markAsRead = async (notificationId) => {
 
     try {
         const config = useRuntimeConfig()
-        const response = await fetch(`${config.public.apiBase}/api/notifications/${notificationId}/read`, {
+        const response = await fetch(`${config.public.apiBase}/notifications/${notificationId}/read`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
@@ -330,7 +330,7 @@ const markAsRead = async (notificationId) => {
 const markAllAsRead = async () => {
     try {
         const config = useRuntimeConfig()
-        const response = await fetch(`${config.public.apiBase}/api/notifications/read-all`, {
+        const response = await fetch(`${config.public.apiBase}/notifications/read-all`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
