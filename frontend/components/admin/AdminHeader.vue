@@ -6,9 +6,16 @@
             </button>
 
             <div class="breadcrumb">
-                <span class="breadcrumb-item">Trang chủ</span>
-                <i class="fas fa-chevron-right"></i>
-                <span class="breadcrumb-item active">{{ currentPageTitle }}</span>
+                <span class="breadcrumb-item">Trang chủ</span>     
+                <template v-for="(item, index) in breadcrumbItems" :key="index">
+                    <i class="fas fa-chevron-right"></i>
+                    <span v-if="index === breadcrumbItems.length - 1" class="breadcrumb-item active">
+                        {{ item.label }}
+                    </span>
+                    <span v-else class="breadcrumb-item">
+                        {{ item.label }}
+                    </span>
+                </template>
             </div>
         </div>
 
@@ -104,7 +111,7 @@
                     </div>
 
                     <div class="dropdown-footer">
-                        <NuxtLink to="/admin/notifications" class="view-all-link">
+                        <NuxtLink to="/admin/notifications" @click="closeDropdown()" class="view-all-link">
                             <i class="fas fa-external-link-alt"></i>
                             Xem tất cả thông báo
                         </NuxtLink>
@@ -135,6 +142,9 @@
 
 <script setup>
 import "~/assets/css/admin/notifications.css";
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
+
 // ========================================
 // ADMIN HEADER COMPONENT
 // ========================================
@@ -171,19 +181,113 @@ const notificationsDropdown = ref(null)
 // COMPUTED PROPERTIES
 // ========================================
 
-const currentPageTitle = computed(() => {
+const breadcrumbItems = computed(() => {
+    // Main page titles
     const pageTitles = {
         '/admin': 'Dashboard',
         '/admin/users': 'Người dùng',
         '/admin/contacts': 'Liên hệ',
         '/admin/schools': 'Trường học',
         '/admin/news': 'Tin tức',
-        '/admin/settings': 'Cài đặt'
+        '/admin/settings': 'Cài đặt',
+        '/admin/notifications': 'Thông báo',
+        '/admin/profile': 'Hồ sơ cá nhân',
+        '/admin/content': 'Nội dung',
+        '/admin/faqs': 'Câu hỏi thường gặp',
+        '/admin/team-members': 'Thành viên nhóm',
+        '/admin/other': 'Khác'
     }
     
-    // Find matching page or default to Dashboard
-    const match = Object.keys(pageTitles).find(path => route.path.startsWith(path))
-    return pageTitles[match] || 'Dashboard'
+    // Sub-page titles mapping
+    const subPageTitles = {
+        '/admin/content/about': 'Về chúng tôi',
+        '/admin/content/conditions': 'Điều khoản',
+        '/admin/content/contact': 'Liên hệ',
+        '/admin/content/homepage': 'Trang chủ',
+        '/admin/content/news': 'Tin tức',
+        '/admin/content/schools': 'Trường học',
+        
+        '/admin/faqs/create': 'Tạo FAQ',
+        
+        '/admin/news/categories': 'Danh mục',
+        '/admin/news/create': 'Tạo tin tức',
+        '/admin/news/news-categories': 'Danh mục tin tức',
+        '/admin/news/edit': 'Chỉnh sửa',
+        '/admin/news/view': 'Xem chi tiết',
+        
+        '/admin/other/about-content': 'Nội dung Về chúng tôi',
+        '/admin/other/about-mission': 'Sứ mệnh',
+        '/admin/other/about-reasons': 'Lý do',
+        '/admin/other/about-stats': 'Thống kê',
+        
+        '/admin/schools/types': 'Loại trường',
+        '/admin/schools/regions': 'Khu vực',
+        '/admin/schools/reviews': 'Đánh giá',
+        '/admin/schools/create': 'Tạo trường học',
+        '/admin/schools/edit': 'Chỉnh sửa',
+        '/admin/schools/view': 'Xem chi tiết',
+        
+        '/admin/settings/general': 'Chung',
+        '/admin/settings/backup': 'Sao lưu',
+        '/admin/settings/seo': 'SEO',
+        '/admin/settings/socials': 'Mạng xã hội',
+        
+        '/admin/team-members/create': 'Thêm thành viên'
+    }
+    
+    const currentPath = route.path
+    const breadcrumbs = []
+    
+    // If root admin page, no sub-breadcrumbs
+    if (currentPath === '/admin') {
+        return []
+    }
+    
+    // Parse path segments
+    const pathParts = currentPath.split('/').filter(Boolean) // ['admin', 'settings', 'backup']
+    
+    if (pathParts.length === 2) {
+        // e.g., /admin/contacts
+        const path = `/${pathParts.join('/')}`
+        if (pageTitles[path]) {
+            breadcrumbs.push({ label: pageTitles[path], path })
+        }
+    } else if (pathParts.length >= 3) {
+        // e.g., /admin/settings/backup or /admin/news/edit/5
+        
+        // Add parent level (e.g., /admin/settings)
+        const parentPath = `/${pathParts.slice(0, 2).join('/')}`
+        if (pageTitles[parentPath]) {
+            breadcrumbs.push({ label: pageTitles[parentPath], path: parentPath })
+        }
+        
+        // Add sub-level
+        // Try exact match first
+        if (subPageTitles[currentPath]) {
+            breadcrumbs.push({ label: subPageTitles[currentPath], path: currentPath })
+        } else {
+            // Try without ID (for dynamic routes like /admin/news/edit/5 → /admin/news/edit)
+            const pathWithoutId = `/${pathParts.slice(0, -1).join('/')}`
+            if (subPageTitles[pathWithoutId]) {
+                breadcrumbs.push({ label: subPageTitles[pathWithoutId], path: pathWithoutId })
+            } else {
+                // Fallback: show the last segment as-is
+                const lastSegment = pathParts[pathParts.length - 1]
+                breadcrumbs.push({ 
+                    label: lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1), 
+                    path: currentPath 
+                })
+            }
+        }
+    }
+    
+    return breadcrumbs
+})
+
+// Keep currentPageTitle for backward compatibility if needed
+const currentPageTitle = computed(() => {
+    const items = breadcrumbItems.value
+    return items.length > 0 ? items[items.length - 1].label : 'Dashboard'
 })
 
 const recentNotifications = computed(() => {
@@ -368,6 +472,8 @@ const handleNotificationClick = async (action, notification) => {
         'email': '/admin/settings',
         'dashboard': '/admin'
     }
+
+    closeDropdown()
 
     let route = routes[action] || '/admin'
     

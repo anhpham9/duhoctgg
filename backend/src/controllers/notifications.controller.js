@@ -1,28 +1,58 @@
 import db from "../config/db.js";
 import { logError, logInfo } from "../utils/logger.js";
 
-// Get user's notifications (paginated)
+// Get user's notifications (paginated, filterable, searchable)
 export const getNotifications = async (req, res) => {
     try {
         const userId = req.user.id;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
+        const type = req.query.type || '';  // Filter by notification type
+        const status = req.query.status || '';  // 'read' or 'unread'
+        const search = req.query.search || '';  // Search in title and message
 
+        // Build WHERE clause
+        let whereConditions = ['user_id = $1'];
+        let queryParams = [userId];
+        let paramCounter = 2;
+
+        if (type) {
+            whereConditions.push(`type = $${paramCounter}`);
+            queryParams.push(type);
+            paramCounter++;
+        }
+
+        if (status === 'read') {
+            whereConditions.push('is_read = TRUE');
+        } else if (status === 'unread') {
+            whereConditions.push('is_read = FALSE');
+        }
+
+        if (search) {
+            whereConditions.push(`(title ILIKE $${paramCounter} OR message ILIKE $${paramCounter})`);
+            queryParams.push(`%${search}%`);
+            paramCounter++;
+        }
+
+        const whereClause = whereConditions.join(' AND ');
+
+        // Get paginated results
         const result = await db.query(
             `SELECT * FROM notifications 
-             WHERE user_id = $1 
+             WHERE ${whereClause}
              ORDER BY created_at DESC 
-             LIMIT $2 OFFSET $3`,
-            [userId, limit, offset]
+             LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`,
+            [...queryParams, limit, offset]
         );
 
+        // Get total count
         const countResult = await db.query(
-            'SELECT COUNT(*) FROM notifications WHERE user_id = $1',
-            [userId]
+            `SELECT COUNT(*) FROM notifications WHERE ${whereClause}`,
+            queryParams
         );
 
-        logInfo('Notifications retrieved', { userId, limit, offset, count: result.rows.length });
+        logInfo('Notifications retrieved', { userId, limit, offset, type, status, search, count: result.rows.length });
         res.json({
             success: true,
             data: result.rows,
