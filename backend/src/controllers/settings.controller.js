@@ -24,6 +24,7 @@ import {
     deleteCloudinaryAssetsSafely,
     ensureCloudinaryReady
 } from "../services/cmsAsset.service.js";
+import { NotificationService } from "../services/notification.service.js";
 
 const MANAGE_SETTINGS_ROLES = [1, 2];
 const ALLOWED_GENERAL_IMAGE_TYPES = new Set(["logo", "favicon", "homepage-banner"]);
@@ -208,39 +209,20 @@ export const updateHomepageBannerSettings = async (req, res) => {
 
         await db.query("BEGIN");
 
-        const settingsEntries = [
-            [GENERAL_SETTINGS_KEYS.homepageBannerUrl, payload.bannerUrl],
-            [GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId, payload.bannerAssetPublicId]
-        ];
-
-        const placeholders = settingsEntries
-            .map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
-            .join(",\n                ");
-
-        const values = settingsEntries.flatMap(([key, value]) => [
-            key,
-            value,
-            GENERAL_SETTINGS_DESCRIPTIONS[key] || "",
-            "general"
-        ]);
-
-        await db.query(
-            `INSERT INTO settings (key, value, description, group_name)
-             VALUES
-                ${placeholders}
-             ON CONFLICT (key)
-             DO UPDATE SET
-                value = EXCLUDED.value,
-                description = EXCLUDED.description,
-                group_name = EXCLUDED.group_name`,
-            values
+        // Fetch old values for notifications
+        const oldSettingsResult = await db.query(
+            `SELECT key, value FROM settings 
+             WHERE key = ANY($1::text[])`,
+            [[
+                GENERAL_SETTINGS_KEYS.homepageBannerUrl,
+                GENERAL_SETTINGS_KEYS.homepageBannerAssetPublicId
+            ]]
         );
+        const oldSettingsMap = {};
+        oldSettingsResult.rows.forEach(row => {
+            oldSettingsMap[row.key] = row.value;
+        });
 
-        const ownershipSyncResult = await syncMediaAssetOwnership({
-            ownerType: MEDIA_OWNER_TYPES.settings,
-            ownerKey: MEDIA_OWNER_KEYS.general,
-            fieldMappings: [
-                {
                     fieldName: MEDIA_FIELD_NAMES.homepageBannerUrl,
                     payloadKey: "bannerUrl"
                 }
@@ -262,6 +244,14 @@ export const updateHomepageBannerSettings = async (req, res) => {
             hasBannerUrl: Boolean(payload.bannerUrl),
             hasBannerAssetPublicId: Boolean(payload.bannerAssetPublicId)
         }, req);
+
+        // 🔔 NOTIFY: Settings changed for each modified setting
+        for (const [key, newValue] of settingsEntries) {
+            const oldValue = oldSettingsMap[key] || null;
+            if (oldValue !== newValue) {
+                await NotificationService.notifySettingsChanged(key, oldValue, newValue, currentUserId);
+            }
+        }
 
         return res.json({
             success: true,

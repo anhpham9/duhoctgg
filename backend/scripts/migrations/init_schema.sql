@@ -43,6 +43,14 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT REFERENCES users(id)
 );
+-- Run this ALTER after migrations
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_reason VARCHAR(255) DEFAULT NULL;
+
+-- Index để query users bị lock
+CREATE INDEX IF NOT EXISTS idx_users_locked_until ON users(locked_until) 
+WHERE locked_until IS NOT NULL;
 
 -- ======================== CATEGORIES ========================
 CREATE TABLE IF NOT EXISTS categories (
@@ -355,6 +363,29 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_role ON notifications(role_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+
+-- ======================== NOTIFICATION_RULES ========================
+CREATE TABLE IF NOT EXISTS notification_rules (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(50) UNIQUE NOT NULL,  -- contact_submission, account_locked, backup_completed, settings_changed
+    notify_superadmin BOOLEAN DEFAULT TRUE,
+    notify_admins BOOLEAN DEFAULT FALSE,
+    notify_managers BOOLEAN DEFAULT FALSE,
+    notify_consultants BOOLEAN DEFAULT FALSE,
+    custom_roles INTEGER[] DEFAULT NULL,  -- [1, 2, 4] để override
+    title_template VARCHAR(255),
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed default rules
+INSERT INTO notification_rules (type, notify_superadmin, notify_admins, notify_managers, title_template) VALUES
+('contact_submission', TRUE, TRUE, TRUE, 'Liên hệ mới: {name}'),
+('backup_completed', TRUE, TRUE, FALSE, 'Sao lưu hệ thống hoàn tất'),
+('account_locked', TRUE, FALSE, FALSE, 'Tài khoản {username} bị tạm khóa'),
+('settings_changed', TRUE, TRUE, FALSE, 'Cài đặt {key} được thay đổi');
+
 
 -- ======================== NOTIFICATION_SETTINGS ========================
 CREATE TABLE IF NOT EXISTS notification_settings (

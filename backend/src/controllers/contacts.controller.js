@@ -3,6 +3,7 @@ import { logError, logInfo, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
 import validator from 'validator';
+import { NotificationService } from "../services/notification.service.js";
 
 // Roles that can access contacts: superadmin, admin, manager, consultant
 const ALLOWED_CONTACT_ROLES = [1, 2, 3, 5];
@@ -166,7 +167,8 @@ export const submitPublicContact = async (req, res) => {
             [sanitizedName, sanitizedEmail, sanitizedPhone, sanitizedMessage]
         );
 
-        const contactId = result.rows[0].id;
+        const contact = result.rows[0];
+        const contactId = contact.id;
 
         // Log successful submission for audit
         logInfo('Public contact form submitted successfully', {
@@ -175,7 +177,7 @@ export const submitPublicContact = async (req, res) => {
             email: sanitizedEmail,
             ip: req.ip,
             userAgent: req.get('User-Agent'),
-            timestamp: result.rows[0].created_at
+            timestamp: contact.created_at
         });
 
         // Audit log for compliance
@@ -194,12 +196,15 @@ export const submitPublicContact = async (req, res) => {
             userAgent: req.get('User-Agent')
         });
 
+        // 🔔 NOTIFY ADMINS about new contact
+        await NotificationService.notifyContactSubmission(contact);
+
         res.status(201).json({
             success: true,
             message: 'Cảm ơn bạn! Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.',
             data: {
                 id: contactId,
-                submitted_at: result.rows[0].created_at
+                submitted_at: contact.created_at
             }
         });
 

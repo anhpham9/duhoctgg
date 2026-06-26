@@ -194,65 +194,62 @@ const recentNotifications = computed(() => {
 // NOTIFICATION DATA MANAGEMENT
 // ========================================
 
-const loadNotifications = () => {
-    // Simulate loading notifications (in real app, this would be from API)
-    notifications.value = [
-        {
-            id: 1,
-            type: 'danger',
-            title: 'Bảo trì hệ thống',
-            message: 'Hệ thống sẽ bảo trì vào 2:00 sáng ngày mai',
-            timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-            isRead: false,
-            icon: 'fas fa-exclamation-triangle',
-            action: 'maintenance'
-        },
-        {
-            id: 2,
-            type: 'warning',
-            title: 'Hồ sơ mới cần duyệt',
-            message: 'Có 5 hồ sơ du học mới chờ duyệt',
-            timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-            isRead: false,
-            icon: 'fas fa-file-alt',
-            action: 'applications'
-        },
-        {
-            id: 3,
-            type: 'info',
-            title: 'Liên hệ mới',
-            message: 'Nguyễn Văn A đã gửi yêu cầu tư vấn',
-            timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-            isRead: false,
-            icon: 'fas fa-envelope',
-            action: 'contacts'
-        },
-        {
-            id: 4,
-            type: 'success',
-            title: 'Backup thành công',
-            message: 'Sao lưu dữ liệu hoàn tất lúc 14:00',
-            timestamp: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-            isRead: true,
-            icon: 'fas fa-check-circle',
-            action: 'backup'
-        },
-        {
-            id: 5,
-            type: 'info',
-            title: 'Cập nhật tin tức',
-            message: 'Bài viết "Học bổng MEXT 2026" đã được xuất bản',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-            isRead: true,
-            icon: 'fas fa-newspaper',
-            action: 'news'
+const loadNotifications = async () => {
+    try {
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/api/notifications?limit=6`, {
+            credentials: 'include'
+        })
+        const result = await response.json()
+        
+        if (result.success) {
+            notifications.value = result.data.map(n => ({
+                id: n.id,
+                type: n.type,
+                title: n.title,
+                message: n.message,
+                timestamp: new Date(n.created_at),
+                isRead: n.is_read,
+                icon: getIconByType(n.type),
+                action: n.data?.action || 'dashboard'
+            }))
+            updateUnreadCount()
         }
-    ]
-    updateUnreadCount()
+    } catch (error) {
+        console.error('Load notifications error:', error)
+        // Fallback to empty or mock data
+        notifications.value = []
+    }
 }
 
+/**
+ * Fetch actual unread count from API
+ * This is more accurate than filtering local array (which may be incomplete)
+ */
+const refreshUnreadCount = async () => {
+    try {
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/api/notifications/unread-count`, {
+            credentials: 'include'
+        })
+        const result = await response.json()
+        
+        if (result.success) {
+            unreadCount.value = result.unread_count
+        }
+    } catch (error) {
+        console.error('Failed to refresh unread count:', error)
+        // Fallback: count from local notifications array
+        unreadCount.value = notifications.value.filter(n => !n.isRead).length
+    }
+}
+
+/**
+ * Legacy: Update from local array (fallback only)
+ */
 const updateUnreadCount = () => {
-    unreadCount.value = notifications.value.filter(n => !n.isRead).length
+    // Prefer API call instead - kept for backward compatibility
+    refreshUnreadCount()
 }
 
 // ========================================
@@ -302,33 +299,60 @@ const handleMobileToggle = () => {
 // NOTIFICATION ACTIONS
 // ========================================
 
-const markAsRead = (notificationId) => {
+/**
+ * Mark single notification as read via API
+ */
+const markAsRead = async (notificationId) => {
     const notification = notifications.value.find(n => n.id === notificationId)
-    if (notification && !notification.isRead) {
-        notification.isRead = true
-        updateUnreadCount()
+    if (!notification) return
+
+    try {
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/api/notifications/${notificationId}/read`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        const result = await response.json()
         
-        // In real app, send API request to mark as read
-        simulateApiCall('mark-read', { id: notificationId })
+        if (result.success) {
+            notification.isRead = true
+            refreshUnreadCount()
+        }
+    } catch (error) {
+        console.error('Failed to mark notification as read:', error)
     }
 }
 
-const markAllAsRead = () => {
-    const unreadNotifications = notifications.value.filter(n => !n.isRead)
-    
-    unreadNotifications.forEach(notification => {
-        notification.isRead = true
-    })
-    
-    updateUnreadCount()
-    
-    // Show success message using global toast function
-    if (window.showToast) {
-        window.showToast('Đã đánh dấu tất cả thông báo là đã đọc', 'success')
+/**
+ * Mark all notifications as read via API
+ */
+const markAllAsRead = async () => {
+    try {
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/api/notifications/read-all`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        const result = await response.json()
+        
+        if (result.success) {
+            notifications.value.forEach(n => {
+                n.isRead = true
+            })
+            refreshUnreadCount()
+            
+            if (window.showToast) {
+                window.showToast('Đã đánh dấu tất cả thông báo là đã đọc', 'success')
+            }
+        }
+    } catch (error) {
+        console.error('Failed to mark all as read:', error)
+        if (window.showToast) {
+            window.showToast('Lỗi khi cập nhật thông báo', 'error')
+        }
     }
-    
-    // In real app, send API request
-    simulateApiCall('mark-all-read')
 }
 
 const handleNotificationClick = (action) => {
@@ -524,6 +548,15 @@ onMounted(async () => {
             getUnreadCount: () => unreadCount.value
         }
     }
+    
+    // Auto-refresh
+    const refreshInterval = setInterval(() => {
+        loadNotifications()
+    }, 30000) // 30 seconds
+
+    onBeforeUnmount(() => {
+        clearInterval(refreshInterval)
+    })
 })
 
 // ========================================

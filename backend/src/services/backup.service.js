@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import db from '../config/db.js';
 import { logError, logInfo, logWarn } from '../utils/logger.js';
+import { NotificationService } from "./notification.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -243,8 +244,12 @@ const createBackup = async ({ type = 'manual', userId = null } = {}) => {
         createdBy: userId,
         status: 'success'
     });
+    
 
     await cleanupOldBackups(30);
+
+    // 🔔 NOTIFY ADMINS about new backup
+    await NotificationService.notifyBackupCompleted(record.file_name, record.file_size, 'success');
 
     return {
         id: record.id,

@@ -4,6 +4,7 @@ import { generateToken } from "../utils/jwt.js";
 import { logInfo, logError, auditLog } from "../utils/logger.js";
 import { InputSanitizer } from "../utils/sanitizer.js";
 import { SecurityLogger } from "../utils/securityLogger.js";
+import { NotificationService } from "../services/notification.service.js";
 
 export const login = async (req, res) => {
     try {
@@ -11,10 +12,13 @@ export const login = async (req, res) => {
 
         // Validate required fields
         if (!username || !password) {
-            logError('Login failed - Missing fields', new Error('Missing username or password'), {
+            logError('Login validation failed', null, {
+                stage: 'input_validation',
+                reason: 'missing_credentials',
                 hasUsername: !!username,
                 hasPassword: !!password,
-                ip: req.ip
+                ip: req.ip,
+                timestamp: new Date().toISOString()
             });
             return res.status(400).json({ 
                 success: false,
@@ -30,10 +34,13 @@ export const login = async (req, res) => {
         // Basic username validation (alphanumeric, underscore, dot)
         const usernameRegex = /^[a-zA-Z0-9._]{3,50}$/;
         if (!usernameRegex.test(sanitizedUsername)) {
-            logError('Login failed - Invalid username format', new Error('Username contains invalid characters'), {
+            logError('Login validation failed', null, {
+                stage: 'username_validation',
+                reason: 'invalid_format',
                 originalUsername: username,
                 sanitizedUsername: sanitizedUsername,
-                ip: req.ip
+                ip: req.ip,
+                timestamp: new Date().toISOString()
             });
             return res.status(400).json({ 
                 success: false,
@@ -47,18 +54,27 @@ export const login = async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            SecurityLogger.logFailedLogin(
-                sanitizedUsername, 
-                req.ip, 
-                req.get('User-Agent'), 
-                'user_not_found'
-            );
-            
-            logError('Login failed - User not found', new Error('Username not found'), {
+            // 1️⃣ Application logging (debugging)
+            logError('Login failed - User not found', null, {
+                stage: 'user_lookup',
+                reason: 'user_not_found',
                 attemptedUsername: sanitizedUsername,
                 ip: req.ip,
-                userAgent: req.get('User-Agent')
+                userAgent: req.get('User-Agent'),
+                timestamp: new Date().toISOString()
             });
+    
+            // 2️⃣ Security audit logging (compliance)
+            auditLog('SECURITY_LOGIN_FAILED', null, {
+                event: 'login_failed',
+                username: sanitizedUsername,
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+                reason: 'user_not_found',
+                severity: 'medium'
+            });
+
+
             return res.status(400).json({ 
                 success: false,
                 message: "Invalid username or password" 
@@ -67,47 +83,109 @@ export const login = async (req, res) => {
 
         const user = result.rows[0];
 
+        // ✅ CHECK: User bị lock?
+        if (user.locked_until && new Date(user.locked_until) > new Date()) {
+            const remainingMinutes = Math.ceil(
+                (new Date(user.locked_until) - new Date()) / 60000
+            );
+            return res.status(403).json({
+                success: false,
+                message: `Tài khoản đã bị tạm khóa. Vui lòng thử lại sau ${remainingMinutes} phút hoặc liên hệ quản trị viên.`,
+                locked: true,
+                locked_until: user.locked_until
+            });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            SecurityLogger.logFailedLogin(
-                user.username, 
-                req.ip, 
-                req.get('User-Agent'), 
-                'wrong_password'
+            // ❌ FAILED LOGIN ATTEMPT
+            let newFailedAttempts = (user.failed_login_attempts || 0) + 1;
+            let lockedUntil = null;
+            let lockedReason = null;
+
+            // ✅ LOCK ACCOUNT after 3 failed attempts (30 min lock)
+            if (newFailedAttempts >= 3) {
+                lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+                lockedReason = 'Sai mật khẩu quá 3 lần';
+                newFailedAttempts = 0; // Reset counter after lock
+
+                // 🔔 NOTIFY: Account locked
+                await NotificationService.notifyAccountLocked({
+                    id: user.id,
+                    username: user.username,
+                    locked_until: lockedUntil,
+                    locked_reason: lockedReason
+                });
+
+                logInfo('Tài khoản bị tạm khóa do sai mật khẩu quá 3 lần', { 
+                    userId: user.id, 
+                    username: user.username 
+                });
+            }
+
+            // Update user: increment failed attempts or lock
+            await db.query(
+                `UPDATE users 
+                 SET failed_login_attempts = $1, 
+                     locked_until = $2, 
+                     locked_reason = $3
+                 WHERE id = $4`,
+                [newFailedAttempts, lockedUntil, lockedReason, user.id]
             );
-            
-            logError('Login failed - Wrong password', new Error('Password mismatch'), {
+
+            // Log failed authentication attempt
+            logError('Login failed - Wrong password', null, {
+                stage: 'password_verification',
+                reason: 'incorrect_password',
                 userId: user.id,
                 username: user.username,
+                attemptNumber: newFailedAttempts,
+                accountLocked: !!lockedUntil,
                 ip: req.ip,
-                userAgent: req.get('User-Agent')
+                userAgent: req.get('User-Agent'),
+                timestamp: new Date().toISOString()
             });
-            return res.status(400).json({ 
+
+            return res.status(401).json({
                 success: false,
-                message: "Invalid username or password" 
+                message: lockedUntil 
+                    ? `Tài khoản đã bị tạm khóa. Vui lòng liên hệ quản trị viên.`
+                    : `Mật khẩu không chính xác. Còn ${3 - newFailedAttempts} lần thử.`
             });
         }
 
         // Check if user is active
-        if (user.is_active === false) {
-            SecurityLogger.logFailedLogin(
-                user.username, 
-                req.ip, 
-                req.get('User-Agent'), 
-                'account_disabled'
-            );
+        // if (user.is_active === false) {
+        //     SecurityLogger.logFailedLogin(
+        //         user.username, 
+        //         req.ip, 
+        //         req.get('User-Agent'), 
+        //         'account_disabled'
+        //     );
             
-            logError('Login failed - Account disabled', new Error('User account is disabled'), {
-                userId: user.id,
-                username: user.username,
-                ip: req.ip
-            });
-            return res.status(403).json({ 
-                success: false,
-                message: "Your account has been disabled" 
-            });
-        }
+        //     logError('Login failed - Account disabled', new Error('User account is disabled'), {
+        //         userId: user.id,
+        //         username: user.username,
+        //         ip: req.ip
+        //     });
+        //     return res.status(403).json({ 
+        //         success: false,
+        //         message: "Tài khoản của bạn đã bị vô hiệu hóa" 
+        //     });
+        // }
+
+        // ✅ PASSWORD CORRECT
+        // Reset failed attempts
+        await db.query(
+            `UPDATE users 
+             SET failed_login_attempts = 0, 
+                 locked_until = NULL, 
+                 locked_reason = NULL,
+                 last_login = CURRENT_TIMESTAMP
+             WHERE id = $1`,
+            [user.id]
+        );
 
         const token = generateToken(user);
 
@@ -144,9 +222,12 @@ export const login = async (req, res) => {
         });
     } catch (error) {
         logError('Login failed - System error', error, {
-            hasBody: !!req.body,
+            stage: 'exception_handler',
+            reason: 'system_error',
+            errorName: error?.name,
             ip: req.ip,
-            userAgent: req.get('User-Agent')
+            userAgent: req.get('User-Agent'),
+            timestamp: new Date().toISOString()
         });
         
         return res.status(500).json({

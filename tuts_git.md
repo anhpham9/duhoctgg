@@ -51,6 +51,7 @@ feature/faqs-crud
 feature/school_reviews-crud
 feature/about-crud
 feature/hompage-crud
+feature/notifications-crud
 
 
 # frontend
