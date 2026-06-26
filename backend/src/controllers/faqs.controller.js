@@ -416,6 +416,50 @@ export const updateFaq = async (req, res) => {
     }
 };
 
+// Get public FAQs (no auth required) — used for public pages
+export const getPublicFaqs = async (req, res) => {
+    try {
+        const { type, school_id } = req.query;
+
+        const conditions = ['f.is_active = true'];
+        const values = [];
+        let paramCount = 1;
+
+        if (type) {
+            conditions.push(`f.type = $${paramCount}`);
+            values.push(type);
+            paramCount++;
+        }
+
+        if (school_id) {
+            conditions.push(`f.school_id = $${paramCount}`);
+            values.push(parseInt(school_id));
+            paramCount++;
+        }
+
+        const query = `
+            SELECT f.id, f.question, f.answer, f.type, f.school_id, f.sort_order
+            FROM faqs f
+            WHERE ${conditions.join(' AND ')}
+            ORDER BY f.sort_order ASC, f.created_at DESC
+        `;
+
+        const result = await db.query(query, values);
+
+        res.json({
+            success: true,
+            data: result.rows
+        });
+
+    } catch (error) {
+        logError('Get public FAQs failed', error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
 // Delete FAQ
 export const deleteFaq = async (req, res) => {
     try {

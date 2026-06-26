@@ -44,6 +44,7 @@ import {
     getPublicSchoolDetailContentBySlug,
     getPublicSchoolReviewsBySlug
 } from "./controllers/publicSchools.controller.js";
+import { getPublicFaqs } from "./controllers/faqs.controller.js";
 import { trackNewsView } from "./controllers/news.controller.js";
 import { ensureSettingsKeysExist } from "./services/settings.service.js";
 import { ensureMediaAssetTableExists } from "./services/mediaAsset.service.js";
@@ -138,6 +139,7 @@ app.get('/api/public/about/reasons', (req, res) => res.redirect('/api/about/reas
 app.get('/api/public/about/missions', (req, res) => res.redirect('/api/about/missions'));
 app.get('/api/public/about/content', (req, res) => res.redirect('/api/about/content'));
 app.get('/api/public/homepage-sections', getHomepageSectionsPublic);
+app.get('/api/public/faqs', getPublicFaqs);
 app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 

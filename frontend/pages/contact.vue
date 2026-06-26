@@ -81,18 +81,17 @@
         </section>
 
         <!-- FAQ Section -->
-        <FAQ title="Câu Hỏi Thường Gặp" subtitle="Thắc mắc về dịch vụ du học" :faq-data="myFaqData" />
+        <FAQ v-if="myFaqData.length" title="Câu Hỏi Thường Gặp" subtitle="Thắc mắc về dịch vụ du học" :faq-data="myFaqData" />
     </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useFAQ } from '~/composables/useFAQ'
-
-const { getFAQData } = useFAQ()
-const myFaqData = getFAQData('visa') // or 'school', 'visa'
+import { usePublicFAQs } from '~/composables/useFAQ'
 
 const config = useRuntimeConfig()
+
+const { faqs: myFaqData } = usePublicFAQs('general')
 
 const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public/static-pages/contact`, {
     key: 'public-static-page-contact'

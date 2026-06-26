@@ -261,7 +261,12 @@
         </section>
 
         <!-- FAQ Section -->
-        <FAQ title="FAQ" :subtitle="`Questions about ${schoolData.name}`" :faq-data="myFaqData" />
+        <FAQ
+            v-if="schoolFaqs.length"
+            :title="`Câu Hỏi Thường Gặp`"
+            :subtitle="`Những thắc mắc về ${schoolData.name}`"
+            :faq-data="schoolFaqs"
+        />
     </div>
 </template>
 
@@ -270,17 +275,12 @@ import "~/assets/css/school-detail.css";
 
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { useFAQ } from "~/composables/useFAQ";
+import { usePublicFAQs } from "~/composables/useFAQ";
 
 const fallbackImage = "/assets/images/school-1.jpg";
 const route = useRoute();
 const config = useRuntimeConfig();
 const slug = computed(() => String(route.params.slug || "").trim());
-
-
-
-const { getFAQData } = useFAQ();
-const myFaqData = getFAQData("school");
 
 const {
     data: schoolResponse,
@@ -290,6 +290,10 @@ const {
     key: () => `public-school-${slug.value}`,
     watch: [slug]
 });
+
+// Reactive school ID — dùng để fetch FAQs theo trường
+const schoolId = computed(() => schoolResponse.value?.data?.id || null)
+const { faqs: schoolFaqs } = usePublicFAQs('school', schoolId)
 
 const {
     data: detailResponse,

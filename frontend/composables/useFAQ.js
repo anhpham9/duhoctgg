@@ -1,5 +1,26 @@
 // FAQ Composable for managing FAQ data and interactions
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
+
+// Composable để fetch FAQs từ API (dùng cho public pages)
+// type: 'general' | 'school'
+// schoolId: số ID trường (chỉ dùng khi type = 'school')
+export const usePublicFAQs = (type = 'general', schoolId = null) => {
+    const config = useRuntimeConfig()
+
+    const url = computed(() => {
+        const base = `${config.public.apiBase}/public/faqs?type=${type}`
+        return schoolId ? `${base}&school_id=${unref(schoolId)}` : base
+    })
+
+    const { data, pending, error } = useFetch(url, {
+        key: computed(() => `public-faqs-${type}-${unref(schoolId) || 'all'}`),
+        watch: schoolId ? [schoolId] : false
+    })
+
+    const faqs = computed(() => data.value?.data || [])
+
+    return { faqs, pending, error }
+}
 
 export const useFAQ = () => {
     // FAQ data presets for different pages
@@ -39,25 +60,6 @@ export const useFAQ = () => {
             {
                 question: "Thời gian học bao lâu?",
                 answer: "Khóa học tiếng Nhật thường từ 6 tháng đến 2 năm, tùy thuộc vào mục tiêu và trình độ của học sinh."
-            }
-        ],
-        
-        visa: [
-            {
-                question: "Hồ sơ xin visa cần những gì?",
-                answer: "Cần có COE (Certificate of Eligibility), passport, ảnh, đơn xin visa, chứng minh tài chính và các giấy tờ liên quan."
-            },
-            {
-                question: "Thời gian xử lý visa là bao lâu?",
-                answer: "Sau khi có COE, thời gian xử lý visa thường từ 3-5 ngày làm việc."
-            },
-            {
-                question: "Tỷ lệ đậu visa như thế nào?",
-                answer: "Với hồ sơ đầy đủ và hợp lệ, tỷ lệ đậu visa thường trên 95%."
-            },
-            {
-                question: "Chi phí làm visa bao nhiêu?",
-                answer: "Lệ phí visa là 320,000 VND cho visa đơn, chưa bao gồm các chi phí dịch vụ hỗ trợ."
             }
         ]
     }
