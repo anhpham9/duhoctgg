@@ -57,7 +57,7 @@
                         <button 
                             v-if="unreadCount > 0"
                             class="mark-all-btn" 
-                            @click="markAllAsRead"
+                            @click="openMarkAllModal"
                             title="Đánh dấu tất cả đã đọc"
                         >
                             <i class="fas fa-check-double"></i>
@@ -91,12 +91,11 @@
                                 </div>
                                 <div class="notification-actions">
                                     <button 
-                                        v-if="!notification.isRead"
                                         class="mark-read-btn" 
-                                        @click="markAsRead(notification.id)"
-                                        title="Đánh dấu đã đọc"
+                                        @click="toggleNotificationReadStatus(notification)"
+                                        :title="notification.isRead ? 'Đánh dấu chưa đọc' : 'Đánh dấu đã đọc'"
                                     >
-                                        <i class="fas fa-check"></i>
+                                        <i :class="notification.isRead ? 'fas fa-envelope' : 'fas fa-check'"></i>
                                     </button>
                                     <button 
                                         class="notification-action-btn" 
@@ -137,6 +136,32 @@
                 </div>
             </div>
         </div>
+
+        <!-- Mark All Confirmation Modal -->
+        <div v-if="showMarkAllModal" class="modal-overlay" @click="closeMarkAllModal">
+            <div class="modal-dialog" @click.stop>
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <i class="fas fa-check-double" style="color: #ff9800; margin-right: 8px;"></i>
+                        Xác nhận hành động
+                    </h4>
+                    <button class="modal-close" @click="closeMarkAllModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn muốn đánh dấu <strong>tất cả {{ unreadCount }} thông báo chưa xem</strong> là đã đọc?</p>
+                </div>
+                <div class="modal-footer">
+                    <button @click="closeMarkAllModal" class="btn-cancel">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button @click="confirmMarkAll" class="btn-confirm">
+                        <i class="fas fa-check-double"></i> Xác nhận
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
 </template>
 
@@ -172,6 +197,7 @@ const {
 const notifications = ref([])
 const isDropdownOpen = ref(false)
 const unreadCount = ref(0)
+const showMarkAllModal = ref(false)
 
 // Template refs
 const notificationBtn = ref(null)
@@ -430,6 +456,60 @@ const markAsRead = async (notificationId) => {
 }
 
 /**
+ * Toggle notification read status (read/unread)
+ */
+const toggleNotificationReadStatus = async (notification) => {
+    try {
+        const config = useRuntimeConfig()
+        const endpoint = notification.isRead ? 'unread' : 'read'
+        
+        const response = await fetch(`${config.public.apiBase}/notifications/${notification.id}/${endpoint}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        const result = await response.json()
+        
+        if (result.success) {
+            notification.isRead = !notification.isRead
+            refreshUnreadCount()
+            
+            if (window.showToast) {
+                const message = notification.isRead ? 'Đã đánh dấu đã đọc' : 'Đã đánh dấu chưa đọc'
+                window.showToast(message, 'success')
+            }
+        }
+    } catch (error) {
+        console.error('Failed to toggle notification read status:', error)
+        if (window.showToast) {
+            window.showToast('Lỗi khi cập nhật trạng thái', 'error')
+        }
+    }
+}
+
+/**
+ * Open mark all confirmation modal
+ */
+const openMarkAllModal = () => {
+    showMarkAllModal.value = true
+}
+
+/**
+ * Close mark all confirmation modal
+ */
+const closeMarkAllModal = () => {
+    showMarkAllModal.value = false
+}
+
+/**
+ * Confirm and execute mark all as read
+ */
+const confirmMarkAll = async () => {
+    await markAllAsRead()
+    closeMarkAllModal()
+}
+
+/**
  * Mark all notifications as read via API
  */
 const markAllAsRead = async () => {
@@ -628,13 +708,24 @@ const addNotification = (message, type = 'info', title = 'Thông báo mới', ac
 }
 
 const getIconByType = (type) => {
-    const icons = {
+    const iconMap = {
+        // Notification types
+        'contact_submission': 'fas fa-envelope',           // Blue - Contact submission
+        'backup_completed': 'fas fa-check-circle',         // Green - Backup completed
+        'account_locked': 'fas fa-lock',                   // Red - Account locked
+        'settings_changed': 'fas fa-cog',                  // Orange - Settings changed
+        'news_published': 'fas fa-newspaper',              // News published
+        'school_updated': 'fas fa-school',                 // School updated
+        'user_registered': 'fas fa-user-plus',             // User registered
+        'system_alert': 'fas fa-exclamation-triangle',     // System alert
+        
+        // Fallback for legacy types
         'success': 'fas fa-check-circle',
         'warning': 'fas fa-exclamation-triangle',
         'danger': 'fas fa-exclamation-circle',
         'info': 'fas fa-info-circle'
     }
-    return icons[type] || 'fas fa-bell'
+    return iconMap[type] || 'fas fa-bell'
 }
 
 // ========================================
@@ -724,5 +815,147 @@ defineExpose({
 
 .profile-menu {
     display: none;
+}
+
+/* ========================================
+   Mark All Confirmation Modal
+   ======================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-dialog {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 380px;
+    width: 90%;
+    animation: slideUp 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body p {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+}
+
+.btn-cancel,
+.btn-confirm {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.btn-cancel {
+    background: white;
+    color: #666;
+    border-color: #ddd;
+}
+
+.btn-cancel:hover {
+    background: #f5f5f5;
+    border-color: #bbb;
+    color: #333;
+}
+
+.btn-confirm {
+    background: #ff9800;
+    color: white;
+    border-color: #ff9800;
+}
+
+.btn-confirm:hover {
+    background: #f57c00;
+    border-color: #f57c00;
 }
 </style>

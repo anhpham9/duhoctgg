@@ -106,6 +106,27 @@ export const markAsRead = async (req, res) => {
     }
 };
 
+// Mark single notification as unread
+export const markAsUnread = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        await db.query(
+            `UPDATE notifications 
+             SET is_read = FALSE 
+             WHERE id = $1 AND user_id = $2`,
+            [id, userId]
+        );
+
+        logInfo('Notification marked as unread', { notificationId: id, userId });
+        res.json({ success: true, message: "Marked as unread" });
+    } catch (error) {
+        logError('Mark as unread failed', error, { notificationId: req.params.id, userId: req.user?.id });
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
 // Mark all as read
 export const markAllAsRead = async (req, res) => {
     try {

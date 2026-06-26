@@ -1503,5 +1503,18 @@ Quyết định kiến trúc:
 - Maintenance mode → Giữ ở General Settings (liên quan operational config, không liên quan backup/restore)
 - SEO → Tách ra /admin/settings/seo — gom SEO fields + thêm OG image URL
 
-# việc cần làm 
-- thay đổi xác nhận confirm thành modal trong socials.vue
+# Mapping mới cho notification types:
+
+
+```
+'contact_submission'  → 📨 fas fa-envelope       // Liên hệ gửi
+'backup_completed'    → ✅ fas fa-check-circle   // Backup xong
+'account_locked'      → 🔒 fas fa-lock          // Tài khoản bị khóa
+'settings_changed'    → ⚙️  fas fa-cog           // Cài đặt thay đổi
+'news_published'      → 📰 fas fa-newspaper     // Tin tức phát hành
+'school_updated'      → 🏫 fas fa-school        // Trường học cập nhật
+'user_registered'     → 👤 fas fa-user-plus     // User đăng ký
+'system_alert'        → ⚠️  fas fa-exclamation-triangle // Cảnh báo hệ thống
+
+```
+
