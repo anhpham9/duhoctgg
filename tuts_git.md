@@ -71,6 +71,7 @@ feature/frontend-contact-public
 feature/frontend-news-public
 feature/frontend-settings-public
 feature/frontend-schools-public
+feature/frontend-faqs-public
 
 
 

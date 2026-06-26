@@ -73,7 +73,7 @@
             </div>
         </section>
 
-        <FAQ v-if="myFaqData.length" title="Câu Hỏi Thường Gặp" subtitle="Thắc mắc về dịch vụ du học" :faq-data="myFaqData" />
+        <FAQ v-if="myFaqData.length" title="Câu Hỏi Thường Gặp" subtitle="" :faq-data="myFaqData" />
     </div>
 </template>
 
@@ -294,6 +294,17 @@ const normalizeRoadmap = (value) => {
     box-shadow: 0 15px 35px rgba(211, 47, 47, 0.4);
 }
 
+.dynamic-card.bg-white {
+    background: #ffffff;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f0f0f0;
+}
+
+.dynamic-card.bg-white:hover {
+    box-shadow: 0 15px 35px rgba(211, 47, 47, 0.15);
+    border-color: #d32f2f;
+}
+
 .dynamic-card.border-top {
     background: white;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
@@ -318,6 +329,32 @@ const normalizeRoadmap = (value) => {
     background: rgba(255, 255, 255, 0.2);
 }
 
+.dynamic-card.bg-white .card-icon {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    position: relative;
+    box-shadow: 0 8px 25px rgba(211, 47, 47, 0.3);
+}
+
+.dynamic-card.bg-white .card-icon::after {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 2px solid rgba(211, 47, 47, 0.2);
+    border-radius: 50%;
+    animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .border-top .card-icon {
     background: linear-gradient(135deg, #d32f2f, #f44336);
 }
@@ -325,6 +362,11 @@ const normalizeRoadmap = (value) => {
 .card-icon i {
     font-size: 2rem;
     color: #fff;
+}
+
+.dynamic-card.bg-white .card-icon i {
+    position: relative;
+    z-index: 2;
 }
 
 .dynamic-card h3 {

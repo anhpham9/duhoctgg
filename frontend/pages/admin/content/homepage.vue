@@ -350,7 +350,7 @@
                                 <label>Giao diện thẻ</label>
                                 <select v-model="sectionForm.card_layout" class="form-control">
                                     <option value="bg-red">Màu nền đỏ</option>
-                                    <!-- <option value="bg-white">Màu nền trắng</option> -->
+                                    <option value="bg-white">Màu nền trắng</option>
                                     <option value="border-top">Viền trên đỏ - nền trắng</option>
                                 </select>
                             </div>
