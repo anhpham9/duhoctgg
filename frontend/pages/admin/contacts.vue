@@ -548,7 +548,8 @@ import { useNotifications } from '~/composables/useNotifications'
 import { useValidation } from '~/composables/useValidation'
 import { formatSmartDate, formatDate } from '~/utils/date'
 import Toast from '~/components/Toast.vue'
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useVisiblePages } from '~/composables/usePaginationHelper'
 import { useExportExcel } from '~/composables/useExportExcel'
 
@@ -575,12 +576,26 @@ const hasPermission = computed(() => {
 })
 
 // Initialize user data on component mount
+const route = useRoute()
+const router = useRouter()
+
 onMounted(async () => {
     await fetchCurrentUser()
     if (hasPermission.value) {
         await fetchContacts()
         // await fetchContactStats()
 
+        // 📌 Handle query parameter 'view' to auto-open contact detail
+        if (route.query.view) {
+            const contactId = parseInt(route.query.view)
+            const contact = contacts.value.find(c => c.id === contactId)
+            if (contact) {
+                // Open detail modal after a short delay to ensure data is ready
+                nextTick(() => {
+                    openDetailModal(contact)
+                })
+            }
+        }
     }
 })
 

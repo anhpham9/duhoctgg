@@ -93,7 +93,7 @@
                                     </button>
                                     <button 
                                         class="notification-action-btn" 
-                                        @click="handleNotificationClick(notification.action)"
+                                        @click="handleNotificationClick(notification.action, notification)"
                                         title="Xem chi tiết"
                                     >
                                         <i class="fas fa-external-link-alt"></i>
@@ -211,7 +211,8 @@ const loadNotifications = async () => {
                 timestamp: new Date(n.created_at),
                 isRead: n.is_read,
                 icon: getIconByType(n.type),
-                action: n.data?.action || 'dashboard'
+                action: n.data?.action || 'dashboard',
+                data: n.data || {}  // Store full data object for accessing contact_id, etc.
             }))
             updateUnreadCount()
         }
@@ -355,8 +356,8 @@ const markAllAsRead = async () => {
     }
 }
 
-const handleNotificationClick = (action) => {
-    // Handle different notification actions
+const handleNotificationClick = async (action, notification) => {
+    // Handle different notification actions with ID if available
     const routes = {
         'maintenance': '/admin/settings',
         'applications': '/admin/applications',
@@ -368,7 +369,25 @@ const handleNotificationClick = (action) => {
         'dashboard': '/admin'
     }
 
-    const route = routes[action] || '/admin'
+    let route = routes[action] || '/admin'
+    
+    // 🔔 Mark notification as read before navigating
+    if (notification && !notification.isRead) {
+        try {
+            await markAsRead(notification.id)
+        } catch (error) {
+            console.error('Failed to mark notification as read:', error)
+        }
+    }
+    
+    // 📍 Add ID parameter if available
+    if (notification?.data) {
+        if (action === 'contacts' && notification.data.contact_id) {
+            route = `/admin/contacts?view=${notification.data.contact_id}`
+        } else if (action === 'news' && notification.data.news_id) {
+            route = `/admin/news?view=${notification.data.news_id}`
+        }
+    }
     
     closeDropdown()
     
@@ -480,7 +499,7 @@ const simulateApiCall = (action, data = {}) => {
 // GLOBAL FUNCTIONS EXPOSURE
 // ========================================
 
-const addNotification = (message, type = 'info', title = 'Thông báo mới') => {
+const addNotification = (message, type = 'info', title = 'Thông báo mới', actionData = {}) => {
     const newNotification = {
         id: Date.now(),
         type: type,
@@ -489,7 +508,8 @@ const addNotification = (message, type = 'info', title = 'Thông báo mới') =>
         timestamp: new Date(),
         isRead: false,
         icon: getIconByType(type),
-        action: 'dashboard'
+        action: actionData.action || 'dashboard',
+        data: actionData || {}
     }
 
     notifications.value.unshift(newNotification)

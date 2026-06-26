@@ -1,31 +1,31 @@
 import type { IUser } from "~/types/user";
 
 export default defineNuxtRouteMiddleware(async (to) => {
-    console.log('👥 Permission middleware called for:', to.path);
+    // console.log('👥 Permission middleware called for:', to.path);
     
     // 👇 CHẶN LOGIN PAGE
     if (to.path === "/login") {
-        console.log('✅ Skipping permission for login page');
+        // console.log('✅ Skipping permission for login page');
         return;
     }
 
     // Skip permission check for non-admin routes
     if (!to.path.startsWith('/admin')) {
-        console.log('✅ Skipping permission for non-admin route');
+        // console.log('✅ Skipping permission for non-admin route');
         return;
     }
 
     // Chỉ chạy trên client side và sau khi hydration
     if (import.meta.server) {
-        console.log('🚫 Skipping permission middleware on server');
+        // console.log('🚫 Skipping permission middleware on server');
         return;
     }
     if (!process.client) {
-        console.log('🚫 Not on client side for permission');
+        // console.log('🚫 Not on client side for permission');
         return;
     }
 
-    console.log('🔄 Running permission middleware on client');
+    // console.log('🔄 Running permission middleware on client');
 
     // Đợi cho Vue hydration hoàn thành
     return new Promise((resolve) => {
@@ -44,7 +44,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
                 });
 
                 if (!response.ok) {
-                    console.log('❌ Failed to get user data in permission middleware');
+                    // console.log('❌ Failed to get user data in permission middleware');
                     // Don't redirect here as auth middleware should handle this
                     resolve();
                     return;
@@ -54,7 +54,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
                 const user: IUser = data.user;
                 
                 if (!user || !user.role_id) {
-                    console.log('❌ No valid user data in permission middleware');
+                    // console.log('❌ No valid user data in permission middleware');
                     resolve();
                     return;
                 }
@@ -63,52 +63,52 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
                 // Superadmin có tất cả quyền
                 if (user.role_id === 1) {
-                    console.log('✅ Superadmin access granted');
+                    // console.log('✅ Superadmin access granted');
                     resolve();
                     return;
                 }
 
                 // Kiểm tra quyền cho từng trang admin
                 if (to.path.startsWith("/admin/users") && ![1, 2, 3].includes(user.role_id)) {
-                    console.log('🚫 User role not allowed for /admin/users, redirecting');
+                    // console.log('🚫 User role not allowed for /admin/users, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
                 if (to.path.startsWith("/admin/contacts") && ![1, 2, 3, 5].includes(user.role_id)) {
-                    console.log('🚫 User role not allowed for /admin/contacts, redirecting');
+                    // console.log('🚫 User role not allowed for /admin/contacts, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
                 if (to.path.startsWith("/admin/schools") && ![1, 2, 3].includes(user.role_id)) {
-                    console.log('🚫 User role not allowed for /admin/schools, redirecting');
+                    // console.log('🚫 User role not allowed for /admin/schools, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
                 if (to.path.startsWith("/admin/news") && ![1, 2, 3, 4].includes(user.role_id)) {
-                    console.log('🚫 User role not allowed for /admin/news, redirecting');
+                    // console.log('🚫 User role not allowed for /admin/news, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
                 if (to.path.startsWith("/admin/content") && ![1, 2, 3].includes(user.role_id)) {
-                    console.log('🚫 User role not allowed for /admin/content, redirecting');
+                    // console.log('🚫 User role not allowed for /admin/content, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
                 if (to.path.startsWith("/admin/settings") && ![1, 2].includes(user.role_id)) {
-                    console.log('🚫 User role not allowed for /admin/settings, redirecting');
+                    // console.log('🚫 User role not allowed for /admin/settings, redirecting');
                     resolve(navigateTo("/admin"));
                     return;
                 }
 
-                console.log('✅ Permission check passed');
+                // console.log('✅ Permission check passed');
                 resolve();
             } catch (error) {
-                console.error('❌ Permission middleware error:', error);
+                // console.error('❌ Permission middleware error:', error);
                 // Don't redirect on error, let auth middleware handle it
                 resolve();
             }
