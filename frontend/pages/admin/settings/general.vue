@@ -69,7 +69,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Website link</label>
+                            <label>Website URL</label>
                             <input v-model.trim="generalSettings.siteUrl" @input="clearGeneralError('siteUrl')"
                                 type="url" class="form-control" :class="{ 'is-invalid': !!generalErrors.siteUrl }"
                                 placeholder="https://example.com">
@@ -344,6 +344,7 @@ import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
 import { persistClientSiteSettings } from '~/utils/siteSettings'
+import { formatSettingsNotificationMessage } from '~/utils/settingsNotificationFormatter'
 
 definePageMeta({
     layout: 'admin',
@@ -816,7 +817,7 @@ const fetchSettings = async () => {
     try {
         await Promise.all([fetchGeneralSettings(), fetchContactSettings()])
     } catch (err) {
-        error.value = err.message || 'Không thể tải cài đặt'
+        error.value = formatSettingsNotificationMessage(err.message) || 'Không thể tải cài đặt'
     }
 }
 
@@ -893,7 +894,7 @@ const saveGeneralSettings = async () => {
         lastSavedGeneral.value = { ...savedData }
         persistClientSiteSettings(savedData)
         clearPendingGeneralSelections()
-        showSuccess(data?.message || 'Đã lưu cài đặt website thành công')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Đã lưu cài đặt website thành công')
     } catch (err) {
         await rollbackUploadedGeneralImages(uploadedPublicIds)
         throw err
@@ -945,7 +946,7 @@ const saveContactSettings = async () => {
     const savedData = data?.data || payload
     setContactSettings(savedData)
     lastSavedContact.value = { ...savedData }
-    showSuccess(data?.message || 'Đã lưu cài đặt liên hệ thành công')
+    showSuccess(formatSettingsNotificationMessage(data?.message) || 'Đã lưu cài đặt liên hệ thành công')
 }
 
 const saveCurrentTab = async () => {
@@ -957,7 +958,7 @@ const saveCurrentTab = async () => {
             await saveContactSettings()
         }
     } catch (err) {
-        showError(err.message || 'Không thể lưu cài đặt')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể lưu cài đặt')
     } finally {
         saving.value = false
     }

@@ -124,6 +124,7 @@ import { onMounted, reactive, ref, computed } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
+import { formatSettingsNotificationMessage } from '~/utils/settingsNotificationFormatter'
 
 definePageMeta({
     layout: 'admin',
@@ -232,7 +233,7 @@ const fetchSettings = async () => {
         setSettings(payload)
         lastSavedData.value = { ...payload }
     } catch (err) {
-        error.value = err.message || 'Không thể tải cài đặt SEO'
+        error.value = formatSettingsNotificationMessage(err.message) || 'Không thể tải cài đặt SEO'
     } finally {
         loading.value = false
     }
@@ -275,9 +276,9 @@ const saveSettings = async () => {
         setSettings(savedData)
         lastSavedData.value = { ...savedData }
 
-        showSuccess(data?.message || 'Đã lưu cài đặt SEO thành công')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Đã lưu cài đặt SEO thành công')
     } catch (err) {
-        showError(err.message || 'Không thể lưu cài đặt SEO')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể lưu cài đặt SEO')
     } finally {
         saving.value = false
     }

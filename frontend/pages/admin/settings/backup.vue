@@ -195,6 +195,7 @@ import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
 import { formatDate as formatSystemDate } from '~/utils/date'
+import { formatSettingsNotificationMessage } from '~/utils/settingsNotificationFormatter'
 
 definePageMeta({
     layout: 'admin',
@@ -322,7 +323,7 @@ const refreshAll = async () => {
     try {
         await Promise.all([fetchHistory(), fetchBackupConfig()])
     } catch (err) {
-        error.value = err.message || 'Không thể tải dữ liệu backup'
+        error.value = formatSettingsNotificationMessage(err.message) || 'Không thể tải dữ liệu backup'
     } finally {
         loading.value = false
     }
@@ -343,10 +344,10 @@ const createBackup = async () => {
             throw new Error(data?.message || 'Không thể tạo backup thủ công')
         }
 
-        showSuccess(data?.message || 'Tạo backup thủ công thành công')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Tạo backup thủ công thành công')
         await fetchHistory()
     } catch (err) {
-        showError(err.message || 'Không thể tạo backup thủ công')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể tạo backup thủ công')
     } finally {
         creating.value = false
     }
@@ -383,10 +384,10 @@ const handleFileSelected = async (event) => {
             throw new Error(data?.message || 'Upload backup thất bại')
         }
 
-        showSuccess(data?.message || 'Upload backup thành công')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Upload backup thành công')
         await fetchHistory()
     } catch (err) {
-        showError(err.message || 'Upload backup thất bại')
+        showError(formatSettingsNotificationMessage(err.message) || 'Upload backup thất bại')
     } finally {
         uploading.value = false
     }
@@ -421,7 +422,7 @@ const downloadBackup = async (item) => {
         downloadBlob(blob, filename)
         showInfo('Đã bắt đầu tải backup')
     } catch (err) {
-        showError(err.message || 'Không thể tải file backup')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể tải file backup')
     } finally {
         downloadingId.value = null
     }
@@ -448,10 +449,10 @@ const restoreBackup = async (item) => {
             throw new Error(data?.message || 'Không thể restore backup')
         }
 
-        showSuccess(data?.message || 'Khôi phục dữ liệu thành công')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Khôi phục dữ liệu thành công')
         await fetchHistory()
     } catch (err) {
-        showError(err.message || 'Không thể restore backup')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể restore backup')
     } finally {
         restoringId.value = null
     }
@@ -479,9 +480,9 @@ const saveAutoBackupConfig = async () => {
             throw new Error(data?.message || 'Không thể lưu cấu hình backup tự động')
         }
 
-        showSuccess(data?.message || 'Đã lưu cấu hình backup tự động')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Đã lưu cấu hình backup tự động')
     } catch (err) {
-        showError(err.message || 'Không thể lưu cấu hình backup tự động')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể lưu cấu hình backup tự động')
     } finally {
         savingConfig.value = false
     }

@@ -215,6 +215,7 @@ const normalizeRoadmap = (value) => {
     display: block;
     max-width: 100%;
     object-fit: cover;
+    max-height: calc(100vh - 140px);
 }
 
 /* Services Section */

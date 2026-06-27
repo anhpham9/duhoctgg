@@ -221,6 +221,7 @@ import { onMounted, reactive, ref, computed } from 'vue'
 import Toast from '~/components/Toast.vue'
 import { useCurrentUser } from '~/composables/useCurrentUser'
 import { useNotifications } from '~/composables/useNotifications'
+import { formatSettingsNotificationMessage } from '~/utils/settingsNotificationFormatter'
 
 definePageMeta({
     layout: 'admin',
@@ -402,7 +403,7 @@ const fetchSocialLinks = async () => {
 
         socialLinks.value = (data?.data || []).sort((a, b) => a.display_order - b.display_order)
     } catch (err) {
-        error.value = err.message || 'Không thể tải danh sách liên kết'
+        error.value = formatSettingsNotificationMessage(err.message) || 'Không thể tải danh sách liên kết'
     } finally {
         loading.value = false
     }
@@ -456,11 +457,11 @@ const saveLink = async () => {
             throw new Error(data?.message || 'Không thể lưu liên kết')
         }
 
-        showSuccess(data?.message || (editingId.value ? 'Đã cập nhật liên kết' : 'Đã tạo liên kết mới'))
+        showSuccess(formatSettingsNotificationMessage(data?.message) || (editingId.value ? 'Đã cập nhật liên kết' : 'Đã tạo liên kết mới'))
         resetForm()
         await fetchSocialLinks()
     } catch (err) {
-        showError(err.message || 'Không thể lưu liên kết')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể lưu liên kết')
     } finally {
         saving.value = false
     }
@@ -493,11 +494,11 @@ const confirmDeleteLink = async () => {
             throw new Error(data?.message || 'Không thể xóa liên kết')
         }
 
-        showSuccess(data?.message || 'Đã xóa liên kết')
+        showSuccess(formatSettingsNotificationMessage(data?.message) || 'Đã xóa liên kết')
         closeDeleteConfirm()
         await fetchSocialLinks()
     } catch (err) {
-        showError(err.message || 'Không thể xóa liên kết')
+        showError(formatSettingsNotificationMessage(err.message) || 'Không thể xóa liên kết')
     } finally {
         deletingId.value = null
     }
