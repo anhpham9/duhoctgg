@@ -30,7 +30,7 @@
                         <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
                         Làm mới
                     </button>
-                    <button class="btn btn-outline" @click="previewPublicPage">
+                    <!-- <button class="btn btn-outline" @click="previewPublicPage">
                         <i class="fas fa-eye"></i>
                         Xem trang
                     </button>
@@ -38,7 +38,7 @@
                         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
                         <i v-else class="fas fa-save"></i>
                         {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
-                    </button>
+                    </button> -->
                 </div>
             </div>
 
