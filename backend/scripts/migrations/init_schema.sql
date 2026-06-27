@@ -325,6 +325,31 @@ CREATE TABLE IF NOT EXISTS settings (
     group_name VARCHAR(50) CHECK (group_name IN ('general', 'contact', 'seo')) NOT NULL
 );
 
+-- ======================== POPUP_CAMPAIGNS ========================
+
+CREATE TABLE IF NOT EXISTS popup_campaigns (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    desktop_image TEXT NOT NULL,
+    mobile_image TEXT,
+    link TEXT,
+    page VARCHAR(50) NOT NULL CHECK (page IN ('all', 'home', 'about', 'schools', 'news', 'contact', 'conditions')),
+    position VARCHAR(50) NOT NULL CHECK (position IN ('center', 'bottom-right', 'bottom-left', 'top-right', 'top-left', 'fullscreen')),
+    priority INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    start_at TIMESTAMPTZ,
+    end_at TIMESTAMPTZ,
+    close_type VARCHAR(20) NOT NULL CHECK (close_type IN ('session', 'day', 'always')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (end_at IS NULL OR start_at IS NULL OR end_at >= start_at)
+);
+CREATE INDEX IF NOT EXISTS idx_popup_campaigns_active_page ON popup_campaigns(is_active, page);
+CREATE INDEX IF NOT EXISTS idx_popup_campaigns_schedule ON popup_campaigns(start_at, end_at);
+CREATE INDEX IF NOT EXISTS idx_popup_campaigns_priority ON popup_campaigns(priority DESC, created_at DESC);
+
+-- ======================== MEDIA_ASSET_REFS ========================
+
 CREATE TABLE IF NOT EXISTS media_asset_refs (
     id BIGSERIAL PRIMARY KEY,
     owner_type VARCHAR(50) NOT NULL,

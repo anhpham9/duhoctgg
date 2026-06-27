@@ -16,6 +16,11 @@
         <!-- Global Toast Notifications -->
         <Toast />
 
+        <!-- Global popup campaigns -->
+        <ClientOnly>
+            <PopupCampaign />
+        </ClientOnly>
+
         <!-- Footer -->
         <Footer />
 

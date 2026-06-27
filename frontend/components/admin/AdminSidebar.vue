@@ -113,6 +113,7 @@
                         </a>
                         <ul class="submenu" :class="{ 'open': openSubmenus.includes('settings') }">
                             <li><NuxtLink to="/admin/settings/general" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/general') }">Chung</NuxtLink></li>
+                            <li><NuxtLink to="/admin/settings/popup-campaigns" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/popup-campaigns') }">Popup quảng cáo</NuxtLink></li>
                             <li><NuxtLink to="/admin/settings/socials" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/socials') }">Mạng xã hội</NuxtLink></li>
                             <li><NuxtLink to="/admin/settings/seo" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/seo') }">SEO</NuxtLink></li>
                             <li><NuxtLink to="/admin/settings/backup" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/backup') }">Sao lưu & Khôi phục</NuxtLink></li>

@@ -51,6 +51,8 @@ import { ensureMediaAssetTableExists } from "./services/mediaAsset.service.js";
 import { ensureAboutMissionsTableExists, ensureAboutContentTableExists } from "./services/aboutContent.service.js";
 import { ensureHomepageSectionsTableExists } from "./services/homepageSections.service.js";
 import { getHomepageSectionsPublic } from "./controllers/homepageSections.controller.js";
+import { getPublicPopupCampaigns } from "./controllers/popupCampaigns.controller.js";
+import { ensurePopupCampaignsTableExists } from "./services/popupCampaigns.service.js";
 
 
 // RBAC/permission middleware mẫu
@@ -140,6 +142,7 @@ app.get('/api/public/about/missions', (req, res) => res.redirect('/api/about/mis
 app.get('/api/public/about/content', (req, res) => res.redirect('/api/about/content'));
 app.get('/api/public/homepage-sections', getHomepageSectionsPublic);
 app.get('/api/public/faqs', getPublicFaqs);
+app.get('/api/public/popup-campaigns', getPublicPopupCampaigns);
 app.post('/api/public/news/:id/view', rateLimiter.publicView, trackNewsView);
 
 app.post('/api/public/contact', 
@@ -231,6 +234,7 @@ app.listen(PORT, async () => {
     await ensureAboutMissionsTableExists();
     await ensureAboutContentTableExists();
     await ensureHomepageSectionsTableExists();
+    await ensurePopupCampaignsTableExists();
     
     backupService.startBackupScheduler();
 

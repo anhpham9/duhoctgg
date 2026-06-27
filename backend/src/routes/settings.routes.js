@@ -12,6 +12,14 @@ import {
 } from "../controllers/settings.controller.js";
 import { getContactSettings, updateContactSettings } from "../controllers/settings.controller.js";
 import {
+	getPopupCampaigns,
+	createPopupCampaign,
+	updatePopupCampaign,
+	deletePopupCampaign,
+	uploadPopupCampaignImage,
+	deletePopupCampaignImage
+} from "../controllers/popupCampaigns.controller.js";
+import {
 	getBackupHistory,
 	createManualBackup,
 	uploadBackup,
@@ -53,6 +61,13 @@ router.post("/general/upload-image", rateLimiter.uploadLimiter, generalImageUplo
 router.delete("/general/upload-image", deleteGeneralImage);
 router.get("/contact", getContactSettings);
 router.put("/contact", updateContactSettings);
+
+router.get("/popup-campaigns", getPopupCampaigns);
+router.post("/popup-campaigns", createPopupCampaign);
+router.post("/popup-campaigns/upload-image", rateLimiter.uploadLimiter, generalImageUpload.single("image"), uploadPopupCampaignImage);
+router.delete("/popup-campaigns/upload-image", deletePopupCampaignImage);
+router.put("/popup-campaigns/:id", updatePopupCampaign);
+router.delete("/popup-campaigns/:id", deletePopupCampaign);
 
 router.get("/backups/history", getBackupHistory);
 router.post("/backups/create", createManualBackup);

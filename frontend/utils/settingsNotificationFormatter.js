@@ -83,7 +83,31 @@ const SETTINGS_FIELD_LABELS = Object.freeze({
     'settings.backups.run_at': 'Thời gian chạy mỗi ngày',
     'settings.backups.retention_count': 'Số lượng bản lưu',
     'settings.backups.backup_file': 'File backup',
-    'settings.backups.backup_id': 'Mã backup'
+    'settings.backups.backup_id': 'Mã backup',
+
+    // Popup campaigns settings
+    'popup_campaigns.title': 'Tiêu đề popup',
+    'popup_campaigns.desktop_image': 'Ảnh desktop',
+    'popup_campaigns.mobile_image': 'Ảnh mobile',
+    'popup_campaigns.link': 'Link chuyển hướng',
+    'popup_campaigns.page': 'Trang hiển thị',
+    'popup_campaigns.position': 'Vị trí hiển thị',
+    'popup_campaigns.priority': 'Độ ưu tiên',
+    'popup_campaigns.is_active': 'Trạng thái kích hoạt',
+    'popup_campaigns.start_at': 'Thời gian bắt đầu',
+    'popup_campaigns.end_at': 'Thời gian kết thúc',
+    'popup_campaigns.close_type': 'Kiểu đóng popup',
+    'settings.popup_campaigns.title': 'Tiêu đề popup',
+    'settings.popup_campaigns.desktop_image': 'Ảnh desktop',
+    'settings.popup_campaigns.mobile_image': 'Ảnh mobile',
+    'settings.popup_campaigns.link': 'Link chuyển hướng',
+    'settings.popup_campaigns.page': 'Trang hiển thị',
+    'settings.popup_campaigns.position': 'Vị trí hiển thị',
+    'settings.popup_campaigns.priority': 'Độ ưu tiên',
+    'settings.popup_campaigns.is_active': 'Trạng thái kích hoạt',
+    'settings.popup_campaigns.start_at': 'Thời gian bắt đầu',
+    'settings.popup_campaigns.end_at': 'Thời gian kết thúc',
+    'settings.popup_campaigns.close_type': 'Kiểu đóng popup'
 })
 
 const SETTINGS_STANDALONE_FIELD_LABELS = Object.freeze({
@@ -151,14 +175,21 @@ const SETTINGS_STANDALONE_FIELD_LABELS = Object.freeze({
     backupFile: 'File backup',
     backup_file: 'File backup',
     backupId: 'Mã backup',
-    backup_id: 'Mã backup'
+    backup_id: 'Mã backup',
+
+    desktopImage: 'Ảnh desktop',
+    desktop_image: 'Ảnh desktop',
+    mobileImage: 'Ảnh mobile',
+    mobile_image: 'Ảnh mobile',
+    closeType: 'Kiểu đóng popup',
+    close_type: 'Kiểu đóng popup'
 })
 
 export const formatSettingsNotificationMessage = (message) => {
     const rawMessage = String(message || '').trim()
     if (!rawMessage) return rawMessage
 
-    const replacedPrefixedKeys = rawMessage.replace(/\b(?:settings\.)?(?:general|contact|seo|socials|backups)\.[a-z0-9_]+\b/gi, (fieldKey) => {
+    const replacedPrefixedKeys = rawMessage.replace(/\b(?:settings\.)?(?:general|contact|seo|socials|backups|popup_campaigns)\.[a-z0-9_]+\b/gi, (fieldKey) => {
         const rawFieldKey = String(fieldKey || '')
         return SETTINGS_FIELD_LABELS[rawFieldKey] || SETTINGS_FIELD_LABELS[rawFieldKey.toLowerCase()] || fieldKey
     })
