@@ -1,0 +1,87 @@
+/* Responsive Styles */
+
+/* Tablet - School Detail */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 15px;
+    }
+
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    .section-header h2 {
+        font-size: 2rem;
+    }
+
+    /* ===================
+    about style
+    ===================== */
+
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+
+    .section-header h2 {
+        font-size: 1.8rem;
+    }
+
+    .btn {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+
+}
+
+/* Print Styles */
+@media print {
+
+    .header-top,
+    .header,
+    .nav-toggle,
+    .btn {
+        display: none;
+    }
+
+    .hero {
+        padding: 0;
+        margin: 0;
+    }
+
+    .hero-banner {
+        width: 100%;
+        height: auto;
+    }
+
+    .service-card {
+        background: none;
+        border: 1px solid #ddd;
+        color: #333;
+    }
+
+    .footer {
+        background: none;
+        color: #333;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {}

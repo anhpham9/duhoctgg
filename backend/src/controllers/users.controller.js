@@ -1,0 +1,835 @@
+import bcrypt from "bcrypt";
+import db from "../config/db.js";
+import { logError, logInfo, auditLog } from "../utils/logger.js";
+import { InputSanitizer } from "../utils/sanitizer.js";
+import { SecurityLogger } from "../utils/securityLogger.js";
+
+// Role hierarchy for permission checking
+const ROLE_HIERARCHY = {
+    1: [1, 2, 3, 4, 5], // Superadmin: can manage all roles
+    2: [3, 4, 5],       // Admin: can manage Manager, Editor, Consultant  
+    3: [4, 5],          // Manager: can manage Editor, Consultant
+    4: [],              // Editor: cannot manage users
+    5: []               // Consultant: cannot manage users
+};
+
+// Get all users with role information
+export const getUsers = async (req, res) => {
+    try {
+        const currentUserRole = req.user.role_id;
+
+        // Check if user has permission to view users
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. Insufficient permissions."
+            });
+        }
+
+        // Get users with role names
+        const result = await db.query(`
+            SELECT 
+                u.id,
+                u.name,
+                u.username,
+                u.email,
+                u.phone,
+                u.role_id,
+                r.name as role_name,
+                COALESCE(u.is_active, true) as is_active,
+                u.created_at,
+                u.updated_at
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            ORDER BY u.created_at DESC
+        `);
+
+        // Filter users based on current user's permissions
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+        const filteredUsers = result.rows.filter(user =>
+            currentUserRole === 1 || // Superadmin sees all
+            allowedRoleIds.includes(user.role_id) ||
+            user.id === req.user.id // Always show own profile
+        );
+
+        res.json({
+            success: true,
+            data: filteredUsers,
+            total: filteredUsers.length
+        });
+
+    } catch (error) {
+        logError('Get users failed', error, {
+            userId: req.user?.id,
+            userRole: req.user?.role_id
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+// Get single user by ID
+export const getUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUserRole = req.user.role_id;
+
+        // Check if user has permission to view users
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. Insufficient permissions."
+            });
+        }
+
+        const result = await db.query(`
+            SELECT 
+                u.id,
+                u.name,
+                u.username,
+                u.email,
+                u.role_id,
+                r.name as role_name,
+                COALESCE(u.is_active, true) as is_active,
+                u.created_at,
+                u.updated_at
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.id = $1
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const user = result.rows[0];
+
+        // Check if current user can view this specific user
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+        if (currentUserRole !== 1 && // Not superadmin
+            !allowedRoleIds.includes(user.role_id) &&
+            user.id !== req.user.id) { // Not own profile
+            return res.status(403).json({
+                message: "Access denied. Cannot view this user."
+            });
+        }
+
+        res.json({
+            success: true,
+            data: user
+        });
+
+    } catch (error) {
+        logError('Get user failed', error, {
+            requestedUserId: id,
+            requesterId: req.user?.id
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+// Create new user
+export const createUser = async (req, res) => {
+    try {
+        // Sanitize input data
+        const sanitizedData = InputSanitizer.sanitizeUserData(req.body);
+        const { name, username, email, phone, password, role_id, is_active } = sanitizedData;
+
+        const currentUserRole = req.user.role_id;
+
+        logInfo('User creation attempt', {
+            createdBy: req.user.id,
+            targetRole: role_id,
+            creatorRole: currentUserRole,
+            data: { name, username, email, phone } // Don't log password
+        });
+
+        // Validate required fields
+        if (!name || !username || !email || !password || !role_id) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required (name, username, email, password, role_id)"
+            });
+        }
+
+        // Validate is_active
+        if (is_active !== undefined && typeof is_active !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: "is_active must be true or false"
+            });
+        }
+
+        // Check if current user can create users
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot create users."
+            });
+        }
+
+        // Check if current user can assign this role
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+        if (currentUserRole !== 1 && !allowedRoleIds.includes(role_id)) {
+            return res.status(403).json({
+                message: `Access denied. You cannot create users with role ID ${role_id}.`
+            });
+        }
+
+        // Validate role exists
+        const roleCheck = await db.query(
+            'SELECT id, name FROM roles WHERE id = $1',
+            [role_id]
+        );
+
+        if (roleCheck.rows.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role_id"
+            });
+        }
+
+        // Check if username already exists
+        const usernameCheck = await db.query(
+            'SELECT id FROM users WHERE username = $1',
+            [username]
+        );
+
+        if (usernameCheck.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Username already exists"
+            });
+        }
+
+        // Check if email already exists
+        const emailCheck = await db.query(
+            'SELECT id FROM users WHERE email = $1',
+            [email]
+        );
+
+        if (emailCheck.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Email already exists"
+            });
+        }
+
+        // Check if phone already exists (if provided)
+        if (phone && phone.trim()) {
+            const phoneCheck = await db.query(
+                'SELECT id FROM users WHERE phone = $1',
+                [phone.trim()]
+            );
+
+            if (phoneCheck.rows.length > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Phone already exists"
+                });
+            }
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const result = await db.query(`
+            INSERT INTO users (name, username, email, phone, password, role_id, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, username, email, phone, role_id, COALESCE(is_active, true) as is_active, created_at
+        `, [name, username, email, phone || null, hashedPassword, role_id, is_active]);
+
+        const newUser = result.rows[0];
+
+        // Get role name
+        const roleInfo = roleCheck.rows[0];
+
+        // Audit log successful user creation
+        auditLog('CREATE_USER', req.user.id, {
+            targetUserId: result.id,
+            targetUsername: result.username,
+            targetEmail: result.email,
+            targetRole: roleInfo.name,
+            isActive: result.is_active
+        }, req);
+
+        logInfo('User created successfully', {
+            createdBy: req.user.id,
+            newUserId: result.id,
+            username: result.username,
+            role: roleInfo.name
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "User created successfully",
+            data: {
+                ...newUser,
+                role_name: roleInfo.name
+            }
+        });
+
+    } catch (error) {
+        logError('Create user failed', error, {
+            createdBy: req.user?.id,
+            targetData: req.body ? { ...req.body, password: '[REDACTED]' } : {}
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+// Update user
+export const updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, username, email, phone, role_id, is_active } = req.body;
+        const currentUserRole = req.user.role_id;
+
+        // Validate is_active if provided
+        if (is_active !== undefined && typeof is_active !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: "is_active must be true or false"
+            });
+        }
+
+        // Check if current user can update users
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot update users."
+            });
+        }
+
+        // Get the target user
+        const userResult = await db.query(
+            'SELECT * FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const targetUser = userResult.rows[0];
+
+        // Không cho phép tự đổi role hoặc trạng thái của chính mình
+        // Self-modification protection (must be checked before role hierarchy checks)
+        if (parseInt(id) === req.user.id) {
+            if ((role_id && role_id !== targetUser.role_id) || (is_active !== undefined && is_active !== targetUser.is_active)) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Bạn không thể thay đổi quyền hoặc trạng thái của chính mình."
+                });
+            }
+        }
+
+        // Check if current user can modify this user's current role
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+        if (currentUserRole !== 1 && // Not superadmin
+            !allowedRoleIds.includes(targetUser.role_id) &&
+            targetUser.id !== req.user.id) { // Not own profile
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You cannot modify this user."
+            });
+        }
+
+        // If updating role, check if current user can assign new role
+        if (role_id && role_id !== targetUser.role_id) {
+            if (currentUserRole !== 1 && !allowedRoleIds.includes(role_id)) {
+                return res.status(403).json({
+                    message: `Access denied. You cannot assign role ID ${role_id}.`
+                });
+            }
+
+            // Validate new role exists
+            const roleCheck = await db.query(
+                'SELECT id FROM roles WHERE id = $1',
+                [role_id]
+            );
+
+            if (roleCheck.rows.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid role_id"
+                });
+            }
+        }
+
+        // Build update fields
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
+
+        if (name) {
+            updates.push(`name = $${paramCount++}`);
+            values.push(name);
+        }
+
+        if (username && username !== targetUser.username) {
+            // Check if new username is available
+            const usernameCheck = await db.query(
+                'SELECT id FROM users WHERE username = $1 AND id != $2',
+                [username, id]
+            );
+
+            if (usernameCheck.rows.length > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Username already exists"
+                });
+            }
+
+            updates.push(`username = $${paramCount++}`);
+            values.push(username);
+        }
+
+        if (email && email !== targetUser.email) {
+            // Check if new email is available
+            const emailCheck = await db.query(
+                'SELECT id FROM users WHERE email = $1 AND id != $2',
+                [email, id]
+            );
+
+            if (emailCheck.rows.length > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Email already exists"
+                });
+            }
+
+            updates.push(`email = $${paramCount++}`);
+            values.push(email);
+        }
+
+        if (phone !== undefined && phone !== targetUser.phone) {
+            // Handle phone update (can be null/empty or a value)
+            const trimmedPhone = phone ? phone.trim() : null;
+
+            if (trimmedPhone) {
+                // Check if new phone is available
+                const phoneCheck = await db.query(
+                    'SELECT id FROM users WHERE phone = $1 AND id != $2',
+                    [trimmedPhone, id]
+                );
+
+                if (phoneCheck.rows.length > 0) {
+                    return res.status(409).json({
+                        success: false,
+                        message: "Phone already exists"
+                    });
+                }
+            }
+
+            updates.push(`phone = $${paramCount++}`);
+            values.push(trimmedPhone);
+        }
+
+        if (role_id) {
+            updates.push(`role_id = $${paramCount++}`);
+            values.push(role_id);
+        }
+
+        if (is_active !== undefined) {
+            updates.push(`is_active = $${paramCount++}`);
+            values.push(is_active);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No fields to update"
+            });
+        }
+
+        // Add updated_at
+        updates.push(`updated_at = NOW()`);
+        values.push(id);
+
+        // Execute update
+        const updateQuery = `
+            UPDATE users 
+            SET ${updates.join(', ')}
+            WHERE id = $${paramCount}
+            RETURNING id, name, username, email, phone, role_id, COALESCE(is_active, true) as is_active, updated_at
+        `;
+
+        const result = await db.query(updateQuery, values);
+        const updatedUser = result.rows[0];
+
+        // Get role name
+        const roleResult = await db.query(
+            'SELECT name FROM roles WHERE id = $1',
+            [updatedUser.role_id]
+        );
+
+
+        // Xác định các trường đã cập nhật để log
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (username !== undefined) updateData.username = username;
+        if (email !== undefined) updateData.email = email;
+        if (phone !== undefined) updateData.phone = phone;
+        if (role_id !== undefined) updateData.role_id = role_id;
+        if (is_active !== undefined) updateData.is_active = is_active;
+
+        // Audit log successful user update
+        auditLog('UPDATE_USER', req.user.id, {
+            targetUserId: id,
+            targetUsername: updatedUser.username,
+            updatedFields: Object.keys(updateData)
+        }, req);
+
+        logInfo('User updated successfully', {
+            updatedBy: req.user.id,
+            targetUserId: id,
+            updatedFields: Object.keys(updateData)
+        });
+
+        res.json({
+            success: true,
+            message: "User updated successfully",
+            data: {
+                ...updatedUser,
+                role_name: roleResult.rows[0].name
+            }
+        });
+
+    } catch (error) {
+        logError('Update user failed', error, {
+            updatedBy: req.user?.id,
+            targetUserId: req.params?.id,
+            updateData: req.body ? { ...req.body, password: '[REDACTED]' } : {}
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+// Toggle user status (active/inactive) with RBAC
+export const toggleUserStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUserId = req.user.id;
+        const currentUserRole = req.user.role_id;
+
+        // Lấy thông tin user mục tiêu
+        const userResult = await db.query(
+            `SELECT id, role_id, is_active FROM users WHERE id = $1`,
+            [id]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const targetUser = userResult.rows[0];
+
+        // Không cho phép tự đổi trạng thái chính mình
+        if (parseInt(id) === currentUserId) {
+            return res.status(403).json({ success: false, message: "You cannot change your own status." });
+        }
+
+        // Superadmin (role_id=1) được phép thao tác với mọi user
+        if (currentUserRole !== 1) {
+            // Chỉ cho phép nếu role của mình nhỏ hơn role của user mục tiêu
+            if (currentUserRole >= targetUser.role_id) {
+                return res.status(403).json({
+                    success: false,
+                    message: "You do not have permission to change status of this user."
+                });
+            }
+        }
+
+        // Đảo trạng thái
+        const newStatus = !targetUser.is_active;
+        await db.query(
+            `UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2`,
+            [newStatus, id]
+        );
+
+        auditLog('TOGGLE_USER_STATUS', currentUserId, {
+            targetUserId: id,
+            oldStatus: targetUser.is_active,
+            newStatus
+        }, req);
+
+        res.json({
+            success: true,
+            message: `User status updated successfully`,
+            data: { id, is_active: newStatus }
+        });
+    } catch (error) {
+        logError('Toggle user status failed', error, {
+            requestedUserId: req.params.id,
+            requesterId: req.user?.id
+        });
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Delete user
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUserRole = req.user.role_id;
+
+        // Check if current user can delete users
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot delete users."
+            });
+        }
+
+        // Get the target user
+        const userResult = await db.query(
+            'SELECT * FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const targetUser = userResult.rows[0];
+
+        // Prevent self-deletion
+        if (targetUser.id === req.user.id) {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot delete your own account"
+            });
+        }
+
+        // Check if current user can delete this user's role
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+        if (currentUserRole !== 1 && !allowedRoleIds.includes(targetUser.role_id)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot delete this user."
+            });
+        }
+
+
+        // Kiểm tra liên kết trong contacts (assigned_to)
+        const contactRef = await db.query(
+            'SELECT id FROM contacts WHERE assigned_to = $1 LIMIT 1',
+            [id]
+        );
+        if (contactRef.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xóa người dùng vì còn liên kết với dữ liệu khác (contacts). Hãy chuyển hoặc xóa các liên kết trước."
+            });
+        }
+
+        // Delete user
+        await db.query('DELETE FROM users WHERE id = $1', [id]);
+
+        // Audit log successful user deletion
+        auditLog('DELETE_USER', req.user.id, {
+            targetUserId: id,
+            targetUsername: targetUser.username,
+            targetEmail: targetUser.email
+        }, req);
+
+        // Security log for user deletion
+        SecurityLogger.logSecurityAction(
+            id,
+            req.user.id,
+            'delete_user',
+            'Admin deletion',
+            req.ip
+        );
+
+        logInfo('User deleted successfully', {
+            deletedBy: req.user.id,
+            targetUserId: id,
+            targetUsername: targetUser.username
+        });
+
+        res.json({
+            success: true,
+            message: "User deleted successfully"
+        });
+
+    } catch (error) {
+        logError('Delete user failed', error, {
+            deletedBy: req.user?.id,
+            targetUserId: req.params?.id
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+// Get available roles for current user to assign
+export const getAvailableRoles = async (req, res) => {
+    try {
+        const currentUserRole = req.user.role_id;
+
+        // Check if current user can create users
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot view assignable roles."
+            });
+        }
+
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+
+        // Get all roles
+        const result = await db.query(`
+            SELECT id, name, description 
+            FROM roles 
+            ORDER BY id ASC
+        `);
+
+        // Filter roles based on permissions
+        const availableRoles = result.rows.filter(role =>
+            currentUserRole === 1 || allowedRoleIds.includes(role.id)
+        );
+
+        res.json({
+            success: true,
+            data: availableRoles
+        });
+
+    } catch (error) {
+        logError('Get available roles failed', error, {
+            requesterId: req.user?.id
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+// Reset user password  
+export const resetPassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUserRole = req.user.role_id;
+
+        // Check if current user can reset passwords
+        if (![1, 2, 3].includes(currentUserRole)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot reset passwords."
+            });
+        }
+
+        // Get the target user
+        const userResult = await db.query(
+            'SELECT * FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const targetUser = userResult.rows[0];
+
+        // Permission check based on role hierarchy
+        const allowedRoleIds = ROLE_HIERARCHY[currentUserRole] || [];
+
+        // Superadmin can reset all passwords (including other superadmins)
+        // Other roles can only reset passwords for lower roles
+        if (currentUserRole !== 1 && !allowedRoleIds.includes(targetUser.role_id)) {
+            return res.status(403).json({
+                message: "Access denied. You cannot reset this user's password."
+            });
+        }
+
+        // Generate a random secure password
+        const generateRandomPassword = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        };
+
+        const newPassword = generateRandomPassword();
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        // Update password in database
+        await db.query(
+            'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
+            [hashedPassword, id]
+        );
+
+        // Audit log successful password reset
+        auditLog('RESET_PASSWORD', req.user.id, {
+            targetUserId: targetUser.id,
+            targetUsername: targetUser.username
+        }, req);
+
+        // Security log for password reset
+        SecurityLogger.logPasswordEvent(
+            targetUser.id,
+            req.user.id,
+            'admin_reset',
+            req.ip
+        );
+
+        logInfo('Password reset successfully', {
+            resetBy: req.user.id,
+            targetUserId: targetUser.id,
+            targetUsername: targetUser.username
+        });
+
+        res.json({
+            success: true,
+            message: "Password reset successfully",
+            data: {
+                user: {
+                    id: targetUser.id,
+                    name: targetUser.name,
+                    username: targetUser.username
+                },
+                // Trả về password mới để admin có thể thông báo cho user
+                // Lưu ý: Chỉ hiển thị 1 lần và admin cần copy ngay
+                newPassword: newPassword
+            }
+        });
+
+    } catch (error) {
+        logError('Reset password failed', error, {
+            resetBy: req.user?.id,
+            targetUserId: req.params?.id
+        });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};

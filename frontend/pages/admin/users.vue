@@ -1,0 +1,2787 @@
+<template>
+    <div class="users-page">
+        <!-- Permission Check & Loading -->
+        <div v-if="loadingUser || !hasPermission" class="permission-check">
+            <div v-if="loadingUser" class="loading-permission">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Đang kiểm tra quyền truy cập...</p>
+            </div>
+            <div v-else class="permission-denied">
+                <i class="fas fa-shield-alt"></i>
+                <h3>Không thể truy cập Quản lý Người dùng</h3>
+                <p>Chỉ Superadmin, Admin và Manager mới có thể quản lý người dùng.</p>
+                <NuxtLink to="/admin" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Quay lại Dashboard
+                </NuxtLink>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div v-else>
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <h1>
+                        <i class="fas fa-users"></i>
+                        Quản lý Người dùng
+                    </h1>
+                    <p>Quản lý tài khoản và phân quyền người dùng trong hệ thống</p>
+                </div>
+                <div class="header-actions">
+                    <button @click="handleOpenCreateForm" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Thêm người dùng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <h3>Tổng số</h3>
+                            <span>{{ stats.total || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div v-if="isSuperadmin" class="stat-card superadmin">
+                        <i class="fas fa-user-shield"></i>
+                        <div class="stat-info">
+                            <h3>Superadmin</h3>
+                            <span>{{ stats.superadmin || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2])" class="stat-card admin">
+                        <i class="fas fa-user-tie"></i>
+                        <div class="stat-info">
+                            <h3>Admin</h3>
+                            <span>{{ stats.admin || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2, 3])" class="stat-card manager">
+                        <i class="fas fa-user-cog"></i>
+                        <div class="stat-info">
+                            <h3>Manager</h3>
+                            <span>{{ stats.manager || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2, 3])" class="stat-card editor">
+                        <i class="fas fa-user-edit"></i>
+                        <div class="stat-info">
+                            <h3>Editor</h3>
+                            <span>{{ stats.editor || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div v-if="hasAnyRole([1, 2, 3])" class="stat-card consultant">
+                        <i class="fas fa-user-headset"></i>
+                        <div class="stat-info">
+                            <h3>Consultant</h3>
+                            <span>{{ stats.consultant || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div class="stat-card active">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-info">
+                            <h3>Đang hoạt động</h3>
+                            <span>{{ stats.active || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                    <div class="stat-card inactive">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="stat-info">
+                            <h3>Tạm khóa</h3>
+                            <span>{{ stats.inactive || 0 }} người dùng</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>Danh sách người dùng ({{ filteredUsers.length }})</h2>
+                    <div class="table-actions">
+                        <button @click="handleExportToExcel" class="btn btn-success"
+                            :disabled="loading || filteredUsers.length === 0">
+                            <i class="fas fa-file-excel" :class="{ 'fa-spin': exportingExcel }"></i>
+                            Xuất Excel
+                        </button>
+                        <button @click="fetchUsers" class="btn btn-secondary" :disabled="loading">
+                            <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+                            Làm mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Controls -->
+                <div class="table-controls">
+                    <div class="controls-row">
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" :value="searchQuery" @input="setSearchQuery($event.target.value)"
+                                placeholder="Tìm kiếm theo tên, username, email hoặc số điện thoại..."
+                                class="search-input" />
+                            <button v-if="searchQuery" @click="setSearchQuery('')" class="clear-search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <!-- Role Filter -->
+                        <div class="filter-group">
+                            <label>Lọc theo quyền:</label>
+                            <select :value="selectedRoleFilter" @change="setRoleFilter($event.target.value)"
+                                class="filter-select">
+                                <option value="">Tất cả quyền</option>
+                                <option value="Superadmin">Superadmin</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Editor">Editor</option>
+                                <option value="Consultant">Consultant</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="filter-group">
+                            <label>Lọc theo trạng thái:</label>
+                            <select :value="selectedStatusFilter" @change="setStatusFilter($event.target.value)"
+                                class="filter-select">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="active">Đang hoạt động</option>
+                                <option value="inactive">Tạm khóa</option>
+                            </select>
+                        </div>
+
+                        <!-- Items per page -->
+                        <div class="filter-group">
+                            <label>Hiển thị:</label>
+                            <select :value="itemsPerPage" @change="setItemsPerPage(parseInt($event.target.value))"
+                                class="filter-select">
+                                <option v-for="option in itemsPerPageOptions" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Clear Filters Button -->
+                        <div class="filter-group">
+                            <button class="btn btn-outline-secondary" @click="clearAllFilters"
+                                style="margin-top: 24px;">
+                                <i class="fas fa-eraser"></i> Xóa bộ lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div v-if="loading" class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Đang tải danh sách người dùng...</p>
+                </div>
+
+                <!-- Error State -->
+                <div v-else-if="error" class="error-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Lỗi: {{ error }}</p>
+                    <button @click="fetchUsers" class="btn btn-primary">Thử lại</button>
+                </div>
+
+                <!-- Users Table -->
+                <div v-else class="table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'id' && sortDirection === 'asc', 'sort-desc': sortColumn === 'id' && sortDirection === 'desc' }"
+                                    @click="handleSort('id')">
+                                    ID
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'name' && sortDirection === 'asc', 'sort-desc': sortColumn === 'name' && sortDirection === 'desc' }"
+                                    @click="handleSort('name')">
+                                    Người dùng
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'email' && sortDirection === 'asc', 'sort-desc': sortColumn === 'email' && sortDirection === 'desc' }"
+                                    @click="handleSort('email')">
+                                    Email
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'phone' && sortDirection === 'asc', 'sort-desc': sortColumn === 'phone' && sortDirection === 'desc' }"
+                                    @click="handleSort('phone')">
+                                    Số điện thoại
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'role_name' && sortDirection === 'asc', 'sort-desc': sortColumn === 'role_name' && sortDirection === 'desc' }"
+                                    @click="handleSort('role_name')">
+                                    Quyền
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'is_active' && sortDirection === 'asc', 'sort-desc': sortColumn === 'is_active' && sortDirection === 'desc' }"
+                                    @click="handleSort('is_active')">
+                                    Trạng thái
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable"
+                                    :class="{ 'sort-asc': sortColumn === 'created_at' && sortDirection === 'asc', 'sort-desc': sortColumn === 'created_at' && sortDirection === 'desc' }"
+                                    @click="handleSort('created_at')">
+                                    Ngày tạo
+                                    <i class="fas fa-sort"></i>
+                                </th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="user in paginatedUsers" :key="user.id" class="user-row">
+                                <td class="user-id">#{{ user.id }}</td>
+                                <td class="user-info">
+                                    <div class="user-avatar">
+                                        <i :class="getRoleIcon(user.role_name)"></i>
+                                    </div>
+                                    <div class="user-details">
+                                        <div class="user-name">{{ user.name }}</div>
+                                        <div class="username">@{{ user.username }}</div>
+                                    </div>
+                                </td>
+                                <td class="user-email">{{ user.email }}</td>
+                                <td class="user-phone">{{ user.phone || '-' }}</td>
+                                <td class="user-role">
+                                    <span class="role-badge" :class="getRoleBadgeColor(user.role_name)">
+                                        {{ getRoleDisplayName(user.role_name) }}
+                                    </span>
+                                </td>
+                                <td class="user-status">
+                                    <button @click="handleToggleStatusWrapper(user)" class="status-toggle"
+                                        :class="user.is_active ? 'status-active' : 'status-inactive'"
+                                        :disabled="loading || user.id === currentUser?.id"
+                                        :title="user.id === currentUser?.id ? 'Bạn không thể thay đổi trạng thái của chính mình!' : (user.is_active ? 'Click để tạm khóa' : 'Click để kích hoạt')">
+                                        <i :class="user.is_active ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>{{ user.is_active ? 'Hoạt động' : 'Tạm khóa' }}</span>
+                                    </button>
+                                </td>
+                                <td class="user-date">{{ formatDate(user.created_at) }}</td>
+                                <td>
+                                    <div class="user-actions">
+                                        <button @click="handleOpenViewDetail(user)" class="btn-action btn-view"
+                                            title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button @click="handleOpenEditForm(user)" class="btn-action btn-edit"
+                                            title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button v-if="canResetPassword(currentUser, user)"
+                                            @click="openResetPasswordConfirm(user)" class="btn-action btn-reset"
+                                            title="Reset mật khẩu">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button @click="openDeleteConfirm(user)" class="btn-action btn-delete"
+                                            title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Empty State -->
+                    <div v-if="filteredUsers.length === 0" class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>Không tìm thấy kết quả</h3>
+                        <p v-if="searchQuery || selectedRoleFilter">
+                            Không có người dùng nào phù hợp với bộ lọc hiện tại.
+                        </p>
+                        <p v-else>
+                            Chưa có người dùng nào trong hệ thống.
+                        </p>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div v-if="totalPages > 1" class="pagination">
+                        <div class="pagination-info">
+                            Hiển thị {{ ((currentPage - 1) * itemsPerPage) + 1 }} -
+                            {{ Math.min(currentPage * itemsPerPage, filteredUsers.length) }}
+                            trong tổng số {{ filteredUsers.length }} người dùng
+                        </div>
+                        <div class="pagination-controls">
+                            <button @click="goToPage(1)" :disabled="currentPage === 1" class="btn-page btn-page-first">
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+                                class="btn-page btn-page-prev">
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+
+                            <template v-for="page in visiblePages" :key="page">
+                                <button v-if="page === '...'" class="btn-page btn-page-dots" disabled>
+                                    ...
+                                </button>
+                                <button v-else @click="goToPage(page)"
+                                    :class="['btn-page', { 'btn-page-active': page === currentPage }]">
+                                    {{ page }}
+                                </button>
+                            </template>
+
+                            <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages"
+                                class="btn-page btn-page-next">
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button @click="goToPage(totalPages)" :disabled="currentPage === totalPages"
+                                class="btn-page btn-page-last">
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create User Modal -->
+            <div v-if="showCreateForm" class="modal-overlay">
+                <div class="modal" @click.stop>
+                    <div class="modal-header">
+                        <h3>Thêm người dùng mới</h3>
+                        <button @click="handleCloseAllModals" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form @submit.prevent="handleCreateUserWrapper" class="modal-body">
+                        <div class="form-group">
+                            <label for="create-name">Họ và tên <span class="required">*</span></label>
+                            <input id="create-name" v-model="createForm.name" type="text" required
+                                placeholder="Nhập họ và tên" :class="{ 'input-error': validationErrors.name }"
+                                @blur="validateField('name')" />
+                            <div v-if="validationErrors.name" class="field-error">
+                                {{ validationErrors.name }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-username">Tên đăng nhập <span class="required">*</span></label>
+                            <input id="create-username" v-model="createForm.username" type="text" required
+                                placeholder="Nhập tên đăng nhập" :class="{ 'input-error': validationErrors.username }"
+                                @blur="validateField('username')" />
+                            <div v-if="validationErrors.username" class="field-error">
+                                {{ validationErrors.username }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-email">Email <span class="required">*</span></label>
+                            <input id="create-email" v-model="createForm.email" type="email" required
+                                placeholder="Nhập địa chỉ email" :class="{ 'input-error': validationErrors.email }"
+                                @input="checkEmailValidation" @blur="validateField('email')" />
+                            <div v-if="validationErrors.email" class="field-error">
+                                {{ validationErrors.email }}
+                            </div>
+                            <div v-if="createForm.email && isEmailValid && !validationErrors.email"
+                                class="success-message">
+                                <i class="fas fa-check-circle"></i>
+                                Địa chỉ email hợp lệ
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-phone">Số điện thoại</label>
+                            <input id="create-phone" v-model="createForm.phone" type="tel"
+                                placeholder="Nhập số điện thoại (tùy chọn)"
+                                :class="{ 'input-error': validationErrors.phone }" @input="checkPhoneValidation"
+                                @blur="validateField('phone')" />
+                            <div v-if="validationErrors.phone" class="field-error">
+                                {{ validationErrors.phone }}
+                            </div>
+                            <div v-if="createForm.phone && isPhoneValid && !validationErrors.phone"
+                                class="success-message">
+                                <i class="fas fa-check-circle"></i>
+                                Số điện thoại hợp lệ
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-password">Mật khẩu <span class="required">*</span></label>
+                            <input id="create-password" v-model="createForm.password" type="password" required
+                                placeholder="Nhập mật khẩu" :class="{ 'input-error': validationErrors.password }"
+                                @input="checkPasswordStrength" @blur="validateField('password')" />
+                            <div v-if="validationErrors.password" class="field-error">
+                                {{ validationErrors.password }}
+                            </div>
+
+                            <!-- Password Strength Checker -->
+                            <div v-if="createForm.password" class="password-strength">
+                                <h4>Kiểm tra độ bảo mật mật khẩu:</h4>
+                                <div class="strength-checks">
+                                    <div class="strength-check"
+                                        :class="{ 'check-valid': passwordStrength.hasMinLength }">
+                                        <i
+                                            :class="passwordStrength.hasMinLength ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>Ít nhất 8 ký tự</span>
+                                    </div>
+                                    <div class="strength-check"
+                                        :class="{ 'check-valid': passwordStrength.hasLettersAndNumbers }">
+                                        <i
+                                            :class="passwordStrength.hasLettersAndNumbers ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>Gồm chữ và số</span>
+                                    </div>
+                                    <div class="strength-check"
+                                        :class="{ 'check-valid': passwordStrength.hasMixedCase }">
+                                        <i
+                                            :class="passwordStrength.hasMixedCase ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>Gồm chữ in hoa và in thường</span>
+                                    </div>
+                                </div>
+                                <div class="strength-indicator">
+                                    <div class="strength-bar">
+                                        <div class="strength-progress"
+                                            :class="getPasswordStrengthClass(passwordStrength)"
+                                            :style="{ width: getPasswordStrengthPercentage(passwordStrength) + '%' }">
+                                        </div>
+                                    </div>
+                                    <span class="strength-text">{{ getPasswordStrengthText(passwordStrength) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-confirm-password">Nhập lại mật khẩu <span
+                                    class="required">*</span></label>
+                            <input id="create-confirm-password" v-model="createForm.confirmPassword" type="password"
+                                required placeholder="Nhập lại mật khẩu"
+                                :class="{ 'input-error': validationErrors.confirmPassword }"
+                                @blur="validateField('confirmPassword')" />
+                            <div v-if="validationErrors.confirmPassword" class="field-error">
+                                {{ validationErrors.confirmPassword }}
+                            </div>
+                            <div v-if="createForm.confirmPassword && passwordsMatch && !validationErrors.confirmPassword"
+                                class="success-message">
+                                <i class="fas fa-check-circle"></i>
+                                Mật khẩu trùng khớp
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-role">Quyền <span class="required">*</span></label>
+                            <select id="create-role" v-model="createForm.role_id" required
+                                :class="{ 'input-error': validationErrors.role_id }" @blur="validateField('role_id')">
+                                <option value="">Chọn quyền</option>
+                                <option v-for="role in availableRoles" :key="role.id" :value="role.id">
+                                    {{ getRoleDisplayName(role.name) }}
+                                </option>
+                            </select>
+                            <div v-if="validationErrors.role_id" class="field-error">
+                                {{ validationErrors.role_id }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="create-status">Trạng thái <span class="required">*</span></label>
+                            <select id="create-status" v-model="createForm.is_active" required>
+                                <option :value="true">Hoạt động</option>
+                                <option :value="false">Tạm khóa</option>
+                            </select>
+                        </div>
+                    </form>
+                    <div class="modal-footer">
+                        <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
+                        <button @click="handleCreateUserWrapper" type="button" class="btn btn-primary"
+                            :disabled="loading || !isCreateFormValid || phoneCheckingDuplicate">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            {{ loading ? 'Đang tạo...' : 'Tạo người dùng' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit User Modal -->
+            <div v-if="showEditForm" class="modal-overlay">
+                <div class="modal" @click.stop>
+                    <div class="modal-header">
+                        <h3>Chỉnh sửa người dùng</h3>
+                        <button @click="handleCloseAllModals" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form @submit.prevent="handleUpdateUserWrapper" class="modal-body">
+                        <div class="form-group">
+                            <label for="edit-name">Họ và tên *</label>
+                            <input id="edit-name" v-model="editForm.name" type="text" required
+                                placeholder="Nhập họ và tên" :class="{ 'input-error': editValidationErrors.name }"
+                                @blur="validateEditField('name')" />
+                            <div v-if="editValidationErrors.name" class="field-error">
+                                {{ editValidationErrors.name }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-username">Tên đăng nhập *</label>
+                            <input id="edit-username" v-model="editForm.username" type="text" required
+                                placeholder="Nhập tên đăng nhập"
+                                :class="{ 'input-error': editValidationErrors.username }"
+                                @blur="validateEditField('username')" />
+                            <div v-if="editValidationErrors.username" class="field-error">
+                                {{ editValidationErrors.username }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-email">Email *</label>
+                            <input id="edit-email" v-model="editForm.email" type="email" required
+                                placeholder="Nhập địa chỉ email" :class="{ 'input-error': editValidationErrors.email }"
+                                @input="checkEditEmailValidation" @blur="validateEditField('email')" />
+                            <div v-if="editValidationErrors.email" class="field-error">
+                                {{ editValidationErrors.email }}
+                            </div>
+                            <div v-if="editForm.email && isEditEmailValid && !editValidationErrors.email"
+                                class="success-message">
+                                <i class="fas fa-check-circle"></i>
+                                Địa chỉ email hợp lệ
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-phone">Số điện thoại</label>
+                            <input id="edit-phone" v-model="editForm.phone" type="tel"
+                                placeholder="Nhập số điện thoại (tùy chọn)"
+                                :class="{ 'input-error': editValidationErrors.phone }" @input="checkEditPhoneValidation"
+                                @blur="validateEditField('phone')" />
+                            <div v-if="editValidationErrors.phone" class="field-error">
+                                {{ editValidationErrors.phone }}
+                            </div>
+                            <div v-if="editForm.phone && isEditPhoneValid && !editValidationErrors.phone"
+                                class="success-message">
+                                <i class="fas fa-check-circle"></i>
+                                Số điện thoại hợp lệ
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-role">Quyền *</label>
+                            <select id="edit-role" v-model="editForm.role_id" required
+                                :class="{ 'input-error': editValidationErrors.role_id }"
+                                @blur="validateEditField('role_id')"
+                                :disabled="editingUser && editingUser.id === currentUser?.id">
+                                <option value="">Chọn quyền</option>
+                                <option v-for="role in availableRoles" :key="role.id" :value="role.id">
+                                    {{ getRoleDisplayName(role.name) }}
+                                </option>
+                            </select>
+                            <div v-if="editValidationErrors.role_id" class="field-error">
+                                {{ editValidationErrors.role_id }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-status">Trạng thái *</label>
+                            <select id="edit-status" v-model="editForm.is_active" required
+                                :disabled="editingUser && editingUser.id === currentUser?.id">
+                                <option :value="true">Hoạt động</option>
+                                <option :value="false">Tạm khóa</option>
+                            </select>
+                        </div>
+                    </form>
+                    <div class="modal-footer">
+                        <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
+                        <button @click="handleUpdateUserWrapper" type="button" class="btn btn-primary"
+                            :disabled="loading || !isEditFormValid || editPhoneCheckingDuplicate">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            {{ loading ? 'Đang cập nhật...' : 'Cập nhật' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div v-if="showDeleteConfirm && userToDelete" class="modal-overlay">
+                <div class="modal modal-small" @click.stop>
+                    <div class="modal-header">
+                        <h3>Xác nhận xóa</h3>
+                        <button @click="handleCloseAllModals" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="delete-confirmation">
+                            <i class="fas fa-exclamation-triangle warning-icon"></i>
+                            <p>Bạn có chắc chắn muốn xóa người dùng <strong>{{ userToDelete.name }}</strong>?</p>
+                            <p class="warning-text">Thao tác này không thể hoàn tác!</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Hủy</button>
+                        <button @click="handleDeleteUserWrapper" type="button" class="btn btn-danger"
+                            :disabled="loading">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            {{ loading ? 'Đang xóa...' : 'Xóa người dùng' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Password Modal -->
+            <div v-if="showResetPasswordForm && userToResetPassword" class="modal-overlay">
+                <div class="modal modal-medium" @click.stop>
+                    <div class="modal-header">
+                        <h3>Reset mật khẩu</h3>
+                        <button @click="handleCloseAllModals" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Confirmation Step -->
+                        <div v-if="!resetPasswordResult" class="reset-confirmation">
+                            <i class="fas fa-key warning-icon"></i>
+                            <p>Bạn có chắc chắn muốn reset mật khẩu cho người dùng <strong>{{ userToResetPassword.name
+                            }}</strong>?
+                            </p>
+                            <div class="user-info">
+                                <div class="info-item">
+                                    <span class="label">Tên đăng nhập:</span>
+                                    <span class="value">{{ userToResetPassword.username }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Email:</span>
+                                    <span class="value">{{ userToResetPassword.email }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Quyền:</span>
+                                    <span class="value">{{ getRoleDisplayName(userToResetPassword.role_name) }}</span>
+                                </div>
+                            </div>
+                            <p class="warning-text">Hệ thống sẽ tự động tạo mật khẩu mới và hiển thị cho bạn!</p>
+                        </div>
+
+                        <!-- Result Step -->
+                        <div v-else class="reset-result">
+                            <i class="fas fa-check-circle success-icon"></i>
+                            <p class="success-text">Reset mật khẩu thành công!</p>
+                            <div class="password-result">
+                                <h4>Thông tin đăng nhập mới:</h4>
+                                <div class="credential-item">
+                                    <span class="credential-label">Tên đăng nhập:</span>
+                                    <div class="credential-value">
+                                        <input type="text" :value="resetPasswordResult.user.username" readonly
+                                            class="credential-input">
+                                        <button @click="copyToClipboard(resetPasswordResult.user.username)"
+                                            class="btn-copy" title="Copy">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="credential-item">
+                                    <span class="credential-label">Mật khẩu mới:</span>
+                                    <div class="credential-value">
+                                        <input type="text" :value="resetPasswordResult.newPassword" readonly
+                                            class="credential-input password-field">
+                                        <button @click="copyToClipboard(resetPasswordResult.newPassword)"
+                                            class="btn-copy" title="Copy">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="important-note">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p><strong>Quan trọng:</strong> Hãy copy và gửi thông tin này cho người dùng ngay. Sau
+                                    khi đóng
+                                    modal này, bạn sẽ không thể xem lại mật khẩu!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button v-if="!resetPasswordResult" @click="handleCloseAllModals" type="button"
+                            class="btn btn-secondary">Hủy</button>
+                        <button v-if="!resetPasswordResult" @click="handleResetPasswordWrapper" type="button"
+                            class="btn btn-warning" :disabled="loading">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            {{ loading ? 'Đang reset...' : 'Reset mật khẩu' }}
+                        </button>
+                        <button v-else @click="handleCloseAllModals" type="button" class="btn btn-primary">Đóng</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <Toast />
+
+            <!-- Detail User Modal -->
+            <div v-if="showDetailModal && detailUser" class="modal-overlay">
+                <div class="modal modal-medium" @click.stop>
+                    <div class="modal-header">
+                        <h3>Chi tiết người dùng</h3>
+                        <button @click="handleCloseAllModals" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="user-detail-fields">
+                            <div><strong>ID:</strong> {{ detailUser.id }}</div>
+                            <div><strong>Họ tên:</strong> {{ detailUser.name }}</div>
+                            <div><strong>Tên đăng nhập:</strong> {{ detailUser.username }}</div>
+                            <div><strong>Email:</strong> {{ detailUser.email }}</div>
+                            <div><strong>Số điện thoại:</strong> {{ detailUser.phone || '-' }}</div>
+                            <div><strong>Quyền:</strong> {{ getRoleDisplayName(detailUser.role_name) }}</div>
+                            <div><strong>Trạng thái:</strong> {{ detailUser.is_active ? 'Hoạt động' : 'Tạm khóa' }}
+                            </div>
+                            <div><strong>Ngày tạo:</strong> {{ formatDate(detailUser.created_at) }}</div>
+                            <div><strong>Ngày cập nhật:</strong> {{ formatDate(detailUser.updated_at) }}</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button @click="handleCloseAllModals" type="button" class="btn btn-secondary">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+// Import composables and components
+import { useCurrentUser } from '~/composables/useCurrentUser'
+import { useUsersAPI } from '~/composables/useUsersAPI'
+import { useNotifications } from '~/composables/useNotifications'
+import { useValidation } from '~/composables/useValidation'
+import Toast from '~/components/Toast.vue'
+import { formatDate } from '~/utils/date'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
+import { useVisiblePages } from '~/composables/usePaginationHelper'
+import { useExportExcel } from '~/composables/useExportExcel'
+
+// ===========================================
+// AUTHENTICATION & PERMISSIONS
+// ===========================================
+
+// Get current user with permissions
+const {
+    currentUser,
+    loadingUser,
+    hasRole,
+    hasAnyRole,
+    isSuperadmin,
+    isAdmin,
+    isManager,
+    fetchCurrentUser
+} = useCurrentUser()
+
+// Check if user has permission for users management
+const hasPermission = computed(() => {
+    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
+})
+
+// Initialize user data on component mount
+onMounted(async () => {
+    await fetchCurrentUser()
+    if (hasPermission.value) {
+        await fetchUsers()
+        await fetchAvailableRoles()
+    }
+})
+
+// ===========================================
+// USERS API & DATA MANAGEMENT
+// ===========================================
+
+// Use the users API composable
+const {
+    users,
+    availableRoles,
+    loading,
+    error,
+    stats,
+    // Search and Filter
+    searchQuery,
+    selectedRoleFilter,
+    selectedStatusFilter,
+    // Sort
+    sortColumn,
+    sortDirection,
+    // Pagination
+    currentPage,
+    itemsPerPage,
+    itemsPerPageOptions,
+    filteredUsers,
+    paginatedUsers,
+    totalPages,
+    // Form state
+    editingUser,
+    detailUser,
+    showCreateForm,
+    showDetailModal,
+    showEditForm,
+    showDeleteConfirm,
+    showResetPasswordForm,
+    userToDelete,
+    userToResetPassword,
+    resetPasswordResult,
+    createForm,
+    editForm,
+    // Methods
+    fetchUsers,
+    fetchAvailableRoles,
+    createUser,
+    updateUser,
+    deleteUser,
+    resetPassword,
+    // Form methods
+    resetCreateForm,
+    resetEditForm,
+    openCreateForm,
+    openDetailModal,
+    openEditForm,
+    openDeleteConfirm,
+    openResetPasswordConfirm,
+    closeAllModals,
+    // Search and Filter Methods
+    setSearchQuery,
+    setRoleFilter,
+    setStatusFilter,
+    handleSort,
+    setItemsPerPage,
+    goToPage,
+    toggleUserStatus,
+    // Helpers
+    getRoleDisplayName,
+    getRoleIcon,
+    getRoleBadgeColor,
+    canResetPassword,
+    // Event handlers for page
+    handleCreateUser,
+    handleUpdateUser,
+    handleDeleteUser,
+    handleResetPassword,
+    handleToggleStatus
+} = useUsersAPI()
+
+// ===========================================
+// NOTIFICATION SYSTEM
+// ===========================================
+
+// Use notification composable
+const {
+    notification,
+    showSuccess,
+    showError,
+    showWarning,
+    hideNotification
+} = useNotifications()
+
+// ===========================================
+// FORM VALIDATION & STATES
+// ===========================================
+
+// Export to Excel composable
+const { exportToExcel, exportingExcel } = useExportExcel()
+
+// Use validation composable
+const {
+    validateEmail,
+    validatePhone,
+    validatePasswordStrength,
+    validatePasswordConfirmation,
+    validateUsername,
+    validateRequired,
+    createPasswordStrength,
+    getPasswordStrengthPercentage,
+    getPasswordStrengthText,
+    getPasswordStrengthClass,
+    normalizePhoneNumber,
+    parseBackendValidationError
+} = useValidation()
+
+// Password strength checking
+const passwordStrength = createPasswordStrength()
+
+// Email validation
+const isEmailValid = ref(false)
+const isEditEmailValid = ref(false)
+
+// Phone validation
+const isPhoneValid = ref(false)
+const isEditPhoneValid = ref(false)
+const phoneCheckingDuplicate = ref(false)
+const editPhoneCheckingDuplicate = ref(false)
+
+// Validation errors
+const validationErrors = reactive({
+    name: '',
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    role_id: ''
+})
+
+// Edit form validation errors
+const editValidationErrors = reactive({
+    name: '',
+    username: '',
+    email: '',
+    phone: '',
+    role_id: ''
+})
+
+// Xóa tất cả filter (role, status, search)
+const clearAllFilters = () => {
+    setRoleFilter('')
+    setStatusFilter('')
+    setSearchQuery('')
+}
+
+// Email validation function
+const checkEmailValidation = () => {
+    const emailValidation = validateEmail(createForm.email)
+    isEmailValid.value = emailValidation.isValid
+
+    // Clear email error if valid
+    if (isEmailValid.value) {
+        validationErrors.email = ''
+    }
+}
+
+// Edit email validation function
+const checkEditEmailValidation = () => {
+    const emailValidation = validateEmail(editForm.email)
+    isEditEmailValid.value = emailValidation.isValid
+
+    // Clear email error if valid
+    if (isEditEmailValid.value) {
+        editValidationErrors.email = ''
+    }
+}
+
+// Phone validation function
+const checkPhoneValidation = async () => {
+    phoneCheckingDuplicate.value = true
+
+    try {
+        const phoneValidation = await validatePhone(createForm.phone, users.value)
+        isPhoneValid.value = phoneValidation.isValid
+
+        if (!phoneValidation.isValid) {
+            validationErrors.phone = phoneValidation.message
+        } else {
+            validationErrors.phone = ''
+        }
+    } catch (error) {
+        console.error('Error during phone validation:', error)
+        isPhoneValid.value = false
+        validationErrors.phone = 'Lỗi khi kiểm tra số điện thoại'
+    } finally {
+        phoneCheckingDuplicate.value = false
+    }
+}
+
+// Edit phone validation function
+const checkEditPhoneValidation = async () => {
+    editPhoneCheckingDuplicate.value = true
+
+    try {
+        const phoneValidation = await validatePhone(editForm.phone, users.value, editingUser.value?.id)
+        isEditPhoneValid.value = phoneValidation.isValid
+
+        if (!phoneValidation.isValid) {
+            editValidationErrors.phone = phoneValidation.message
+        } else {
+            editValidationErrors.phone = ''
+        }
+    } catch (error) {
+        console.error('Error during edit phone validation:', error)
+        isEditPhoneValid.value = false
+        editValidationErrors.phone = 'Lỗi khi kiểm tra số điện thoại'
+    } finally {
+        editPhoneCheckingDuplicate.value = false
+    }
+}
+
+// Set backend validation errors to form fields
+const setBackendValidationErrors = (errors, isEditForm = false) => {
+    const errorObj = isEditForm ? editValidationErrors : validationErrors
+
+    // Clear existing errors first
+    Object.keys(errorObj).forEach(key => {
+        errorObj[key] = ''
+    })
+
+    // Set new errors (already translated by parseBackendValidationError)
+    Object.keys(errors).forEach(field => {
+        if (field === '_general') {
+            // Show general error as notification
+            showError(errors[field])
+        } else if (errorObj.hasOwnProperty(field)) {
+            errorObj[field] = errors[field] // No translation needed, already done by composable
+
+            // Reset validation states when backend returns field errors
+            if (!isEditForm) {
+                if (field === 'email') {
+                    isEmailValid.value = false
+                }
+                if (field === 'username') {
+                    // Force username field to show error
+                }
+                if (field === 'phone') {
+                    isPhoneValid.value = false
+                }
+            } else {
+                if (field === 'email') {
+                    isEditEmailValid.value = false
+                }
+                if (field === 'phone') {
+                    isEditPhoneValid.value = false
+                }
+            }
+        }
+    })
+}
+
+// Validate individual field
+const validateField = async (fieldName) => {
+    const value = createForm[fieldName]
+
+    // Clear previous error (including backend errors)
+    validationErrors[fieldName] = ''
+
+    // Field labels for required validation
+    const fieldLabels = {
+        name: 'Họ và tên',
+        username: 'Tên đăng nhập',
+        email: 'Email',
+        password: 'Mật khẩu',
+        confirmPassword: 'Xác nhận mật khẩu',
+        role_id: 'Quyền'
+    }
+
+    // Specific validations using composable
+    switch (fieldName) {
+        case 'name':
+            const nameValidation = validateRequired(value, fieldLabels[fieldName])
+            if (!nameValidation.isValid) {
+                validationErrors[fieldName] = nameValidation.message
+                return false
+            }
+            break
+
+        case 'username':
+            const usernameValidation = validateUsername(value)
+            if (!usernameValidation.isValid) {
+                validationErrors[fieldName] = usernameValidation.message
+                return false
+            }
+            break
+
+        case 'email':
+            const emailValidation = validateEmail(value)
+            if (!emailValidation.isValid) {
+                validationErrors[fieldName] = emailValidation.message
+                return false
+            }
+            break
+
+        case 'phone':
+            if (value && value.trim()) {
+                await checkPhoneValidation()
+                return isPhoneValid.value
+            }
+            break
+
+        case 'password':
+            const passwordValidation = validatePasswordStrength(value, passwordStrength)
+            if (!passwordValidation.isValid) {
+                validationErrors[fieldName] = passwordValidation.message
+                return false
+            }
+            break
+
+        case 'confirmPassword':
+            const confirmValidation = validatePasswordConfirmation(createForm.password, value)
+            if (!confirmValidation.isValid) {
+                validationErrors[fieldName] = confirmValidation.message
+                return false
+            }
+            break
+
+        case 'role_id':
+            const roleValidation = validateRequired(value, fieldLabels[fieldName])
+            if (!roleValidation.isValid) {
+                validationErrors[fieldName] = roleValidation.message
+                return false
+            }
+            break
+    }
+
+    return true
+}
+
+// Validate edit form field
+const validateEditField = async (fieldName) => {
+    const value = editForm[fieldName]
+
+    // Clear previous error (including backend errors)
+    editValidationErrors[fieldName] = ''
+
+    // Required field check (phone is optional)
+    if (fieldName !== 'phone' && (!value || (typeof value === 'string' && !value.trim()))) {
+        const fieldLabels = {
+            name: 'Họ và tên',
+            username: 'Tên đăng nhập',
+            email: 'Email',
+            role_id: 'Quyền'
+        }
+        editValidationErrors[fieldName] = `${fieldLabels[fieldName]} là bắt buộc`
+        return false
+    }
+
+    // Specific validations
+    if (fieldName === 'email' && !isEditEmailValid.value) {
+        editValidationErrors.email = 'Địa chỉ email không hợp lệ'
+        return false
+    }
+
+    if (fieldName === 'phone' && value && value.trim()) {
+        await checkEditPhoneValidation()
+        return isEditPhoneValid.value
+    }
+
+    if (fieldName === 'username' && value.length < 3) {
+        editValidationErrors.username = 'Tên đăng nhập phải ít nhất 3 ký tự'
+        return false
+    }
+
+    return true
+}
+
+// Validate entire form
+const validateCreateForm = async () => {
+    const fields = ['name', 'username', 'email', 'phone', 'password', 'confirmPassword', 'role_id']
+    let isValid = true
+
+    for (const field of fields) {
+        const fieldValid = await validateField(field)
+        if (!fieldValid) {
+            isValid = false
+        }
+    }
+
+    return isValid
+}
+
+// Validate entire edit form
+const validateEditForm = async () => {
+    const fields = ['name', 'username', 'email', 'phone', 'role_id']
+    let isValid = true
+
+    for (const field of fields) {
+        const fieldValid = await validateEditField(field)
+        if (!fieldValid) {
+            isValid = false
+        }
+    }
+
+    return isValid
+}
+
+// Check if passwords match
+const passwordsMatch = computed(() => {
+    return createForm.password === createForm.confirmPassword
+})
+
+// Check if create form is valid
+const isCreateFormValid = computed(() => {
+    // Check if all required fields are filled (phone is optional)
+    const hasAllFields = createForm.name &&
+        createForm.username &&
+        createForm.email &&
+        createForm.password &&
+        createForm.confirmPassword &&
+        createForm.role_id
+
+    // Check if no validation errors
+    const hasNoErrors = !validationErrors.name &&
+        !validationErrors.username &&
+        !validationErrors.email &&
+        !validationErrors.phone &&
+        !validationErrors.password &&
+        !validationErrors.confirmPassword &&
+        !validationErrors.role_id
+
+    // Check specific validations
+    const validationsPassed = isEmailValid.value &&
+        passwordsMatch.value &&
+        passwordStrength.hasMinLength &&
+        passwordStrength.hasLettersAndNumbers &&
+        passwordStrength.hasMixedCase &&
+        (createForm.phone ? isPhoneValid.value : true) // Phone is optional
+
+    return hasAllFields && hasNoErrors && validationsPassed
+})
+
+// Check if edit form is valid
+const isEditFormValid = computed(() => {
+    // Check if all required fields are filled (phone is optional)
+    const hasAllFields = editForm.name &&
+        editForm.username &&
+        editForm.email &&
+        editForm.role_id
+
+    // Check if no validation errors
+    const hasNoErrors = !editValidationErrors.name &&
+        !editValidationErrors.username &&
+        !editValidationErrors.email &&
+        !editValidationErrors.phone &&
+        !editValidationErrors.role_id
+
+    // Check email validation and phone validation (if provided)
+    const emailValid = isEditEmailValid.value
+    const phoneValid = editForm.phone ? isEditPhoneValid.value : true // Phone is optional
+
+    return hasAllFields && hasNoErrors && emailValid && phoneValid
+})
+
+// Password strength checker function
+const checkPasswordStrength = () => {
+    const password = createForm.password
+
+    // Use validation composable to check password strength
+    const passwordValidation = validatePasswordStrength(password, passwordStrength)
+
+    // Clear password error if strength requirements are met
+    if (passwordValidation.isValid) {
+        validationErrors.password = ''
+    }
+
+    // Also validate confirm password if it exists
+    if (createForm.confirmPassword) {
+        validateField('confirmPassword')
+    }
+}
+
+// Wrapper: chuẩn hóa gọi handleCreateUser từ composable
+const handleCreateUserWrapper = async () => {
+    await handleCreateUser({
+        validateCreateForm,
+        showError,
+        showSuccess,
+        parseBackendValidationError,
+        validationErrors,
+        setBackendValidationErrors
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleUpdateUser từ composable
+const handleUpdateUserWrapper = async () => {
+    await handleUpdateUser({
+        validateEditForm,
+        showError,
+        showSuccess,
+        parseBackendValidationError,
+        editValidationErrors,
+        setBackendValidationErrors
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleDeleteUser từ composable
+const handleDeleteUserWrapper = async () => {
+    await handleDeleteUser({
+        showError,
+        showSuccess
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleResetPassword từ composable
+const handleResetPasswordWrapper = async () => {
+    await handleResetPassword({
+        showError,
+        showSuccess
+    });
+};
+
+// Wrapper: chuẩn hóa gọi handleToggleStatus từ composable
+const handleToggleStatusWrapper = async (user) => {
+    if (user.id === currentUser.value?.id) {
+        showError('Bạn không thể thay đổi trạng thái của chính mình!')
+        return
+    }
+    await handleToggleStatus(user, {
+        showError,
+        showSuccess
+    });
+};
+
+// Override closeAllModals to reset password strength
+const handleCloseAllModals = () => {
+    closeAllModals()
+
+    // Reset password strength
+    passwordStrength.hasMinLength = false
+    passwordStrength.hasLettersAndNumbers = false
+    passwordStrength.hasMixedCase = false
+
+    // Reset email validation
+    isEmailValid.value = false
+    isEditEmailValid.value = false
+
+    // Reset phone validation
+    isPhoneValid.value = false
+    isEditPhoneValid.value = false
+    phoneCheckingDuplicate.value = false
+    editPhoneCheckingDuplicate.value = false
+
+    // Clear validation errors
+    Object.keys(validationErrors).forEach(key => {
+        validationErrors[key] = ''
+    })
+    Object.keys(editValidationErrors).forEach(key => {
+        editValidationErrors[key] = ''
+    })
+}
+
+// Override openCreateForm to clear validation errors  
+const handleOpenCreateForm = () => {
+    openCreateForm()
+
+    // Clear validation errors
+    Object.keys(validationErrors).forEach(key => {
+        validationErrors[key] = ''
+    })
+
+    // Reset validation states
+    isEmailValid.value = false
+    isPhoneValid.value = false
+    passwordStrength.hasMinLength = false
+    passwordStrength.hasLettersAndNumbers = false
+    passwordStrength.hasMixedCase = false
+}
+
+// Hàm xử lý khi click nút xem chi tiết
+const handleOpenViewDetail = (user) => {
+    openDetailModal(user)
+}
+
+// Override openEditForm to set email validation
+const handleOpenEditForm = (user) => {
+    
+    openEditForm(user)
+
+    // Clear validation errors
+    Object.keys(editValidationErrors).forEach(key => {
+        editValidationErrors[key] = ''
+    })
+
+    // Set email and phone validation for existing data
+    nextTick(() => {
+        checkEditEmailValidation()
+        if (editForm.phone) {
+            checkEditPhoneValidation()
+        } else {
+            isEditPhoneValid.value = true
+        }
+    })
+}
+
+// Pagination helper (reusable)
+const visiblePages = useVisiblePages(totalPages, currentPage)
+
+// ===========================================
+// EXCEL EXPORT FUNCTIONALITY
+// ===========================================
+
+const handleExportToExcel = () => {
+    exportToExcel({
+        data: filteredUsers.value,
+        columns: [
+            { label: 'STT', key: 'id', value: (_row, idx) => idx + 1, width: 5 },
+            { label: 'ID', key: 'id', width: 8 },
+            { label: 'Họ và tên', key: 'name', width: 25 },
+            { label: 'Tên đăng nhập', key: 'username', width: 20 },
+            { label: 'Email', key: 'email', width: 30 },
+            { label: 'Số điện thoại', key: 'phone', value: row => row.phone || '', width: 15 },
+            { label: 'Quyền', key: 'role_name', value: row => getRoleDisplayName(row.role_name), width: 15 },
+            { label: 'Trạng thái', key: 'is_active', value: row => row.is_active ? 'Hoạt động' : 'Tạm khóa', width: 12 },
+            { label: 'Ngày tạo', key: 'created_at', value: row => formatDate(row.created_at), width: 12 },
+            { label: 'Ngày cập nhật', key: 'updated_at', value: row => formatDate(row.updated_at), width: 12 }
+        ],
+        filenamePrefix: 'danh-sach-nguoi-dung',
+        onSuccess: msg => showSuccess(msg),
+        onError: msg => showWarning(msg)
+    })
+}
+
+const copyToClipboard = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text)
+        showSuccess('Đã copy vào clipboard!')
+    } catch (error) {
+        console.error('Copy failed:', error)
+        showError('Không thể copy vào clipboard')
+    }
+}
+
+// ===========================================
+// PAGE CONFIGURATION
+// ===========================================
+
+definePageMeta({
+    layout: "admin",
+    middleware: ["auth", "permission"],
+    ssr: false
+})
+
+// ========================================
+// PAGE TITLE & SEO
+// ========================================
+useHead({
+    title: 'Quản lý người dùng - Admin'
+})
+</script>
+
+<style scoped>
+/* =========================
+   PERMISSION CHECK STYLES
+   ========================= */
+.permission-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.loading-permission,
+.permission-denied {
+    text-align: center;
+    max-width: 500px;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.loading-permission i {
+    font-size: 3rem;
+    color: #2196F3;
+    margin-bottom: 1rem;
+}
+
+.permission-denied i {
+    font-size: 3rem;
+    color: #f44336;
+    margin-bottom: 1rem;
+}
+
+.permission-denied h3 {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.permission-denied p {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.permission-denied .btn {
+    margin-top: 1rem;
+}
+
+/* =========================
+   MAIN LAYOUT
+   ========================= */
+.users-page {
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* =========================
+   PAGE HEADER
+   ========================= */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 1.5rem 0;
+    border-bottom: 2px solid #eee;
+}
+
+.header-content h1 {
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 2rem;
+}
+
+.header-content h1 i {
+    color: #d32f2f;
+}
+
+.header-content p {
+    color: #666;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* =========================
+   STATS SECTION
+   ========================= */
+.stats-section {
+    margin-bottom: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid #ddd;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.superadmin {
+    border-left-color: #f44336;
+}
+
+.stat-card.admin {
+    border-left-color: #2196F3;
+}
+
+.stat-card.manager {
+    border-left-color: #FF9800;
+}
+
+.stat-card.editor {
+    border-left-color: #4CAF50;
+}
+
+.stat-card.consultant {
+    border-left-color: #9C27B0;
+}
+
+.stat-card.total {
+    border-left-color: #607D8B;
+}
+
+.stat-card.active {
+    border-left-color: #4CAF50;
+}
+
+.stat-card.inactive {
+    border-left-color: #f44336;
+}
+
+.stat-card i {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.stat-card.superadmin i {
+    color: #f44336;
+}
+
+.stat-card.admin i {
+    color: #2196F3;
+}
+
+.stat-card.manager i {
+    color: #FF9800;
+}
+
+.stat-card.editor i {
+    color: #4CAF50;
+}
+
+.stat-card.consultant i {
+    color: #9C27B0;
+}
+
+.stat-card.total i {
+    color: #607D8B;
+}
+
+.stat-card.active i {
+    color: #4CAF50;
+}
+
+.stat-card.inactive i {
+    color: #f44336;
+}
+
+.stat-info h3 {
+    margin: 0 0 0.25rem 0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.stat-info span {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* =========================
+   TABLE SECTION
+   ========================= */
+.table-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.table-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.3rem;
+}
+
+.table-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    white-space: nowrap;
+}
+
+.users-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.user-row:hover {
+    background: #f9f9f9;
+}
+
+.user-id {
+    font-family: 'Courier New', monospace;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.user-row .user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e3f2fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1976d2;
+    font-size: 1.2rem;
+}
+
+.user-details .user-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.user-details .username {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.user-email {
+    color: #666;
+}
+
+.user-phone {
+    color: #666;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.role-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.badge-superadmin {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.badge-admin {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.badge-manager {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.badge-editor {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.badge-consultant {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.badge-default {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.user-date {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-action {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-edit {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.btn-edit:hover {
+    background: #1976d2;
+    color: white;
+}
+
+.btn-delete {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.btn-delete:hover {
+    background: #d32f2f;
+    color: white;
+}
+
+.btn-reset {
+    background: #fff3e0;
+    color: #f57400;
+}
+
+.btn-reset:hover {
+    background: #f57400;
+    color: white;
+}
+
+/* =========================
+   STATES
+   ========================= */
+.loading-state,
+.error-state,
+.empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+    color: #666;
+}
+
+.loading-state i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #2196F3;
+}
+
+.error-state i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #f44336;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #ccc;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.empty-state p {
+    margin: 0;
+    color: #999;
+}
+
+/* =========================
+   BUTTONS
+   ========================= */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: #1976d2;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #1565c0;
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #eee;
+}
+
+.btn-danger {
+    background: #d32f2f;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #c62828;
+}
+
+.btn-success {
+    background: #2e7d32;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #1b5e20;
+}
+
+/* =========================
+   MODALS
+   ========================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-small {
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+
+.btn-close:hover {
+    background: #f0f0f0;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #eee;
+}
+
+/* =========================
+   FORMS
+   ========================= */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.form-group input.input-error,
+.form-group select.input-error {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.form-group input.input-error:focus,
+.form-group select.input-error:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.field-error {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+span.required {
+    color: #dc3545;
+    font-size: 0.8rem;
+}
+
+.success-message {
+    color: #28a745;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.success-message i {
+    color: #28a745;
+}
+
+.form-group input::placeholder {
+    color: #999;
+}
+
+/* =========================
+   DELETE CONFIRMATION
+   ========================= */
+.delete-confirmation {
+    text-align: center;
+}
+
+.warning-icon {
+    font-size: 3rem;
+    color: #ff9800;
+    margin-bottom: 1rem;
+}
+
+.warning-text {
+    color: #f44336;
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+/* =========================
+   TABLE CONTROLS
+   ========================= */
+.table-controls {
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.controls-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Search Box */
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    z-index: 1;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.clear-search {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.clear-search:hover {
+    background: #f0f0f0;
+}
+
+/* Filter Groups */
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 140px;
+}
+
+.filter-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #666;
+}
+
+.filter-select {
+    padding: 0.5rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+/* =========================
+   STATUS COLUMN
+   ========================= */
+.user-status {
+    text-align: center;
+}
+
+.status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-width: 110px;
+    justify-content: center;
+}
+
+.status-active {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.status-active:hover {
+    background: #c8e6c9;
+}
+
+.status-inactive {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-inactive:hover {
+    background: #ffcdd2;
+}
+
+.status-toggle:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* =========================
+   PAGINATION
+   ========================= */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.btn-page {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+
+.btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-page-active {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2;
+}
+
+.btn-page-active:hover {
+    background: #1565c0;
+    border-color: #1565c0;
+}
+
+.btn-page-dots {
+    cursor: default;
+    border: none;
+    background: transparent;
+}
+
+.btn-page-first,
+.btn-page-last,
+.btn-page-prev,
+.btn-page-next {
+    font-size: 0.8rem;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .controls-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .search-box {
+        min-width: auto;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .users-page {
+        padding: 0;
+    }
+
+    .page-header {
+        padding: 1rem 0;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .table-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .table-controls {
+        padding: 1rem;
+    }
+
+    .filter-group {
+        min-width: auto;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .user-row .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .modal-overlay {
+        padding: 1rem;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .status-toggle {
+        min-width: 90px;
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .controls-row {
+        gap: 0.75rem;
+    }
+
+    .search-input {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+    }
+
+    .users-table {
+        font-size: 0.8rem;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+    }
+
+    .role-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+    }
+
+    .btn-page {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .table-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .modal-overlay {
+        padding: 1rem;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+}
+
+/* =========================
+   PASSWORD STRENGTH CHECKER
+   ========================= */
+.password-strength {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.password-strength h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 600;
+}
+
+.strength-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.strength-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+
+.strength-check.check-valid {
+    color: #28a745;
+}
+
+.strength-check i {
+    width: 16px;
+    font-size: 0.9rem;
+}
+
+.strength-check.check-valid i {
+    color: #28a745;
+}
+
+.strength-check:not(.check-valid) i {
+    color: #dc3545;
+}
+
+.strength-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.strength-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.strength-progress {
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.strength-progress.strength-weak {
+    background: #dc3545;
+}
+
+.strength-progress.strength-medium {
+    background: #ffc107;
+}
+
+.strength-progress.strength-strong {
+    background: #28a745;
+}
+
+.strength-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.strength-weak .strength-text {
+    color: #dc3545;
+}
+
+.strength-medium .strength-text {
+    color: #ffc107;
+}
+
+.strength-strong .strength-text {
+    color: #28a745;
+}
+
+.success-notification {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.success-notification i {
+    font-size: 0.9rem;
+}
+
+/* =========================
+   RESET PASSWORD MODAL
+   ========================= */
+.modal-medium {
+    width: 90%;
+    max-width: 600px;
+}
+
+.reset-confirmation,
+.reset-result {
+    text-align: center;
+}
+
+.reset-confirmation .warning-icon,
+.reset-result .success-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.reset-confirmation .warning-icon {
+    color: #f57400;
+}
+
+.reset-result .success-icon {
+    color: #28a745;
+}
+
+.reset-confirmation .user-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: left;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+    gap: 0.5rem;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.info-item .value {
+    color: #212529;
+}
+
+.warning-text {
+    color: #f57400 !important;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.success-text {
+    color: #28a745 !important;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.password-result {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.password-result h4 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.credential-item {
+    margin-bottom: 1rem;
+}
+
+.credential-item:last-child {
+    margin-bottom: 0;
+}
+
+.credential-label {
+    display: block;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.credential-value {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.credential-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: white;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.credential-input.password-field {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    font-weight: 600;
+    color: #856404;
+}
+
+.btn-copy {
+    padding: 0.75rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 45px;
+}
+
+.btn-copy:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.important-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.important-note i {
+    color: #856404;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.important-note p {
+    color: #856404;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* =========================
+   SORTABLE HEADERS
+   ========================= */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+    background-color: #f5f5f5;
+}
+
+.sortable i {
+    margin-left: 0.5rem;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.sortable:hover i {
+    opacity: 0.8;
+}
+
+.sortable.sort-asc i::before {
+    content: '\f0de';
+    /* fa-sort-up */
+    opacity: 1;
+    color: #1976d2;
+}
+
+.sortable.sort-desc i::before {
+    content: '\f0dd';
+    /* fa-sort-down */
+    opacity: 1;
+    color: #1976d2;
+}
+
+.sortable.sort-asc,
+.sortable.sort-desc {
+    background-color: #f8f9fa;
+    color: #1976d2;
+}
+</style>

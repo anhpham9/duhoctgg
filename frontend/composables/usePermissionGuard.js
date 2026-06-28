@@ -1,0 +1,170 @@
+import { ref, onMounted, computed, readonly, nextTick } from "vue"
+
+/**
+ * Composable for handling permission checks in admin pages
+ * @param {Array} allowedRoles - Array of role IDs that can access this page
+ * @param {Object} options - Additional options
+ * @returns {Object} - Permission state and methods
+ */
+export const usePermissionGuard = (allowedRoles = [], options = {}) => {
+    const {
+        redirectTo = '/admin',
+        redirectDelay = 2000,
+        autoRedirect = true
+    } = options
+
+    const isCheckingPermission = ref(true)
+    const hasPermission = ref(false)
+    const currentUser = ref(null)
+    const permissionError = ref(null)
+
+    // Role mapping for display
+    const roleMap = {
+        1: 'Superadmin',     // Toàn quyền
+        2: 'Admin',          // Admin (toàn quyền trừ tạo tài khoản admin + super admin)
+        3: 'Manager',        // Quản lý
+        4: 'Editor',         // Biên tập nội dung
+        5: 'Consultant'      // Tư vấn
+    }
+
+    const checkPermissions = async () => {
+        if (!process.client) {
+            isCheckingPermission.value = false
+            return
+        }
+        
+        try {
+            const config = useRuntimeConfig()
+            
+            // Check authentication via API call (httpOnly cookie based)
+            const response = await fetch(`${config.public.apiBase}/auth/me`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            
+            if (!response.ok) {
+                console.warn('🚫 Authentication failed, redirecting to login')
+                
+                permissionError.value = {
+                    code: 'NOT_AUTHENTICATED',
+                    message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+                    status: response.status
+                }
+                
+                if (autoRedirect) {
+                    setTimeout(async () => {
+                        await navigateTo('/login')
+                    }, redirectDelay)
+                }
+                return
+            }
+
+            const data = await response.json()
+            const user = data.user
+            currentUser.value = user
+            
+            // Check permissions
+            hasPermission.value = allowedRoles.includes(user.role_id)
+            
+            if (!hasPermission.value) {
+                console.warn(`🚫 User role ${user.role_id} not allowed. Required roles: [${allowedRoles.join(', ')}]`)
+                permissionError.value = {
+                    code: 'INSUFFICIENT_PERMISSIONS',
+                    message: 'Bạn không có quyền truy cập trang này.',
+                    userRole: user.role_id,
+                    requiredRoles: allowedRoles
+                }
+
+                if (autoRedirect) {
+                    setTimeout(async () => {
+                        await navigateTo(redirectTo)
+                    }, redirectDelay)
+                }
+            } else {
+                console.log(`✅ Permission granted for role ${user.role_id}`)
+            }
+            
+        } catch (error) {
+            console.error('❌ Permission check error:', error)
+            
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                permissionError.value = {
+                    code: 'NETWORK_ERROR',
+                    message: 'Không thể kết nối tới máy chủ. Vui lòng thử lại.',
+                    error: error.message
+                }
+            } else {
+                permissionError.value = {
+                    code: 'AUTH_ERROR', 
+                    message: 'Lỗi xác thực. Vui lòng đăng nhập lại.',
+                    error: error.message
+                }
+                
+                if (autoRedirect) {
+                    setTimeout(async () => {
+                        await navigateTo('/login')
+                    }, redirectDelay)
+                }
+            }
+        } finally {
+            isCheckingPermission.value = false
+        }
+    }
+
+    const getUserRoleName = () => {
+        if (!currentUser.value) return 'Unknown'
+        return roleMap[currentUser.value.role_id] || `Role ${currentUser.value.role_id}`
+    }
+
+    const getUserInfo = () => {
+        if (!currentUser.value) return null
+        return {
+            id: currentUser.value.id,
+            username: currentUser.value.username,
+            name: currentUser.value.name,
+            email: currentUser.value.email,
+            role_id: currentUser.value.role_id,
+            role_name: getUserRoleName(),
+            is_active: currentUser.value.is_active
+        }
+    }
+
+    const retryPermissionCheck = () => {
+        isCheckingPermission.value = true
+        hasPermission.value = false
+        permissionError.value = null
+        checkPermissions()
+    }
+
+    // Auto-check permissions on mount
+    onMounted(() => {
+        checkPermissions()
+    })
+
+    return {
+        // States
+        isCheckingPermission: readonly(isCheckingPermission),
+        hasPermission: readonly(hasPermission),
+        currentUser: readonly(currentUser),
+        permissionError: readonly(permissionError),
+        
+        // Methods
+        checkPermissions,
+        getUserRoleName,
+        getUserInfo,
+        retryPermissionCheck
+    }
+}
+
+// Predefined permission sets for common admin pages
+export const ADMIN_PERMISSIONS = {
+    SUPERADMIN_ONLY: [1],              // Chỉ Superadmin
+    ADMIN_LEVEL: [1, 2],               // Superadmin + Admin
+    MANAGEMENT_LEVEL: [1, 2, 3],       // Superadmin + Admin + Manager
+    CONTENT_EDITORS: [1, 2, 3, 4],     // Superadmin + Admin + Manager + Editor
+    CONTACT_HANDLERS: [1, 2, 3, 5],    // Superadmin + Admin + Manager + Consultant
+    ALL_ROLES: [1, 2, 3, 4, 5]         // Tất cả roles
+}
