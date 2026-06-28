@@ -1,8 +1,13 @@
 <template>
     <div class="profile-page">
         <div class="page-header">
-            <h1>Hồ sơ cá nhân</h1>
-            <p>Cập nhật thông tin tài khoản và đổi mật khẩu</p>
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-user"></i>
+                    Hồ sơ cá nhân
+                </h1>
+                <p>Cập nhật thông tin tài khoản và đổi mật khẩu.</p>
+            </div>
         </div>
 
         <div v-if="pageLoading || loadingUser" class="state-card loading-state">
@@ -101,7 +106,7 @@
                             <input id="newPassword" v-model="passwordForm.newPassword" type="password"
                                 autocomplete="new-password" @input="checkPasswordStrength" />
                             <small v-if="passwordErrors.newPassword" class="field-error">{{ passwordErrors.newPassword
-                            }}</small>
+                                }}</small>
 
                             <div v-if="passwordForm.newPassword" class="password-strength">
                                 <h4>Kiểm tra độ bảo mật mật khẩu:</h4>

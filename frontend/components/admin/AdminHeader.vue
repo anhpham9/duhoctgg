@@ -127,7 +127,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="profile-menu" :class="{ 'show': isProfileMenuOpen }">
-                        <NuxtLink to="/admin/profile"><i class="fas fa-user"></i> Hồ sơ</NuxtLink>
+                        <NuxtLink to="/admin/profile" @click="toggleProfileMenu"><i class="fas fa-user"></i> Hồ sơ</NuxtLink>
                         <hr>
                         <button @click="handleLogout" class="logout-btn">
                             <i class="fas fa-sign-out-alt"></i> Đăng xuất
