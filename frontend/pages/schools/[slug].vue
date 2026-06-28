@@ -483,6 +483,48 @@ const parentLink = computed(() => staticPage.value.slug || '/schools')
 
 const parentName = computed(() => staticPage.value.title || 'Liên Hệ Với Chúng Tôi')
 
+const {
+    seo: siteSeo,
+    pending: siteSeoPending,
+    error: siteSeoError,
+    refresh
+} = useSiteSeo()
+
+const currentPageOgUrl = useAbsolutePageUrl({
+    baseUrl: () => siteSeo.value.siteUrl
+})
+
+useSeoMeta({
+    title: () =>
+        `${schoolData.value.name} - ${siteSeo.value.defaultTitle}` ||
+        siteSeo.value.defaultTitle,
+
+    description: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogTitle: () =>
+        `${schoolData.value.name} - ${siteSeo.value.defaultTitle}` ||
+        siteSeo.value.defaultTitle,
+
+    ogDescription: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogImage: () => heroImage.value || siteSeo.value.defaultOgImage,
+
+    ogType: 'website'
+})
+
+useHead(() => ({
+    meta: [
+        {
+            property: 'og:url',
+            content: currentPageOgUrl.value
+        }
+    ]
+}))
+
 useHead(() => {
     const title = schoolData.value
         ? `${schoolData.value.name}`

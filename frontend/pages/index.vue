@@ -1,7 +1,8 @@
 <template>
     <div>
         <section class="hero">
-            <img :src="homepageBannerSrc" :alt="staticPage.meta_description || 'Cùng chúng tôi đồng hành cùng bạn'" class="hero-banner">
+            <img :src="homepageBannerSrc" :alt="staticPage.meta_description || 'Cùng chúng tôi đồng hành cùng bạn'"
+                class="hero-banner">
         </section>
 
         <section v-for="section in homepageSections" :key="section.id" class="home-dynamic-section">
@@ -23,8 +24,7 @@
                     </article>
                 </div>
 
-                <div :class="sectionMediaClass('section-list', section)"
-                    v-else-if="section.type === 'list'">
+                <div :class="sectionMediaClass('section-list', section)" v-else-if="section.type === 'list'">
                     <div class="section-list-text">
                         <ul class="section-list-items">
                             <li v-for="(item, index) in normalizeList(section.list_items)"
@@ -41,8 +41,7 @@
                     </div>
                 </div>
 
-                <div :class="sectionMediaClass('section-paragraph', section)"
-                    v-else-if="section.type === 'paragraph'">
+                <div :class="sectionMediaClass('section-paragraph', section)" v-else-if="section.type === 'paragraph'">
                     <div class="section-paragraph-text">
                         <div class="paragraph-text">{{ section.paragraph_text }}</div>
                         <a v-if="section.contact_btn_show && section.contact_btn_text" href="#contact"
@@ -56,7 +55,7 @@
                 <template v-else-if="section.type === 'roadmap'">
                     <ul class="roadmap-timeline">
                         <li class="roadmap-step" v-for="(item, index) in normalizeRoadmap(section.roadmap_items)"
-                                :key="`${section.id}-${index}`">
+                            :key="`${section.id}-${index}`">
                             <div class="step-number">BƯỚC <span>{{ String(index + 1).padStart(2, '0') }}</span></div>
                             <div class="step-line"></div>
                             <div class="step-content">
@@ -66,7 +65,7 @@
                         </li>
                     </ul>
                     <a v-if="section.contact_btn_show && section.contact_btn_text" href="#contact"
-                            class="btn btn-primary">{{ section.contact_btn_text }}</a>
+                        class="btn btn-primary">{{ section.contact_btn_text }}</a>
 
                 </template>
 
@@ -103,19 +102,47 @@ const homepageBannerSrc = computed(() => {
     return configuredBanner || '/assets/images/banner.jpg'
 })
 
-useHead(() => {
-    const metaTitle = staticPage.value.meta_title || staticPage.value.title || 'Trang chủ - Du học NB'
-    const metaDescription = staticPage.value.meta_description || staticPage.value.hero_description || 'Du học NB đồng hành cùng bạn trên hành trình du học Nhật Bản.'
+const {
+    seo: siteSeo,
+    pending: siteSeoPending,
+    error: siteSeoError,
+    refresh
+} = useSiteSeo()
 
-    return {
-        title: metaTitle,
-        meta: [
-            { name: 'description', content: metaDescription },
-            { property: 'og:title', content: metaTitle },
-            { property: 'og:description', content: metaDescription }
-        ]
-    }
+const currentPageOgUrl = useAbsolutePageUrl({
+    baseUrl: () => siteSeo.value.siteUrl
 })
+
+useSeoMeta({
+    title: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    description: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogTitle: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    ogDescription: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogImage: () => siteSeo.value.defaultOgImage,
+
+    ogType: 'website'
+})
+
+useHead(() => ({
+    meta: [
+        {
+            property: 'og:url',
+            content: currentPageOgUrl.value
+        }
+    ]
+}))
 
 const homepageSections = computed(() => {
     const rows = Array.isArray(homepageSectionsData.value?.data) ? homepageSectionsData.value.data : []
@@ -553,8 +580,8 @@ const normalizeRoadmap = (value) => {
     index style
     ==================== */
     /* .section-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
     } */
 
     .section-grid {
@@ -575,12 +602,12 @@ const normalizeRoadmap = (value) => {
     .contact-content,
     .fee-content,
     .about-content {
-        gap: 40px;
+    gap: 40px;
     }
 
     .conditions-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 25px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
     } */
 
     .roadmap-timeline {
@@ -627,8 +654,8 @@ const normalizeRoadmap = (value) => {
     }
 
     /* .section-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     } */
 
     .section-grid {
@@ -653,21 +680,21 @@ const normalizeRoadmap = (value) => {
     .contact-content,
     .fee-content,
     .about-content {
-        grid-template-columns: 1fr;
-        gap: 30px;
+    grid-template-columns: 1fr;
+    gap: 30px;
     }
 
     .conditions-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
+    grid-template-columns: 1fr;
+    gap: 20px;
     }
 
     .condition-card {
-        padding: 30px 20px;
+    padding: 30px 20px;
     }
 
     .fee-list li span {
-        font-size: 1rem;
+    font-size: 1rem;
     } */
 
     .roadmap-timeline {

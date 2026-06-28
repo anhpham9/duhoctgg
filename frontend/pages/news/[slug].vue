@@ -231,10 +231,11 @@ const heroDescription = computed(() => {
     return article.value?.excerpt || 'Cập nhật thông tin mới nhất về du học Nhật Bản'
 })
 
-const currentUrl = computed(() => {
-    const base = (config.public.siteUrl || '').replace(/\/$/, '')
-    const path = `/news/${article.value?.slug || String(route.params.slug || '')}`
-    return base ? `${base}${path}` : path
+const { seo: siteSeo } = useSiteSeo()
+
+const currentUrl = useAbsolutePageUrl({
+    baseUrl: () => siteSeo.value.siteUrl,
+    path: () => `/news/${article.value?.slug || String(route.params.slug || '')}`
 })
 
 const facebookShareUrl = computed(() => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl.value)}`)
@@ -289,20 +290,37 @@ watch(
     { immediate: true }
 )
 
-useHead(() => {
-    const metaTitle = 'Chi tiết tin tức' + (article.value?.metaTitle ? ` : ${article.value?.metaTitle}` : pageTitle.value)
-    const metaDescription = article.value?.metaDescription || heroDescription.value
+// SEO
+useSeoMeta({
+    title: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
 
-    return {
-        title: metaTitle,
-        meta: [
-            { name: 'description', content: metaDescription },
-            { property: 'og:title', content: metaTitle },
-            { property: 'og:description', content: metaDescription },
-            { property: 'og:url', content: currentUrl.value }
-        ]
-    }
+    description: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogTitle: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    ogDescription: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogImage: () => siteSeo.value.defaultOgImage,
+
+    ogType: 'website'
 })
+
+useHead(() => ({
+    meta: [
+        {
+            property: 'og:url',
+            content: currentUrl.value
+        }
+    ]
+}))
 </script>
 
 <style scoped>

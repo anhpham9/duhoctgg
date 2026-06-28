@@ -3,6 +3,7 @@ import { InputSanitizer } from "../utils/sanitizer.js";
 
 export const GENERAL_SETTINGS_PREFIX = "general.";
 export const CONTACT_SETTINGS_PREFIX = "contact.";
+export const SEO_SETTINGS_PREFIX = "seo.";
 
 export const GENERAL_SETTINGS_KEYS = {
     siteName: `${GENERAL_SETTINGS_PREFIX}site_name`,
@@ -27,6 +28,15 @@ export const CONTACT_SETTINGS_KEYS = {
     address: `${CONTACT_SETTINGS_PREFIX}address`,
     googleMapEmbedUrl: `${CONTACT_SETTINGS_PREFIX}google_map_embed_url`,
     workingHours: `${CONTACT_SETTINGS_PREFIX}working_hours`
+};
+
+export const SEO_SETTINGS_KEYS = {
+    siteName: `${GENERAL_SETTINGS_PREFIX}site_name`,
+    siteUrl: `${GENERAL_SETTINGS_PREFIX}site_url`,
+    defaultTitle: `${SEO_SETTINGS_PREFIX}default_title`,
+    defaultDescription: `${SEO_SETTINGS_PREFIX}default_description`,
+    defaultOgImage: `${SEO_SETTINGS_PREFIX}default_og_image`,
+    facebookAppId: `${SEO_SETTINGS_PREFIX}facebook_app_id`
 };
 
 export const GENERAL_SETTINGS_DESCRIPTIONS = {
@@ -54,6 +64,15 @@ export const CONTACT_SETTINGS_DESCRIPTIONS = {
     [CONTACT_SETTINGS_KEYS.workingHours]: "Contact setting: working hours"
 };
 
+export const SEO_SETTINGS_DESCRIPTIONS = {
+    [GENERAL_SETTINGS_KEYS.siteName]: "SEO setting: website name",
+    [GENERAL_SETTINGS_KEYS.siteUrl]: "SEO setting: website url",
+    [SEO_SETTINGS_KEYS.defaultTitle]: "SEO setting: default title",
+    [SEO_SETTINGS_KEYS.defaultDescription]: "SEO setting: default description",
+    [SEO_SETTINGS_KEYS.defaultOgImage]: "SEO setting: default OG image",
+    [SEO_SETTINGS_KEYS.facebookAppId]: "SEO setting: Facebook App ID"
+};
+
 export const getDefaultGeneralSettings = () => ({
     siteName: "",
     siteUrl: "",
@@ -77,6 +96,15 @@ export const getDefaultContactSettings = () => ({
     address: "",
     googleMapEmbedUrl: "",
     workingHours: ""
+});
+
+export const getDefaultSeoSettings = () => ({
+    siteName: "",
+    siteUrl: "",
+    defaultTitle: "",
+    defaultDescription: "",
+    defaultOgImage: "",
+    facebookAppId: ""
 });
 
 export const mapRowsToGeneralSettings = (rows = []) => {
@@ -116,6 +144,21 @@ export const mapRowsToContactSettings = (rows = []) => {
     return data;
 };
 
+export const mapRowsToSeoSettings = (rows = []) => {
+    const data = getDefaultSeoSettings();
+
+    for (const row of rows) {
+        if (row.key === GENERAL_SETTINGS_KEYS.siteName) data.siteName = row.value || "";
+        if (row.key === GENERAL_SETTINGS_KEYS.siteUrl) data.siteUrl = row.value || "";
+        if (row.key === SEO_SETTINGS_KEYS.defaultTitle) data.defaultTitle = row.value || "";
+        if (row.key === SEO_SETTINGS_KEYS.defaultDescription) data.defaultDescription = row.value || "";
+        if (row.key === SEO_SETTINGS_KEYS.defaultOgImage) data.defaultOgImage = row.value || "";
+        if (row.key === SEO_SETTINGS_KEYS.facebookAppId) data.facebookAppId = row.value || "";
+    }
+
+    return data;
+};
+
 export const getGeneralSettingsRows = async (keys = Object.values(GENERAL_SETTINGS_KEYS)) => {
     const result = await db.query(
         `SELECT key, value
@@ -135,6 +178,18 @@ export const getGeneralSettingsData = async (keys = Object.values(GENERAL_SETTIN
 export const getContactSettingsData = async (keys = Object.values(CONTACT_SETTINGS_KEYS)) => {
     const rows = await getGeneralSettingsRows(keys);
     return mapRowsToContactSettings(rows);
+};
+
+export const getSeoSettingsData = async () => {
+    const keys = [
+        GENERAL_SETTINGS_KEYS.siteName,
+        GENERAL_SETTINGS_KEYS.siteUrl,
+        ...Object.values(SEO_SETTINGS_KEYS)
+    ];
+
+    const rows = await getGeneralSettingsRows(keys);
+
+    return mapRowsToSeoSettings(rows);
 };
 
 export const ensureSettingsKeysExist = async () => {
@@ -265,5 +320,20 @@ export const getPublicFooterData = async () => {
         hotline: contactData.hotline,
         address: contactData.address,
         socialLinks
+    };
+};
+
+export const getPublicSeoSettingsData = async () => {
+    const [contactData] = await Promise.all([
+        getSeoSettingsData()
+    ]);
+
+    return {
+        siteName: contactData.siteName,
+        siteUrl: contactData.siteUrl,
+        defaultTitle: contactData.defaultTitle,
+        defaultDescription: contactData.defaultDescription,
+        defaultOgImage: contactData.defaultOgImage,
+        facebookAppId: contactData.facebookAppId
     };
 };

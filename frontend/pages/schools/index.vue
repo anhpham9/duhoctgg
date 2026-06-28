@@ -176,19 +176,43 @@ const heroDescription = computed(() => {
 })
 
 // SEO
-useHead(() => {
-    const metaTitle = staticPage.value.meta_title || pageTitle.value || 'Trường Nhật Ngữ'
-    const metaDescription = staticPage.value.meta_description || heroDescription.value
+const {
+    seo: siteSeo,
+    pending: siteSeoPending,
+    error: siteSeoError,
+    refresh
+} = useSiteSeo()
 
-    return {
-        title: metaTitle,
-        meta: [
-            { name: 'description', content: metaDescription },
-            { property: 'og:title', content: metaTitle },
-            { property: 'og:description', content: metaDescription }
-        ]
-    }
+useSeoMeta({
+    title: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    description: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogTitle: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    ogDescription: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogImage: () => siteSeo.value.defaultOgImage,
+
+    ogType: 'website'
 })
+
+useHead(() => ({
+    meta: [
+        {
+            property: 'og:url',
+            content: siteSeo.value.siteUrl
+        }
+    ]
+}))
 
 // Schools data
 const toArray = (value) => {

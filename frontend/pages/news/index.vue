@@ -188,6 +188,11 @@ const { data: staticPageData } = await useFetch(`${config.public.apiBase}/public
 })
 const staticPage = computed(() => staticPageData.value?.data || {})
 
+const { seo: siteSeo } = useSiteSeo()
+const currentPageOgUrl = useAbsolutePageUrl({
+    baseUrl: () => siteSeo.value.siteUrl
+})
+
 const pageTitle = computed(() => staticPage.value.title || 'Tin Tức')
 
 const heroTitle = computed(() => staticPage.value.hero_title || 'Tin Tức Mới Nhất')
@@ -197,19 +202,36 @@ const heroDescription = computed(() => {
 })
 
 // SEO
-useHead(() => {
-    const metaTitle = staticPage.value.meta_title || pageTitle.value || 'Tin Tức'
-    const metaDescription = staticPage.value.meta_description || heroDescription.value
+useSeoMeta({
+    title: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
 
-    return {
-        title: metaTitle,
-        meta: [
-            { name: 'description', content: metaDescription },
-            { property: 'og:title', content: metaTitle },
-            { property: 'og:description', content: metaDescription }
-        ]
-    }
+    description: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogTitle: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    ogDescription: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogImage: () => siteSeo.value.defaultOgImage,
+
+    ogType: 'website'
 })
+
+useHead(() => ({
+    meta: [
+        {
+            property: 'og:url',
+            content: currentPageOgUrl.value
+        }
+    ]
+}))
 
 const newsDescription = computed(() => {
     return newsInfo.value.siteDescription || 'Cập nhật những tin tức mới nhất về du học Nhật Bản'

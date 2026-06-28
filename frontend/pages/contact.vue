@@ -104,6 +104,11 @@ const { data } = await useFetch(`${config.public.apiBase}/public/general-setting
 const staticPage = computed(() => staticPageData.value?.data || {})
 const contactInfo = computed(() => data.value?.data || {})
 
+const { seo: siteSeo } = useSiteSeo()
+const currentPageOgUrl = useAbsolutePageUrl({
+    baseUrl: () => siteSeo.value.siteUrl
+})
+
 // console.log('Contact Info Data:', contactInfo.value)
 
 const pageTitle = computed(() => staticPage.value.title || 'Liên Hệ')
@@ -114,19 +119,37 @@ const heroDescription = computed(() => {
     return staticPage.value.hero_description || 'Chúng tôi luôn sẵn sàng hỗ trợ bạn trong hành trình du học'
 })
 
-useHead(() => {
-    const metaTitle = staticPage.value.meta_title || pageTitle.value || 'Liên Hệ'
-    const metaDescription = staticPage.value.meta_description || heroDescription.value
+useSeoMeta({
+    title: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
 
-    return {
-        title: metaTitle,
-        meta: [
-            { name: 'description', content: metaDescription },
-            { property: 'og:title', content: metaTitle },
-            { property: 'og:description', content: metaDescription }
-        ]
-    }
+    description: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogTitle: () =>
+        staticPage.value.meta_title ||
+        siteSeo.value.defaultTitle,
+
+    ogDescription: () =>
+        staticPage.value.meta_description ||
+        siteSeo.value.defaultDescription,
+
+    ogImage: () => siteSeo.value.defaultOgImage,
+
+    ogType: 'website'
 })
+
+useHead(() => ({
+    meta: [
+        {
+            property: 'og:url',
+            content: currentPageOgUrl.value
+        }
+    ]
+}))
+
 
 const contactDescription = computed(() => {
     return contactInfo.value.siteDescription || 'Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy liên hệ với chúng tôi qua các thông tin dưới đây:'
