@@ -36,11 +36,11 @@
                 </div>
                 <div class="meta-row">
                     <span>Lần đăng nhập cuối:</span>
-                    <strong>{{ currentUser.last_login || 'Unknown' }}</strong>
+                    <strong>{{ formatSmartDate(currentUser.last_login) }}</strong>
                 </div>
             </section>
 
-            <div>
+            <div class="profile-content">
                 <div class="tab-nav top-tabs">
                     <button v-for="tab in contentTabs" :key="tab.key" type="button" class="tab-btn"
                         :class="{ active: activeContentTab === tab.key }" @click="activeContentTab = tab.key">
@@ -48,90 +48,117 @@
                     </button>
                 </div>
 
-                <div v-if="loading" class="loading-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Đang tải nội dung...</p>
-                </div>
 
-                <div v-else>
-                    <section v-if="activeContentTab === 'profile'" class="card profile-form-card">
-                        <h3>Thông tin cá nhân</h3>
-                        <form @submit.prevent="handleSaveProfile">
-                            <div class="form-group">
-                                <label for="name">Họ và tên</label>
-                                <input id="name" v-model="profileForm.name" type="text" maxlength="100" />
-                                <small v-if="profileErrors.name" class="field-error">{{ profileErrors.name }}</small>
+                <section v-if="activeContentTab === 'profile'" class="card profile-form-card">
+                    <h3>Thông tin cá nhân</h3>
+                    <form @submit.prevent="handleSaveProfile">
+                        <div class="form-group">
+                            <label for="name">Họ và tên</label>
+                            <input id="name" v-model="profileForm.name" type="text" maxlength="100" />
+                            <small v-if="profileErrors.name" class="field-error">{{ profileErrors.name }}</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input id="email" v-model="profileForm.email" type="email" maxlength="120" />
+                            <small v-if="profileErrors.email" class="field-error">{{ profileErrors.email }}</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại</label>
+                            <input id="phone" v-model="profileForm.phone" type="text" maxlength="20" />
+                            <small v-if="profileErrors.phone" class="field-error">{{ profileErrors.phone }}</small>
+                        </div>
+
+                        <!-- <small v-if="profileErrors._general" class="field-error">{{ profileErrors._general }}</small> -->
+
+                        <div class="actions">
+                            <button type="button" class="btn btn-light" @click="resetProfileForm"
+                                :disabled="savingProfile">
+                                Khôi phục
+                            </button>
+                            <button type="submit" class="btn btn-primary" :disabled="savingProfile">
+                                <i v-if="savingProfile" class="fas fa-spinner fa-spin"></i>
+                                {{ savingProfile ? 'Đang lưu...' : 'Lưu thay đổi' }}
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section v-if="activeContentTab === 'password'" class="card password-form-card">
+                    <h3>Đổi mật khẩu</h3>
+                    <form @submit.prevent="handleChangePassword">
+                        <div class="form-group">
+                            <label for="currentPassword">Mật khẩu hiện tại</label>
+                            <input id="currentPassword" v-model="passwordForm.currentPassword" type="password"
+                                autocomplete="current-password" />
+                            <small v-if="passwordErrors.currentPassword" class="field-error">{{
+                                passwordErrors.currentPassword }}</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword">Mật khẩu mới</label>
+                            <input id="newPassword" v-model="passwordForm.newPassword" type="password"
+                                autocomplete="new-password" @input="checkPasswordStrength" />
+                            <small v-if="passwordErrors.newPassword" class="field-error">{{ passwordErrors.newPassword
+                            }}</small>
+
+                            <div v-if="passwordForm.newPassword" class="password-strength">
+                                <h4>Kiểm tra độ bảo mật mật khẩu:</h4>
+                                <div class="strength-checks">
+                                    <div class="strength-check"
+                                        :class="{ 'check-valid': passwordStrength.hasMinLength }">
+                                        <i
+                                            :class="passwordStrength.hasMinLength ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>Ít nhất 8 ký tự</span>
+                                    </div>
+                                    <div class="strength-check"
+                                        :class="{ 'check-valid': passwordStrength.hasLettersAndNumbers }">
+                                        <i
+                                            :class="passwordStrength.hasLettersAndNumbers ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>Gồm chữ và số</span>
+                                    </div>
+                                    <div class="strength-check"
+                                        :class="{ 'check-valid': passwordStrength.hasMixedCase }">
+                                        <i
+                                            :class="passwordStrength.hasMixedCase ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                                        <span>Gồm chữ in hoa và in thường</span>
+                                    </div>
+                                </div>
+                                <div class="strength-indicator">
+                                    <div class="strength-bar">
+                                        <div class="strength-progress"
+                                            :class="getPasswordStrengthClass(passwordStrength)"
+                                            :style="{ width: getPasswordStrengthPercentage(passwordStrength) + '%' }">
+                                        </div>
+                                    </div>
+                                    <span class="strength-text">{{ getPasswordStrengthText(passwordStrength) }}</span>
+                                </div>
                             </div>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="email">Email</label>
-                                <input id="email" v-model="profileForm.email" type="email" maxlength="120" />
-                                <small v-if="profileErrors.email" class="field-error">{{ profileErrors.email }}</small>
-                            </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                            <input id="confirmPassword" v-model="passwordForm.confirmPassword" type="password"
+                                autocomplete="new-password" />
+                            <small v-if="passwordErrors.confirmPassword" class="field-error">{{
+                                passwordErrors.confirmPassword }}</small>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="phone">Số điện thoại</label>
-                                <input id="phone" v-model="profileForm.phone" type="text" maxlength="20" />
-                                <small v-if="profileErrors.phone" class="field-error">{{ profileErrors.phone }}</small>
-                            </div>
+                        <!-- <small v-if="passwordErrors._general" class="field-error">{{ passwordErrors._general }}</small> -->
 
-                            <small v-if="profileErrors._general" class="field-error">{{ profileErrors._general }}</small>
-
-                            <div class="actions">
-                                <button type="button" class="btn btn-light" @click="resetProfileForm"
-                                    :disabled="savingProfile">
-                                    Khôi phục
-                                </button>
-                                <button type="submit" class="btn btn-primary" :disabled="savingProfile">
-                                    <i v-if="savingProfile" class="fas fa-spinner fa-spin"></i>
-                                    {{ savingProfile ? 'Đang lưu...' : 'Lưu thay đổi' }}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
-
-                    <section v-if="activeContentTab === 'password'" class="card password-form-card">
-                        <h3>Đổi mật khẩu</h3>
-                        <form @submit.prevent="handleChangePassword">
-                            <div class="form-group">
-                                <label for="currentPassword">Mật khẩu hiện tại</label>
-                                <input id="currentPassword" v-model="passwordForm.currentPassword" type="password"
-                                    autocomplete="current-password" />
-                                <small v-if="passwordErrors.currentPassword" class="field-error">{{
-                                    passwordErrors.currentPassword }}</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="newPassword">Mật khẩu mới</label>
-                                <input id="newPassword" v-model="passwordForm.newPassword" type="password"
-                                    autocomplete="new-password" />
-                                <small v-if="passwordErrors.newPassword" class="field-error">{{ passwordErrors.newPassword
-                                    }}</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="confirmPassword">Xác nhận mật khẩu mới</label>
-                                <input id="confirmPassword" v-model="passwordForm.confirmPassword" type="password"
-                                    autocomplete="new-password" />
-                                <small v-if="passwordErrors.confirmPassword" class="field-error">{{
-                                    passwordErrors.confirmPassword }}</small>
-                            </div>
-
-                            <small v-if="passwordErrors._general" class="field-error">{{ passwordErrors._general }}</small>
-
-                            <div class="actions">
-                                <button type="button" class="btn btn-light" @click="resetPasswordForm"
-                                    :disabled="changingPassword">
-                                    Xóa nội dung
-                                </button>
-                                <button type="submit" class="btn btn-primary" :disabled="changingPassword">
-                                    <i v-if="changingPassword" class="fas fa-spinner fa-spin"></i>
-                                    {{ changingPassword ? 'Đang cập nhật...' : 'Đổi mật khẩu' }}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
-                </div>
+                        <div class="actions">
+                            <button type="button" class="btn btn-light" @click="resetPasswordForm"
+                                :disabled="changingPassword">
+                                Xóa nội dung
+                            </button>
+                            <button type="submit" class="btn btn-primary" :disabled="changingPassword">
+                                <i v-if="changingPassword" class="fas fa-spinner fa-spin"></i>
+                                {{ changingPassword ? 'Đang cập nhật...' : 'Đổi mật khẩu' }}
+                            </button>
+                        </div>
+                    </form>
+                </section>
 
             </div>
         </div>
@@ -139,7 +166,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { formatSmartDate, formatDate } from '~/utils/date'
 
 definePageMeta({
     layout: "admin",
@@ -162,7 +190,11 @@ const {
     validateVietnamesePhone,
     validatePasswordStrength,
     validatePasswordConfirmation,
-    parseBackendValidationError
+    parseBackendValidationError,
+    createPasswordStrength,
+    getPasswordStrengthPercentage,
+    getPasswordStrengthText,
+    getPasswordStrengthClass
 } = useValidation()
 
 const {
@@ -189,6 +221,7 @@ const passwordForm = ref({
 
 const profileErrors = ref({})
 const passwordErrors = ref({})
+const passwordStrength = createPasswordStrength()
 
 const syncProfileFormFromCurrentUser = () => {
     if (!currentUser.value) return
@@ -222,6 +255,10 @@ const resetPasswordForm = () => {
         newPassword: '',
         confirmPassword: ''
     }
+
+    passwordStrength.hasMinLength = false
+    passwordStrength.hasLettersAndNumbers = false
+    passwordStrength.hasMixedCase = false
 }
 
 const validateProfileForm = () => {
@@ -299,9 +336,9 @@ const validatePasswordForm = () => {
         errors.currentPassword = currentPasswordRequired.message
     }
 
-    const passwordStrength = validatePasswordStrength(passwordForm.value.newPassword)
-    if (!passwordStrength.isValid) {
-        errors.newPassword = passwordStrength.message
+    const passwordValidation = validatePasswordStrength(passwordForm.value.newPassword, passwordStrength)
+    if (!passwordValidation.isValid) {
+        errors.newPassword = passwordValidation.message
     }
 
     const confirmCheck = validatePasswordConfirmation(passwordForm.value.newPassword, passwordForm.value.confirmPassword)
@@ -315,6 +352,19 @@ const validatePasswordForm = () => {
 
     passwordErrors.value = errors
     return Object.keys(errors).length === 0
+}
+
+const checkPasswordStrength = () => {
+    const passwordValidation = validatePasswordStrength(passwordForm.value.newPassword, passwordStrength)
+
+    if (passwordValidation.isValid) {
+        passwordErrors.value.newPassword = ''
+    }
+
+    if (passwordForm.value.confirmPassword) {
+        const confirmValidation = validatePasswordConfirmation(passwordForm.value.newPassword, passwordForm.value.confirmPassword)
+        passwordErrors.value.confirmPassword = confirmValidation.isValid ? '' : confirmValidation.message
+    }
 }
 
 const handleChangePassword = async () => {
@@ -414,6 +464,38 @@ onMounted(async () => {
     border-radius: 14px;
     padding: 20px;
     box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+}
+
+.tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.top-tabs {
+    margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+    border: 1px solid #cdd8ea;
+    background: #f7faff;
+    color: #214165;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tab-btn.active {
+    background: #1976d2;
+    border-color: #1976d2;
+    color: #fff;
+}
+
+.tab-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .profile-summary {
@@ -517,6 +599,92 @@ onMounted(async () => {
 .btn-light {
     background: #f3f4f6;
     color: #1f2937;
+}
+
+.password-strength {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.password-strength h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 600;
+}
+
+.strength-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.strength-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+
+.strength-check.check-valid {
+    color: #28a745;
+}
+
+.strength-check i {
+    width: 16px;
+    font-size: 0.9rem;
+}
+
+.strength-check.check-valid i {
+    color: #28a745;
+}
+
+.strength-check:not(.check-valid) i {
+    color: #dc3545;
+}
+
+.strength-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.strength-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.strength-progress {
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.strength-progress.strength-weak {
+    background: #dc3545;
+}
+
+.strength-progress.strength-medium {
+    background: #ffc107;
+}
+
+.strength-progress.strength-strong {
+    background: #28a745;
+}
+
+.strength-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
 }
 
 @media (max-width: 1200px) {

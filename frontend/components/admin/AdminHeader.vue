@@ -728,6 +728,24 @@ const getIconByType = (type) => {
     return iconMap[type] || 'fas fa-bell'
 }
 
+let refreshIntervalId = null
+
+const handleDocumentClick = (e) => {
+    if (!e.target.closest('.header-notifications')) {
+        closeDropdown()
+    }
+    if (!e.target.closest('.header-profile')) {
+        isProfileMenuOpen.value = false
+    }
+}
+
+const handleDocumentKeydown = (e) => {
+    if (e.key === 'Escape') {
+        closeDropdown()
+        isProfileMenuOpen.value = false
+    }
+}
+
 // ========================================
 // LIFECYCLE & EVENT HANDLERS
 // ========================================
@@ -740,22 +758,8 @@ onMounted(async () => {
     fetchCurrentUser()
     
     loadNotifications()
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.header-notifications')) {
-            closeDropdown()
-        }
-        if (!e.target.closest('.header-profile')) {
-            isProfileMenuOpen.value = false
-        }
-    })
-    
-    // Escape key to close dropdowns
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeDropdown()
-            isProfileMenuOpen.value = false
-        }
-    })
+    document.addEventListener('click', handleDocumentClick)
+    document.addEventListener('keydown', handleDocumentKeydown)
     
     // Make notification system globally available
     if (process.client) {
@@ -767,13 +771,23 @@ onMounted(async () => {
     }
     
     // Auto-refresh
-    const refreshInterval = setInterval(() => {
+    refreshIntervalId = setInterval(() => {
         loadNotifications()
     }, 30000) // 30 seconds
+})
 
-    onBeforeUnmount(() => {
-        clearInterval(refreshInterval)
-    })
+onBeforeUnmount(() => {
+    document.removeEventListener('click', handleDocumentClick)
+    document.removeEventListener('keydown', handleDocumentKeydown)
+
+    if (refreshIntervalId) {
+        clearInterval(refreshIntervalId)
+        refreshIntervalId = null
+    }
+
+    if (process.client && window.headerNotifications) {
+        delete window.headerNotifications
+    }
 })
 
 // ========================================

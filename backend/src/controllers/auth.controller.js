@@ -324,7 +324,7 @@ export const getAuthStatus = async (req, res) => {
         // Fetch complete user info from database
         const result = await db.query(
             `SELECT u.id, u.username, u.name, u.email, u.phone, u.role_id, 
-                    u.is_active, u.created_at, u.updated_at, r.name as role_name
+                    u.is_active, u.last_login, u.created_at, u.updated_at, r.name as role_name
              FROM users u
              LEFT JOIN roles r ON u.role_id = r.id
              WHERE u.id = $1`,
@@ -461,7 +461,7 @@ export const updateMyProfile = async (req, res) => {
                  phone = $3,
                  updated_at = NOW()
              WHERE id = $4
-             RETURNING id, username, name, email, phone, role_id, is_active, created_at, updated_at`,
+             RETURNING id, username, name, email, phone, role_id, is_active, last_login, created_at, updated_at`,
             [sanitizedName, sanitizedEmail, phoneForSave, userId]
         );
 
@@ -507,21 +507,21 @@ export const changeMyPassword = async (req, res) => {
         if (!userId) {
             return res.status(401).json({
                 success: false,
-                message: "Unauthorized"
+                message: "Không được phép"
             });
         }
 
         if (!currentPassword || !newPassword) {
             return res.status(400).json({
                 success: false,
-                message: "Current password and new password are required"
+                message: "Mật khẩu hiện tại và mật khẩu mới là bắt buộc"
             });
         }
 
         if (currentPassword === newPassword) {
             return res.status(400).json({
                 success: false,
-                message: "New password must be different from current password"
+                message: "Mật khẩu mới phải khác mật khẩu hiện tại"
             });
         }
 
@@ -546,7 +546,7 @@ export const changeMyPassword = async (req, res) => {
         if (userResult.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "Người dùng không tồn tại"
             });
         }
 
@@ -556,7 +556,7 @@ export const changeMyPassword = async (req, res) => {
         if (!isCurrentPasswordValid) {
             return res.status(400).json({
                 success: false,
-                message: "Current password is incorrect"
+                message: "Mật khẩu hiện tại không chính xác"
             });
         }
 
