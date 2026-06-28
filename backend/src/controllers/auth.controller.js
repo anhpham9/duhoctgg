@@ -385,3 +385,210 @@ export const getAuthStatus = async (req, res) => {
         });
     }
 };
+
+export const updateMyProfile = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const sanitizedName = InputSanitizer.sanitizeName(req.body?.name || "");
+        const sanitizedEmail = InputSanitizer.sanitizeEmail(req.body?.email || "");
+        const sanitizedPhone = InputSanitizer.sanitizePhone(req.body?.phone || "");
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        if (!sanitizedName || !sanitizedEmail) {
+            return res.status(400).json({
+                success: false,
+                message: "Name and email are required"
+            });
+        }
+
+        const currentUserResult = await db.query(
+            `SELECT id, name, email, phone
+             FROM users
+             WHERE id = $1`,
+            [userId]
+        );
+
+        if (currentUserResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const duplicateEmailResult = await db.query(
+            `SELECT id
+             FROM users
+             WHERE email = $1 AND id != $2
+             LIMIT 1`,
+            [sanitizedEmail, userId]
+        );
+
+        if (duplicateEmailResult.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Email already exists"
+            });
+        }
+
+        const phoneForSave = sanitizedPhone || null;
+        if (phoneForSave) {
+            const duplicatePhoneResult = await db.query(
+                `SELECT id
+                 FROM users
+                 WHERE phone = $1 AND id != $2
+                 LIMIT 1`,
+                [phoneForSave, userId]
+            );
+
+            if (duplicatePhoneResult.rows.length > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Phone already exists"
+                });
+            }
+        }
+
+        const updateResult = await db.query(
+            `UPDATE users
+             SET name = $1,
+                 email = $2,
+                 phone = $3,
+                 updated_at = NOW()
+             WHERE id = $4
+             RETURNING id, username, name, email, phone, role_id, is_active, created_at, updated_at`,
+            [sanitizedName, sanitizedEmail, phoneForSave, userId]
+        );
+
+        const updatedUser = updateResult.rows[0];
+        const roleResult = await db.query(
+            `SELECT name FROM roles WHERE id = $1 LIMIT 1`,
+            [updatedUser.role_id]
+        );
+
+        auditLog('UPDATE_OWN_PROFILE', userId, {
+            updatedFields: ['name', 'email', 'phone'],
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        }, req);
+
+        res.json({
+            success: true,
+            message: 'Cập nhật hồ sơ thành công',
+            user: {
+                ...updatedUser,
+                role_name: roleResult.rows[0]?.name || null
+            }
+        });
+    } catch (error) {
+        logError('Update own profile failed', error, {
+            userId: req.user?.id,
+            ip: req.ip
+        });
+
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi máy chủ nội bộ'
+        });
+    }
+};
+
+export const changeMyPassword = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const currentPassword = String(req.body?.currentPassword || "");
+        const newPassword = String(req.body?.newPassword || "");
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Current password and new password are required"
+            });
+        }
+
+        if (currentPassword === newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be different from current password"
+            });
+        }
+
+        const hasMinLength = newPassword.length >= 8;
+        const hasLetterAndNumber = /[a-zA-Z]/.test(newPassword) && /[0-9]/.test(newPassword);
+        const hasMixedCase = /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword);
+
+        if (!hasMinLength || !hasLetterAndNumber || !hasMixedCase) {
+            return res.status(400).json({
+                success: false,
+                message: "Mật khẩu mới phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường và số"
+            });
+        }
+
+        const userResult = await db.query(
+            `SELECT id, username, password
+             FROM users
+             WHERE id = $1`,
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const user = userResult.rows[0];
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+
+        if (!isCurrentPasswordValid) {
+            return res.status(400).json({
+                success: false,
+                message: "Current password is incorrect"
+            });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        await db.query(
+            `UPDATE users
+             SET password = $1,
+                 updated_at = NOW()
+             WHERE id = $2`,
+            [hashedNewPassword, userId]
+        );
+
+        auditLog('CHANGE_OWN_PASSWORD', userId, {
+            username: user.username,
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        }, req);
+
+        res.json({
+            success: true,
+            message: 'Đổi mật khẩu thành công'
+        });
+    } catch (error) {
+        logError('Change own password failed', error, {
+            userId: req.user?.id,
+            ip: req.ip
+        });
+
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi máy chủ nội bộ'
+        });
+    }
+};
