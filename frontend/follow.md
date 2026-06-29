@@ -5588,8 +5588,11 @@ Hiện tại bạn có:
 ```Bash
 ssr: false,
 ```
+nên đổi thành
 
-Giữ nguyên.
+```Bash
+ssr: true
+```
 
 #### 1. Tắt devtools
 
@@ -5715,6 +5718,8 @@ Frontend sẽ không cần biết backend chạy cổng nào.
 
 #### Sau khi sửa
 
+push code len git va pull code vao VPS
+
 Chạy
 ```Bash
 npm run build
@@ -5740,6 +5745,174 @@ public/
 
 server/
 ```
+
+---
+
+**Hiện tại mục tiêu của chúng ta là:**
+```Bash
+Internet
+      │
+      ▼
+Nginx (Bài 10)
+      │
+      ├──────────────► Nuxt4 SSR (Port 3000)
+      │
+      └──────────────► Express API (Port 3001)
+```
+
+Backend đã chạy bằng PM2.
+
+Giờ bắt đầu frontend.
+
+---
+
+### Bước 12 - Tạo ecosystem cho Frontend
+
+Trong frontend
+
+```Bash
+nano ecosystem.config.cjs
+```
+
+Nội dung
+```Bash
+module.exports = {
+  apps: [
+    {
+      name: "duhoctgg-frontend",
+
+      script: ".output/server/index.mjs",
+
+      cwd: "/home/deploy/apps/duhoctgg/repo/frontend",
+
+      interpreter: "/usr/bin/node",
+
+      instances: 1,
+
+      exec_mode: "fork",
+
+      autorestart: true,
+
+      watch: false,
+
+      max_memory_restart: "800M",
+
+      env: {
+        NODE_ENV: "production",
+        PORT: 3000
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Bước 13 - Khởi động PM2
+
+```Bash
+pm2 start ecosystem.config.cjs
+```
+
+Kiểm tra
+```Bash
+pm2 list
+```
+
+Kỳ vọng
+```Bash
+┌──────────────────────┐
+duhoctgg-backend
+
+online
+──────────────────────
+
+duhoctgg-frontend
+
+online
+└──────────────────────┘
+```
+
+---
+
+### Bước 14 -  Kiểm tra log
+
+```Bash
+pm2 logs duhoctgg-frontend
+```
+
+Kỳ vọng
+```Bash
+Listening on http://0.0.0.0:3000
+```
+
+Không có Error.
+
+---
+
+### Bước 15 -  Kiểm tra Port
+
+```Bash
+sudo ss -ltnp | grep 3000
+```
+
+Kỳ vọng
+```Bash
+LISTEN
+
+*:3000
+Bước 9.8 Test
+curl http://127.0.0.1:3000
+```
+
+Nếu ra HTML là frontend production đã hoạt động.
+
+---
+
+### Bước 16 -  Test
+
+```Bash
+curl http://127.0.0.1:3000
+```
+
+Nếu ra HTML là frontend production đã hoạt động.
+
+---
+
+### Bước 17 - Lưu PM2
+
+Sau khi frontend chạy
+```Bash
+pm2 save
+```
+
+Kiểm tra
+```Bash
+pm2 list
+```
+
+Bạn sẽ có
+```Bash
+Backend
+↓
+
+PM2
+
+↓
+
+Port 3001
+
+Frontend
+↓
+
+PM2
+
+↓
+
+Port 3000
+
+```
+
 
 
 
