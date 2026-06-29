@@ -3266,7 +3266,9 @@ cd frontend
 npm install
 ```
 Điều đó chạy được, nhưng chưa tối ưu.
+
 ---
+
 **Mình đề xuất chuẩn Production ngay từ đầu**
 
 Thư mục repo chỉ chứa mã nguồn từ GitHub, tuyệt đối không chứa:
@@ -3316,17 +3318,1216 @@ Vì sao làm như vậy?
 
 Đây là kiến trúc mình khuyến nghị cho hệ thống của bạn vì vừa đơn giản, vừa đủ chuyên nghiệp để sử dụng lâu dài. Trong các bài tiếp theo, chúng ta sẽ dựa trên cấu trúc này để cài PostgreSQL và triển khai backend/frontend.
 
+---
 
+## Bài 5 - Chuẩn bị Source Code trên VPS
+
+Mục tiêu
+
+Sau bài này bạn sẽ có:
+```Bash
+/home/deploy/apps/duhoctgg
+
+├── repo/
+│   ├── backend/
+│   ├── frontend/
+│   └── layouts/
+│
+├── deploy/
+│   ├── backend/
+│   └── frontend/
+│
+└── shared/
+    ├── backend/
+    │   ├── .env
+    │   └── logs/
+    │
+    └── frontend/
+        └── .env
+```
+
+### Bước 1. Tạo cấu trúc thư mục
+
+```Bash
+mkdir -p ~/apps/duhoctgg/repo
+mkdir -p ~/apps/duhoctgg/deploy/backend
+mkdir -p ~/apps/duhoctgg/deploy/frontend
+
+mkdir -p ~/apps/duhoctgg/shared/backend/logs
+mkdir -p ~/apps/duhoctgg/shared/frontend
+```
+
+Kiểm tra:
+
+```Bash
+tree ~/apps/duhoctgg
+```
+
+Kết quả mong muốn:
+
+```Bash
+duhoctgg
+
+├── deploy
+│   ├── backend
+│   └── frontend
+│
+├── repo
+│
+└── shared
+    ├── backend
+    │   └── logs
+    └── frontend
+```
+
+---
+
+### Bước 2. Clone GitHub
+
+Đi vào repo
+```Bash
+cd ~/apps/duhoctgg/repo
+```
+
+Clone
+```Bash
+git clone git@github.com:USERNAME/project-duhocNB.git .
+```
+(dấu . ở cuối rất quan trọng)
+
+Kiểm tra
+```Bash
+tree -L 2
+```
+
+Ví dụ
+```Bash
+repo
+
+backend
+
+frontend
+
+layouts
+```
+
+---
+
+### Bước 3. Kiểm tra Remote
+
+```Bash
+git remote -v
+```
+
+Phải là
+```Bash
+origin git@github.com:...
+```
+
+Không phải HTTPS.
+
+---
+
+Bước 4. Kiểm tra Branch
+
+```Bash
+git branch
+```
+
+Ví dụ
+```Bash
+* main
+```
+
+---
+
+### Bước 5. Tạo .gitignore (nếu chưa có)
+
+Trong backend
+```Bash
+node_modules
+.env
+logs
+```
+
+Trong frontend
+```Bash
+node_modules
+.output
+.nuxt
+.env
+```
+
+Điều này giúp không đưa các file sinh ra trong quá trình chạy lên GitHub.
+
+---
+
+### Bước 6. Chuẩn bị thư mục Shared
+
+Tạo file .env trống:
+```Bash
+touch ~/apps/duhoctgg/shared/backend/.env
+touch ~/apps/duhoctgg/shared/frontend/.env
+```
+
+Kiểm tra:
+```Bash
+tree ~/apps/duhoctgg/shared
+```
+
+Kết quả:
+```Bash
+shared
+
+backend
+├── .env
+└── logs
+
+frontend
+└── .env
+```
+
+---
+
+### Bước 7. Không tạo symlink ngay
+
+Nhiều hướng dẫn sẽ làm ngay:
+```
+ln -s ...
+```
+
+Mình không muốn làm lúc này.
+
+Lý do:
+
+1. Chưa có nội dung .env.
+2. Chưa biết backend/frontend cần biến môi trường gì.
+3. Sau này dễ gây nhầm lẫn.
+
+Chúng ta sẽ tạo symlink sau khi PostgreSQL và Cloudinary đã cấu hình xong.
+
+---
+
+### Bước 8. Không cài node_modules trong repo
+
+Đây là quy tắc mình muốn bạn tuân thủ:
+
+❌ Không làm:
+```
+cd repo/backend
+npm install
+```
+
+❌ Không làm:
+```
+cd repo/frontend
+npm install
+```
+
+Trong mô hình này, repo chỉ là nơi lưu source.
+
+Việc cài dependencies và build sẽ thực hiện ở bước deploy.
+
+---
+
+### Mình muốn cải tiến kiến trúc thêm một chút
+
+Hiện tại bạn dự định:
+```
+shared/
+
+backend/
+
+.env
+
+logs
+```
+
+Mình muốn bổ sung:
+```
+shared
+
+backend
+│
+├── .env
+│
+├── logs
+│
+├── uploads
+│
+└── tmp
+```
+
+Mặc dù hiện tại bạn dùng Cloudinary, nhưng:
+```
+file upload tạm,
+export Excel,
+import dữ liệu,
+cache,
+```
+
+vẫn có thể cần thư mục riêng.
+
+Tạo luôn:
+```
+mkdir -p ~/apps/duhoctgg/shared/backend/uploads
+mkdir -p ~/apps/duhoctgg/shared/backend/tmp
+```
+
+---
+
+### Kế hoạch các bài tiếp theo
+
+Sau khi hoàn thành Bài 5, chúng ta sẽ đi theo thứ tự:
+
+- Bài 6: Cài PostgreSQL 16, tạo user duhoctgg_app, tạo database duhoctgg_prod, phân quyền và cấu hình kết nối.
+- Bài 7: Chuẩn bị backend (cài dependencies, tạo .env, kiểm tra kết nối PostgreSQL và Cloudinary, chạy bằng PM2).
+- Bài 8: Build và chạy Nuxt 4.
+- Bài 9: Cấu hình Nginx cho duhoctgg.edu.vn.
+- Bài 10: Cài SSL bằng Let's Encrypt.
+
+**Mình muốn thay đổi một điểm quan trọng**
+
+Trong suốt các bài tiếp theo, mình sẽ không bao giờ chạy ứng dụng trực tiếp trong repo.
+
+Luồng deploy sẽ luôn là:
+```
+GitHub
+    │
+    ▼
+repo/        (source)
+    │
+    ▼
+deploy/      (build & chạy)
+    │
+    ▼
+PM2 + Nginx
+```
+
+Đây là kiến trúc giúp bạn:
+
+- rollback dễ,
+- không làm bẩn source,
+- chuẩn bị sẵn cho CI/CD trong tương lai.
+
+---
+
+### Bài 6: Cài PostgreSQL 16, tạo user duhoctgg_app, tạo database duhoctgg_prod, phân quyền và cấu hình kết nối.
+
+**Mình sẽ không hướng dẫn theo các tutorial trên mạng (thường dùng user postgres cho ứng dụng), mà sẽ cấu hình theo nguyên tắc:**
+
+- PostgreSQL chạy bằng user hệ thống postgres.
+- Mỗi website có database riêng.
+- Mỗi website có user database riêng.
+- User ứng dụng chỉ có quyền trên database của mình.
+
+Đây là cách nên dùng nếu sau này VPS của bạn có cả:
+
+- duhoctgg.edu.vn
+- ttgroup-global.com
+- sandbox
+
+**Series**
+```Bash
+✓ Bài 1 VPS
+✓ Bài 2 Ubuntu
+✓ Bài 2.5 Optimize
+✓ Bài 3 Environment
+✓ Bài 4 GitHub
+✓ Bài 5 Source
+
+➡ Bài 6 PostgreSQL
+```
+
+**Mục tiêu**
+
+Sau bài này bạn sẽ có
+```Bash
+PostgreSQL 16
+
+↓
+
+Role
+
+duhoctgg_app
+
+↓
+
+Database
+
+duhoctgg_prod
+
+↓
+
+Schema
+
+public
+
+↓
+
+Ready
+```
+
+---
+
+### Bước 1. Kiểm tra đã cài PostgreSQL chưa
+
+```Bash
+psql --version
+```
+
+Nếu báo:
+```Bash
+command not found
+```
+
+thì chưa cài.
+
+---
+
+### Bước 2. Cài PostgreSQL 16
+
+Ubuntu 24.04 mặc định cung cấp PostgreSQL 16, vì vậy bạn chỉ cần:
+
+```Bash
+sudo apt update
+
+sudo apt install postgresql postgresql-contrib -y
+```
+
+Không cần thêm repository của PostgreSQL Global Development Group (PGDG), trừ khi sau này bạn muốn dùng phiên bản mới hơn 16.
+
+---
+
+### Bước 3. Kiểm tra service
+
+```Bash
+systemctl status postgresql
+```
+
+Kỳ vọng
+```Bash
+active (running)
+```
+---
+
+### Bước 4. Kiểm tra version
+
+```Bash
+sudo -u postgres psql
+```
+
+Trong PostgreSQL
+```Bash
+SELECT version();
+```
+
+Ví dụ
+```Bash
+PostgreSQL 16.x
+```
+
+Thoát
+```Bash
+\q
+```
+---
+
+### Bước 5. Đăng nhập postgres
+
+Nếu đang ở:
+```Bash
+postgres=#
+```
+
+thì bỏ qua bước này.
+
+```Bash
+sudo -u postgres psql
+```
+
+Bạn sẽ thấy
+```Bash
+postgres=#
+```
+
+---
+
+### Bước 6. Tạo Role
+
+Mình khuyên đặt tên
+
+```Bash
+duhoctgg_app
+```
+
+không phải
+
+```Bash
+duhoctgg
+```
+
+để nhìn là biết đây là application user.
+
+```Bash
+CREATE ROLE duhoctgg_app
+LOGIN
+PASSWORD 'MậtKhẩuRấtMạnh';
+```
+
+Ví dụ
+```Bash
+CREATE ROLE duhoctgg_app
+LOGIN
+PASSWORD 'YourStrongPasswordHere';
+```
+
+'TGGgroup@2026#Cloud';
+
+Lưu ý: Hãy dùng một mật khẩu mạnh và lưu lại cẩn thận. Sau này mật khẩu này sẽ được đặt trong file shared/backend/.env.
+
+---
+
+### Bước 8. Kết nối sang database
+
+```Bash
+\c duhoctgg_prod
+```
+
+---
+
+### Bước 9. Kiểm tra owner
+
+```Bash
+SELECT current_database();
+SELECT current_user;
+```
+
+Kết quả
+```Bash
+duhoctgg_prod
+
+postgres
+```
+
+Đừng ngạc nhiên.
+
+Bạn vẫn đang login bằng postgres.
+
+---
+
+### Bước 10. Kiểm tra quyền
+
+```Bash
+\l
+```
+
+Bạn sẽ thấy
+```Bash
+duhoctgg_prod
+```
+
+Owner
+```Bash
+duhoctgg_app
+```
+
+Đó mới là điều quan trọng.
+
+---
+
+### Bước 11. Thoát
+
+```Bash
+\q
+```
+
+mong muốn con trỏ đứng ở vị trí 
+```Bash
+deploy@tgg-prod-01:~/apps/duhoctgg/repo$
+```
+
+nếu vẫn ở 
+```Bash
+duhoctgg_prod-#
+```
+
+thì hãy nhấn `\q` thêm 1 lần nữa.
+
+---
+
+### Bước 12. Test login bằng user ứng dụng
+
+```Bash
+psql \
+-h localhost \
+-U duhoctgg_app \
+-d duhoctgg_prod
+```
+
+Ubuntu hỏi password.
+
+Nhập password vừa tạo.
+
+Nếu vào được
+```Bash
+duhoctgg_prod=>
+```
+
+là thành công.
+
+Thoát
+```Bash
+\q
+```
+
+---
+
+### Bước 13. Kiểm tra cổng
+
+```Bash
+sudo ss -ltnp | grep 5432
+```
+
+Kỳ vọng
+```Bash
+127.0.0.1:5432
+```
+
+Đây là cấu hình an toàn vì PostgreSQL chỉ lắng nghe trên localhost.
+
+---
+
+### Bước 14. Kiểm tra cấu hình
+
+```Bash
+sudo -u postgres psql
+SHOW listen_addresses;
+```
+
+Kỳ vọng
+```Bash
+localhost
+```
+
+Nếu là
+```Bash
+*
+```
+
+thì không nên với trường hợp của bạn.
+
+---
+
+### Bước 15. Tạo file .env
+
+Backend
+```Bash
+nano ~/apps/duhoctgg/shared/backend/.env
+```
+
+Ví dụ:
+```Bash
+NODE_ENV=production
+
+PORT=3001
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=duhoctgg_prod
+DB_USER=duhoctgg_app
+DB_PASSWORD=YourStrongPasswordHere
+
+JWT_SECRET=...
+
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
+Hiện tại chỉ cần tạo file và điền các giá trị bạn đã có (Cloudinary, JWT...). Chúng ta sẽ sử dụng file này ở Bài 7.
 
 
 ```Bash
+NODE_ENV=production
 
+PORT=3001
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=duhoctgg_prod
+DB_USER=duhoctgg_app
+DB_PASSWORD=TGGgroup@2026#Cloud111
+
+JWT_SECRET=TGGgroup@2026#Cloud111
+
+CLOUDINARY_CLOUD_NAME=dfzr7lsxr
+CLOUDINARY_API_KEY=855544569111575111
+CLOUDINARY_API_SECRET=RTzwevpVueTmOWDHrisqzyJ3jfM111
+CLOUDINARY_FOLDER=duhoctgg
+CLOUDINARY_MAX_FILE_SIZE=5242880
+CLOUDINARY_FAVICON_MAX_FILE_SIZE=524288
+CLOUDINARY_ALLOWED_MIME=image/jpeg,image/png,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon
+ALLOWED_ORIGINS=https://duhoctgg.edu.vn
 ```
 
+---
 
+**Kiến trúc Database sau này**
+
+Khi website Nhật ra đời
+
+PostgreSQL
 ```Bash
+duhoctgg_prod
 
+↓
+
+Owner
+
+duhoctgg_app
+
+-----------------------
+
+ttgroup_prod
+
+↓
+
+Owner
+
+ttgroup_app
+
+-----------------------
+
+sandbox
+
+↓
+
+sandbox_app
 ```
+
+Không dùng chung user.
+
+Không dùng chung database.
+
+Không dùng user postgres.
+
+Đây là cấu hình production.
+
+Mình đề xuất thêm một cải tiến
+
+Mặc dù PostgreSQL tạo schema public mặc định, mình khuyên bạn tạo schema riêng cho ứng dụng để tách biệt dữ liệu.
+
+Ví dụ:
+```Bash
+CREATE SCHEMA duhoctgg AUTHORIZATION duhoctgg_app;
+```
+
+Sau đó:
+```Bash
+ALTER ROLE duhoctgg_app SET search_path TO duhoctgg;
+```
+
+Lợi ích:
+
+- Mọi bảng của ứng dụng sẽ nằm trong schema duhoctgg thay vì public.
+- Sau này nếu cần mở rộng, quản lý hoặc backup từng schema sẽ thuận tiện hơn.
+- Đây là cách nhiều hệ thống production sử dụng.
+
+Nếu dự án của bạn còn đang ở giai đoạn đầu và chưa có nhiều dữ liệu, mình khuyến nghị áp dụng ngay từ bây giờ vì sẽ tránh phải thay đổi sau này.
+
+---
+
+### Bài 7.1
+
+Chuẩn bị Environment Production
+
+Đầu tiên, trong VPS:
+```Bash
+/home/deploy/apps/duhoctgg/shared/backend
+```
+
+ta sẽ có
+```Bash
+.env
+logs/
+tmp/
+uploads/
+```
+
+Kiểm tra:
+```Bash
+tree ~/apps/duhoctgg/shared/backend
+```
+
+Kỳ vọng
+```Bash
+backend
+
+.env
+
+logs
+
+tmp
+
+uploads
+```
+
+Nếu chưa có:
+```Bash
+mkdir -p ~/apps/duhoctgg/shared/backend/uploads
+mkdir -p ~/apps/duhoctgg/shared/backend/tmp
+mkdir -p ~/apps/duhoctgg/shared/backend/logs
+```
+
+---
+
+### Bài 7.2
+
+Symlink
+
+Trong thư mục backend
+```Bash
+repo/backend
+```
+
+không lưu .env
+
+Thay vào đó
+```Bash
+cd ~/apps/duhoctgg/repo/backend
+
+ln -s ../../shared/backend/.env .env
+```
+
+Kiểm tra
+```Bash
+ls -la
+```
+
+Kỳ vọng
+```Bash
+.env -> ../../shared/backend/.env
+```
+
+Sau này dù:
+```Bash
+git pull
+```
+
+hay
+```Bash
+git reset
+```
+
+thì .env vẫn không mất.
+
+---
+
+**Kiểm tra dotenv**
+
+Trong
+```Bash
+src/config/env.js
+```
+
+nếu bạn đang có
+```Bash
+import dotenv from "dotenv";
+
+dotenv.config();
+```
+
+thì giữ nguyên.
+
+Không cần sửa.
+
+---
+
+### Bài 7.3 - Hoàn thiện Database Pool
+
+Sau đó mình sẽ sửa
+```Bash
+config/db.js
+```
+
+thành production.
+
+Hiện tại
+```Bash
+new Pool({
+...
+});
+```
+
+vẫn chạy tốt.
+
+Nhưng mình muốn sửa thành
+```Bash
+import dotenv from "dotenv";
+dotenv.config();
+
+import pkg from "pg";
+const { Pool } = pkg;
+
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+});
+
+pool.on("connect", () => {
+    console.log("PostgreSQL connected.");
+});
+
+pool.on("error", (err) => {
+    console.error("Unexpected PostgreSQL error:", err);
+});
+
+export default {
+    query: (text, params) => pool.query(text, params),
+    getClient: () => pool.connect(),
+    pool
+};
+```
+
+Ý nghĩa
+
+|Thuộc tính	|Ý nghĩa|
+|--|--|
+|max	|tối đa 20 connection|
+|idleTimeoutMillis	|tự đóng connection rảnh|
+|connectionTimeoutMillis	|nếu DB chết thì sau 5 giây báo lỗi|
+
+Đây là cấu hình production khá chuẩn.
+
+---
+
+### Bài 7.4 - Chạy thử Backend (chưa dùng PM2)
+
+SĐây là bước rất nhiều người bỏ qua.
+
+Bước 1
+
+Vào backend
+```Bash
+cd ~/apps/duhoctgg/repo/backend
+```
+---
+
+Bước 2
+
+Cài package
+```Bash
+npm install
+```
+
+Nếu sau này clone lại chỉ cần
+```Bash
+npm ci
+```
+
+---
+
+Bước 3
+
+Kiểm tra Node
+```Bash
+node -v
+```
+
+Nếu chưa có Node 22 thì chưa chạy, vì mình muốn cài Node LTS trước.
+
+👉 Hãy chạy:
+```Bash
+node -v
+npm -v
+```
+
+và gửi mình kết quả trước khi npm install.
+
+---
+
+Bước 4
+
+Kiểm tra .env
+```Bash
+ls -la
+```
+
+Bạn phải thấy
+```Bash
+.env -> ../../shared/backend/.env
+```
+
+Nếu chưa có symlink thì tạo:
+```Bash
+ln -s ../../shared/backend/.env .env
+```
+
+---
+
+Bước 5
+
+Chạy backend
+```Bash
+npm run dev
+```
+
+hoặc
+```Bash
+node src/app.js
+```
+
+Tùy script của bạn.
+
+---
+
+Bước 6
+
+Kiểm tra backend
+
+Trong VPS
+```Bash
+curl http://localhost:3001
+```
+
+hoặc
+```Bash
+curl http://127.0.0.1:3001
+```
+
+Nếu có API:
+```Bash
+404
+```
+
+cũng là thành công.
+
+Nếu
+```Bash
+Connection refused
+```
+
+thì backend chưa chạy.
+
+---
+
+### Bài 7.5 - Cài PM2
+
+Chỉ thực hiện sau khi backend chạy ổn bằng node.
+
+Bước 1
+
+Cài Node LTS (nếu chưa có)
+
+Mình sẽ hướng dẫn riêng nếu VPS chưa có Node 22.
+
+---
+
+Bước 2
+
+Cài PM2
+```Bash
+sudo npm install -g pm2
+```
+
+Kiểm tra
+```Bash
+pm2 -v
+```
+
+---
+
+Bước 3
+
+Khởi động backend
+```Bash
+cd ~/apps/duhoctgg/repo/backend
+pm2 start src/app.js --name duhoctgg-api
+```
+
+Kiểm tra
+```Bash
+pm2 list
+```
+
+Kết quả mong muốn:
+```Bash
+┌────┬───────────────┬────────┬────────┐
+│ id │ name          │ status │ cpu    │
+├────┼───────────────┼────────┼────────┤
+│ 0  │ duhoctgg-api  │ online │ 0%     │
+└────┴───────────────┴────────┴────────┘
+```
+
+---
+
+Bước 4
+
+Xem log
+```Bash
+pm2 logs duhoctgg-api
+```
+
+Nếu thấy:
+```Bash
+PostgreSQL connected.
+```
+
+là rất tốt.
+
+---
+
+Bước 5
+
+Lưu cấu hình
+```Bash
+pm2 save
+```
+
+---
+
+Bước 6
+
+Cho PM2 tự khởi động
+```Bash
+pm2 startup
+```
+
+PM2 sẽ hiện một lệnh kiểu:
+```Bash
+sudo env PATH=... pm2 startup systemd -u deploy --hp /home/deploy
+```
+
+Bạn phải copy đúng lệnh đó và chạy.
+
+Sau đó:
+```Bash
+pm2 save
+```
+
+---
+
+### Bài 7.6- Dùng ecosystem.config.cjs
+
+Sau khi mọi thứ hoạt động ổn, không nên dùng:
+```Bash
+pm2 start src/app.js --name duhoctgg-api
+```
+
+nữa.
+
+Thay vào đó, trong backend tạo file:
+```Bash
+ecosystem.config.cjs
+
+module.exports = {
+  apps: [
+    {
+      name: "duhoctgg-api",
+      script: "./src/app.js",
+      cwd: "/home/deploy/apps/duhoctgg/repo/backend",
+
+      instances: 1,
+      exec_mode: "fork",
+
+      watch: false,
+
+      autorestart: true,
+
+      max_memory_restart: "500M",
+
+      env: {
+        NODE_ENV: "production"
+      }
+    }
+  ]
+};
+```
+
+Khởi động:
+```Bash
+pm2 start ecosystem.config.cjs
+```
+
+Từ nay mọi thao tác chỉ cần:
+```Bash
+pm2 restart duhoctgg-api
+pm2 stop duhoctgg-api
+pm2 logs duhoctgg-api
+pm2 delete duhoctgg-api
+```
+
+---
+
+**Mình có một đề xuất nhỏ cho project của bạn**
+
+Mình thấy bạn đang có:
+```Bash
+config
+
+cloudinary.js
+
+db.js
+
+env.js
+
+security.config.js
+```
+
+Mình khuyên chỉ đổi đúng một tên file:
+```Bash
+db.js
+
+↓
+
+database.js
+```
+
+Lý do:
+
+- database.js rõ nghĩa hơn db.js.
+- Khi dự án lớn lên, rất dễ phân biệt với các file khác như redis.js, cache.js, queue.js.
+- Đây cũng là cách đặt tên phổ biến trong các dự án Node.js production.
+
+Ngoài thay đổi nhỏ này, mình không khuyến khích refactor mạnh. Cấu trúc hiện tại của bạn đã đủ tốt để tiếp tục phát triển và triển khai. Chúng ta sẽ tập trung vào việc hoàn thiện hạ tầng production (PM2, Nginx, SSL, deploy script, backup...) thay vì thay đổi kiến trúc đang hoạt động ổn định.
+
+---
+
+**Mình đề xuất một thay đổi cho kiến trúc**
+
+Hiện tại bạn đang chạy ứng dụng trong:
+```
+repo/backend
+```
+
+Trong ngắn hạn điều này ổn để kiểm thử.
+
+Nhưng khi chuyển sang production hoàn chỉnh (sau Bài 8 và Bài 9), mình sẽ hướng dẫn chuyển sang:
+```
+/home/deploy/apps/duhoctgg/deploy/backend
+```
+
+PM2 sẽ chạy từ thư mục deploy/backend, còn repo/backend chỉ dùng để git pull và build. Điều này giúp:
+
+- cập nhật mã nguồn mà không ảnh hưởng ứng dụng đang chạy;
+- dễ rollback nếu bản mới gặp lỗi;
+- chuẩn bị sẵn cho quy trình CI/CD sau này.
+
+Đó là mô hình mình khuyến nghị cho hệ thống của bạn khi hoàn thành toàn bộ series.
+
+---
+
+### 
+
+
 
 
 ```Bash

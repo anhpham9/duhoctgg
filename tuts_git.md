@@ -12,6 +12,55 @@ feature/frontend-news
 
 ```
 
+### Chỉ checkout 2 thư mục sang master
+
+giả sử 
+
+
+```Bash
+develop
+├── backend
+├── frontend
+└── layouts
+
+master
+└── layouts
+```
+
+Chuyển sang master:
+```Bash
+git checkout master
+```
+
+Lấy riêng 2 thư mục từ develop:
+```Bash
+git checkout develop -- backend frontend
+```
+
+Hoặc với Git mới:
+```Bash
+git restore --source develop backend frontend
+```
+
+Sau đó:
+```Bash
+git add backend frontend
+git commit -m "Update backend and frontend from develop"
+git push origin master
+```
+layouts trên master sẽ không bị thay đổi.
+
+---
+
+Tổng hợp
+```Bash
+git checkout master
+git checkout develop -- backend frontend
+git add backend frontend
+git commit -m "Sync backend and frontend from develop"
+git push origin master
+```
+
 ### Cách đẩy code lên repo và merge vào develop
 
 ```
@@ -77,7 +126,7 @@ feature/frontend-schools-public
 feature/frontend-faqs-public
 feature/frontend-seo-public
 
-
+fix/layouts
 
 ```
 ## Các tình huống đặc biệt
