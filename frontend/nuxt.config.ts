@@ -1,8 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
-  devtools: { enabled: true },
-  ssr: false, // Tắt SSR hoàn toàn để test middleware
+  devtools: { enabled: false },
+  ssr: true, // Tắt SSR hoàn toàn để test middleware
   
   
   
@@ -25,16 +25,8 @@ export default defineNuxtConfig({
       include: [
         'jwt-decode',
       ]
-    },
-    server: {
-      proxy: {
-        '/api': {
-          target: 'http://localhost:5000', // Địa chỉ backend thực tế
-          changeOrigin: true,
-          // rewrite: path => path.replace(/^\/api/, '')
-        }
-      }
     }
+    
   },
   // TẠMTẮT route rules để test middleware
   // routeRules: {
@@ -43,7 +35,7 @@ export default defineNuxtConfig({
   // },
   runtimeConfig: {
     public: {
-      apiBase: "http://localhost:5000/api"
+        apiBase: process.env.NUXT_PUBLIC_API_BASE || "/api"
     }
   }
 })
