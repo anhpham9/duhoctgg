@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import pkg from "pg";
+
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -16,29 +17,14 @@ const pool = new Pool({
     connectionTimeoutMillis: 5000,
 });
 
-const client = await pool.connect();
+let logged = false;
 
-const result = await client.query(`
-    SELECT
-        current_user,
-        current_schema(),
-        current_setting('search_path')
-`);
-
-console.log(result.rows);
-
-try {
-    await client.query("SELECT 1");
-    console.log("PostgreSQL connected.");
-} finally {
-    client.release();
-}
-
-console.log("=================");
-
-// pool.on("connect", () => {
-//     console.log("Đã kết nối với PostgreSQL");
-// });
+pool.on("connect", () => {
+    if (!logged) {
+        console.log(" Đã kết nối với PostgreSQL.");
+        logged = true;
+    }
+});
 
 pool.on("error", (err) => {
     console.error("Lỗi PostgreSQL không mong muốn:", err);
