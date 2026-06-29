@@ -230,12 +230,12 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, async () => {
     // Initialize settings keys in database
-    await ensureMediaAssetTableExists();
-    await ensureSettingsKeysExist();
-    await ensureAboutMissionsTableExists();
-    await ensureAboutContentTableExists();
-    await ensureHomepageSectionsTableExists();
-    await ensurePopupCampaignsTableExists();
+    // await ensureMediaAssetTableExists();
+    // await ensureSettingsKeysExist();
+    // await ensureAboutMissionsTableExists();
+    // await ensureAboutContentTableExists();
+    // await ensureHomepageSectionsTableExists();
+    // await ensurePopupCampaignsTableExists();
     
     backupService.startBackupScheduler();
 
