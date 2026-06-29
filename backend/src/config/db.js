@@ -27,13 +27,18 @@ const result = await client.query(`
 
 console.log(result.rows);
 
-client.release();
+try {
+    await client.query("SELECT 1");
+    console.log("PostgreSQL connected.");
+} finally {
+    client.release();
+}
 
 console.log("=================");
 
-pool.on("connect", () => {
-    console.log("Đã kết nối với PostgreSQL");
-});
+// pool.on("connect", () => {
+//     console.log("Đã kết nối với PostgreSQL");
+// });
 
 pool.on("error", (err) => {
     console.error("Lỗi PostgreSQL không mong muốn:", err);
