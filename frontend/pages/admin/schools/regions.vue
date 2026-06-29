@@ -3,15 +3,15 @@
         <div v-if="loadingUser || !hasPermission" class="permission-check">
             <div v-if="loadingUser" class="loading-permission">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Dang kiem tra quyen truy cap...</p>
+                <p>Đang kiểm tra quyền truy cập...</p>
             </div>
             <div v-else class="permission-denied">
                 <i class="fas fa-shield-alt"></i>
-                <h3>Khong the truy cap Quan ly khu vuc</h3>
-                <p>Chi Superadmin, Admin va Manager moi co the quan ly khu vuc truong hoc.</p>
+                <h3>Không thể truy cập Quản lý khu vực</h3>
+                <p>Chỉ Superadmin, Admin và Manager mới có thể quản lý khu vực trường học.</p>
                 <NuxtLink to="/admin" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i>
-                    Quay lai Dashboard
+                    Quay lại Dashboard
                 </NuxtLink>
             </div>
         </div>
@@ -21,18 +21,18 @@
                 <div class="header-content">
                     <h1>
                         <i class="fas fa-map-marked-alt"></i>
-                        Quan ly khu vuc truong hoc
+                        Quản lý khu vực trường học
                     </h1>
-                    <p>Tao va quan ly cac khu vuc dung de phan loai truong hoc</p>
+                    <p>Tạo và quản lý các khu vực dùng để phân loại trường học</p>
                 </div>
                 <div class="header-actions">
                     <button @click="openCreateModal" class="btn btn-primary">
                         <i class="fas fa-plus"></i>
-                        Them khu vuc
+                        Thêm khu vực
                     </button>
                     <button @click="fetchRegions" class="btn btn-secondary" :disabled="loading">
                         <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-                        Lam moi
+                        Làm mới
                     </button>
                 </div>
             </div>
@@ -42,20 +42,20 @@
                     v-model="searchQuery"
                     type="text"
                     class="form-control search-input"
-                    placeholder="Tim theo ten hoac slug khu vuc..."
+                    placeholder="Tìm theo tên hoặc slug khu vực..."
                 >
             </div>
 
             <div class="regions-table">
                 <div v-if="loading" class="loading-state">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <p>Dang tai khu vuc...</p>
+                    <p>Đang tải khu vực...</p>
                 </div>
 
                 <div v-else-if="error" class="error-state">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <p>Loi: {{ error }}</p>
-                    <button @click="fetchRegions" class="btn btn-primary">Thu lai</button>
+                    <p>Lỗi: {{ error }}</p>
+                    <button @click="fetchRegions" class="btn btn-primary">Thử lại</button>
                 </div>
 
                 <div v-else-if="filteredRegions.length > 0" class="table-container">
@@ -63,10 +63,10 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Ten khu vuc</th>
+                                <th>Tên khu vực</th>
                                 <th>Slug</th>
-                                <th>So truong</th>
-                                <th>Thao tac</th>
+                                <th>Số trường</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,7 +76,7 @@
                                 <td>{{ region.slug }}</td>
                                 <td>
                                     <span class="badge" :class="Number(region.schools_count || 0) > 0 ? 'badge-success' : 'badge-secondary'">
-                                        {{ Number(region.schools_count || 0) }} truong
+                                        {{ Number(region.schools_count || 0) }} trường
                                     </span>
                                 </td>
                                 <td>
@@ -98,8 +98,8 @@
 
                 <div v-else class="empty-state">
                     <i class="fas fa-map"></i>
-                    <h3>Chua co khu vuc phu hop</h3>
-                    <p>Hay tao khu vuc dau tien de phan loai truong hoc.</p>
+                    <h3>Chưa có khu vực phù hợp</h3>
+                    <p>Hãy tạo khu vực đầu tiên để phân loại trường học.</p>
                 </div>
             </div>
         </div>
@@ -107,14 +107,14 @@
         <div v-if="showRegionModal" class="modal-overlay">
             <div class="modal" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ editingRegion ? 'Sua khu vuc' : 'Them khu vuc moi' }}</h3>
+                    <h3>{{ editingRegion ? 'Sửa khu vực' : 'Thêm khu vực mới' }}</h3>
                     <button @click="closeModal" class="btn-close">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Ten khu vuc <span class="required">*</span></label>
+                        <label>Tên khu vực <span class="required">*</span></label>
                         <input
                             v-model.trim="regionForm.name"
                             @input="clearFieldError('name')"
@@ -122,7 +122,7 @@
                             type="text"
                             class="form-control"
                             :class="{ 'is-invalid': !!formErrors.name }"
-                            placeholder="Nhap ten khu vuc"
+                            placeholder="Nhập tên khu vực"
                         >
                         <p v-if="formErrors.name" class="field-error">{{ formErrors.name }}</p>
                     </div>
@@ -144,7 +144,7 @@
                     <button class="btn btn-secondary" @click="closeModal">Huy</button>
                     <button class="btn btn-primary" :disabled="saving" @click="saveRegion">
                         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
-                        {{ editingRegion ? 'Cap nhat' : 'Tao moi' }}
+                        {{ editingRegion ? 'Cập nhật' : 'Tạo mới' }}
                     </button>
                 </div>
             </div>
@@ -153,7 +153,7 @@
         <div v-if="showDeleteConfirm && regionToDelete" class="modal-overlay">
             <div class="modal modal-small" @click.stop>
                 <div class="modal-header">
-                    <h3>Xac nhan xoa</h3>
+                    <h3>Xác nhận xóa</h3>
                     <button @click="closeDeleteConfirm" class="btn-close">
                         <i class="fas fa-times"></i>
                     </button>
@@ -161,15 +161,15 @@
                 <div class="modal-body">
                     <div class="delete-confirmation">
                         <i class="fas fa-exclamation-triangle warning-icon"></i>
-                        <p>Ban co chac chan muon xoa khu vuc <strong>{{ regionToDelete.name }}</strong>?</p>
-                        <p class="warning-text">Thao tac nay khong the hoan tac!</p>
+                        <p>Bạn có chắc chắn muốn xóa khu vực <strong>{{ regionToDelete.name }}</strong>?</p>
+                        <p class="warning-text">Thao tác này không thể hoàn tác!</p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Huy</button>
+                    <button @click="closeDeleteConfirm" type="button" class="btn btn-secondary">Hủy</button>
                     <button @click="confirmDeleteRegion" type="button" class="btn btn-danger" :disabled="saving || deletingId === regionToDelete.id">
                         <i v-if="deletingId === regionToDelete.id" class="fas fa-spinner fa-spin"></i>
-                        {{ deletingId === regionToDelete.id ? 'Dang xoa...' : 'Xoa khu vuc' }}
+                        {{ deletingId === regionToDelete.id ? 'Đang xóa...' : 'Xóa khu vực' }}
                     </button>
                 </div>
             </div>
@@ -252,18 +252,18 @@ const validateField = (field) => {
     const slug = (regionForm.slug || '').trim()
 
     if (field === 'name') {
-        if (!name) return (formErrors.name = 'Ten khu vuc la bat buoc', false)
-        if (name.length < 2) return (formErrors.name = 'Ten khu vuc phai co it nhat 2 ky tu', false)
-        if (name.length > 100) return (formErrors.name = 'Ten khu vuc khong duoc vuot qua 100 ky tu', false)
+        if (!name) return (formErrors.name = 'Tên khu vực là bắt buộc', false)
+        if (name.length < 2) return (formErrors.name = 'Tên khu vực phải có ít nhất 2 ký tự', false)
+        if (name.length > 100) return (formErrors.name = 'Tên khu vực không được vượt quá 100 ký tự', false)
         formErrors.name = ''
         return true
     }
 
     if (field === 'slug') {
         if (!slug) return (formErrors.slug = '', true)
-        if (slug.length < 2) return (formErrors.slug = 'Slug phai co it nhat 2 ky tu', false)
-        if (slug.length > 120) return (formErrors.slug = 'Slug khong duoc vuot qua 120 ky tu', false)
-        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return (formErrors.slug = 'Slug chi gom chu thuong, so va dau gach ngang', false)
+        if (slug.length < 2) return (formErrors.slug = 'Slug phải có ít nhất 2 ký tự', false)
+        if (slug.length > 120) return (formErrors.slug = 'Slug không được vượt quá 120 ký tự', false)
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return (formErrors.slug = 'Slug chỉ gồm chữ thường, số và dấu gạch ngang', false)
         formErrors.slug = ''
         return true
     }
@@ -298,7 +298,7 @@ const fetchRegions = async () => {
         if (!response.ok) throw new Error(data?.message || `HTTP ${response.status}`)
         regions.value = data.data || []
     } catch (err) {
-        error.value = err.message || 'Khong the tai khu vuc'
+        error.value = err.message || 'Không thể tải khu vực'
     } finally {
         loading.value = false
     }
@@ -352,11 +352,11 @@ const confirmDeleteRegion = async () => {
         })
         const data = await response.json()
         if (!response.ok) throw new Error(data?.message || `HTTP ${response.status}`)
-        showSuccess(data?.message || 'Da xoa khu vuc thanh cong')
+        showSuccess(data?.message || 'Đã xóa khu vực thành công')
         closeDeleteConfirm()
         await fetchRegions()
     } catch (err) {
-        showError(err.message || 'Khong the xoa khu vuc')
+        showError(err.message || 'Không thể xóa khu vực')
     } finally {
         deletingId.value = null
     }
@@ -364,7 +364,7 @@ const confirmDeleteRegion = async () => {
 
 const saveRegion = async () => {
     if (!validateRegionForm()) {
-        showError('Vui long kiem tra lai thong tin khu vuc')
+        showError('Vui lòng kiểm tra lại thông tin khu vực')
         return
     }
 
@@ -387,14 +387,14 @@ const saveRegion = async () => {
         const data = await response.json()
         if (!response.ok) {
             if (data?.errors) setBackendFieldErrors(data.errors)
-            throw new Error(data?.message || 'Khong the luu khu vuc')
+            throw new Error(data?.message || 'Không thể lưu khu vực')
         }
 
-        showSuccess(data?.message || 'Luu khu vuc thanh cong')
+        showSuccess(data?.message || 'Lưu khu vực thành công')
         closeModal()
         await fetchRegions()
     } catch (err) {
-        showError(err.message || 'Khong the luu khu vuc')
+        showError(err.message || 'Không thể lưu khu vực')
     } finally {
         saving.value = false
     }
