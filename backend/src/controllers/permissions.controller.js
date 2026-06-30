@@ -4,6 +4,7 @@ import { auditLog, logError, logInfo } from "../utils/logger.js";
 const SETTINGS_KEY = "permissions.modules.v1";
 const ALL_ROLES = [1, 2, 3, 4, 5];
 const MANAGE_PERMISSION_ROLES = [1, 2];
+const SETTINGS_GROUP = process.env.PERMISSIONS_SETTINGS_GROUP || "general";
 
 const DEFAULT_MODULES = [
     { key: "dashboard", label: "Dashboard", routePrefix: "/admin", description: "Trang tổng quan", allowedRoles: [1, 2, 3, 4, 5] },
@@ -82,7 +83,7 @@ const saveModulesConfig = async (modules) => {
             SETTINGS_KEY,
             payload,
             "Role-based admin modules permissions",
-            "security"
+            SETTINGS_GROUP
         ]
     );
 };

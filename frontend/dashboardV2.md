@@ -152,3 +152,30 @@ Lệnh nên chạy ngay để áp DB (nếu bạn muốn mình cũng có thể c
 psql -d <your_db> -f 2026-06-30-allow-security-settings-group.sql
 Seed settings (bao gồm quyền mặc định):
 node seedSettings.js
+
+---
+
+Kết quả vừa chạy:
+
+Seed settings thành công.
+Smoke test permissions chạy full pass:
+Admin GET config: 200
+Manager GET config: 403 đúng kỳ vọng
+Admin PUT config: 200
+Sau khi tạm gỡ quyền Editor ở news, Editor GET news: 403 đúng kỳ vọng
+Restore config: 200
+Verify restore role Editor trong news: YES
+Dọn toàn bộ user tạm: done
+Các thay đổi bổ sung để xử lý lỗi 500:
+
+Sửa lưu cấu hình permissions dùng group tương thích DB cũ (mặc định general):
+permissions.controller.js:6
+Đồng bộ seed key permissions.modules.v1 sang group general:
+seedSettings.js:136
+Thêm script smoke test E2E và npm script chạy test:
+test-permissions-api.js:1
+package.json:8
+Nguyên nhân gốc đã xác định:
+
+DB hiện tại vẫn có check constraint cũ settings_type_check, nên group security bị reject và làm PUT /permissions/config trả 500.
+Sau khi chuyển sang group general, luồng chạy ổn định trên môi trường hiện tại.

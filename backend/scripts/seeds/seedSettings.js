@@ -133,7 +133,7 @@ const settings = [
       updatedAt: new Date().toISOString()
     }),
     description: "Role-based admin modules permissions",
-    group_name: "security"
+    group_name: "general"
   }
 ];
 
