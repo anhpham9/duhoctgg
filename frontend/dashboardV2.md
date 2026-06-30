@@ -179,3 +179,39 @@ Nguyên nhân gốc đã xác định:
 
 DB hiện tại vẫn có check constraint cũ settings_type_check, nên group security bị reject và làm PUT /permissions/config trả 500.
 Sau khi chuyển sang group general, luồng chạy ổn định trên môi trường hiện tại.
+
+---
+
+Kết quả đã làm
+
+Tạo migration runner tự động cho backend
+Script runner mới: runMigrations.js:1
+Có tracking bảng schema_migrations: runMigrations.js:15
+Lọc migration theo tên timestamp .sql: runMigrations.js:11
+Sửa path Windows ổn định bằng fileURLToPath: runMigrations.js:9
+Thêm npm script migrate: package.json:10
+Bổ sung test ma trận quyền cho logic middleware frontend
+Script test mới: test-permission-middleware.js:1
+Hàm quyết định quyền theo path (cùng logic middleware/composable): test-permission-middleware.js:61
+Có test precedence cho /admin/settings/permissions: test-permission-middleware.js:122
+Thêm npm script test:permission-middleware: package.json:11
+Cập nhật migration để tương thích DB cũ có constraint legacy
+Drop cả settings_group_name_check và settings_type_check trước khi add lại:
+2026-06-30-allow-security-settings-group.sql:2
+Chốt tương thích lưu cấu hình quyền
+Cho phép cấu hình group từ env, default general để không vướng DB cũ:
+permissions.controller.js:7
+Seed permissions.modules.v1 dùng general:
+seedSettings.js:116
+seedSettings.js:136
+Kết quả chạy thực tế
+
+npm run migrate: thành công
+Đã apply migration: 2026-06-30-allow-security-settings-group.sql
+npm run test:permission-middleware: thành công
+Loaded 13 modules
+Assertions passed: 140
+npm run test:permissions: thành công
+GET/PUT permissions config hoạt động đúng
+Guard động /api/news phản ánh thay đổi quyền ngay
+Restore config và cleanup user tạm đều done
