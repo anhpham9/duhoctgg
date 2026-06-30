@@ -257,6 +257,7 @@ const breadcrumbItems = computed(() => {
         '/admin/settings/backup': 'Sao lưu',
         '/admin/settings/seo': 'SEO',
         '/admin/settings/socials': 'Mạng xã hội',
+        '/admin/settings/permissions': 'Phân quyền',
         
         '/admin/team-members/create': 'Thêm thành viên'
     }

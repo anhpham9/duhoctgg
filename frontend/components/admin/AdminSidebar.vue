@@ -105,7 +105,7 @@
                             <li><NuxtLink to="/admin/other/about-content" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/other/about-content') }">Về chúng tôi</NuxtLink></li>
                         </ul>
                     </li>
-                    <li v-if="canAccessSettings" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
+                    <li v-if="canAccessSettingsGroup" class="nav-item has-submenu" :class="{ active: openSubmenus.includes('settings') }">
                         <a href="#" class="nav-link" @click="toggleSubmenu('settings')">
                             <i class="fas fa-cog"></i>
                             <span>Cài đặt</span>
@@ -117,6 +117,7 @@
                             <li><NuxtLink to="/admin/settings/socials" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/socials') }">Mạng xã hội</NuxtLink></li>
                             <li><NuxtLink to="/admin/settings/seo" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/seo') }">SEO</NuxtLink></li>
                             <li><NuxtLink to="/admin/settings/backup" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/backup') }">Sao lưu & Khôi phục</NuxtLink></li>
+                            <li v-if="canAccessPermissions"><NuxtLink to="/admin/settings/permissions" @click="handleSubmenuLinkClick" :class="{ active: isSubmenuItemActive('/admin/settings/permissions') }">Phân quyền</NuxtLink></li>
                         </ul>
                     </li>
                 </template>
@@ -165,30 +166,45 @@ const {
     isManager 
 } = useCurrentUser()
 
+const {
+    fetchPermissionsConfig,
+    canAccessModule
+} = usePermissionsConfig()
+
+const currentRoleId = computed(() => Number(currentUser.value?.role_id || 0))
+
 // Permission checks based on role_id
 // Permission computed properties using composable
 const canAccessUsers = computed(() => {
-    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
+    return !loadingUser.value && canAccessModule('users', currentRoleId.value)
 })
 
 const canAccessContacts = computed(() => {
-    return !loadingUser.value && hasAnyRole([1, 2, 3, 5]) // Superadmin, Admin, Manager, Consultant
+    return !loadingUser.value && canAccessModule('contacts', currentRoleId.value)
 })
 
 const canAccessSchools = computed(() => {
-    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
+    return !loadingUser.value && canAccessModule('schools', currentRoleId.value)
 })
 
 const canAccessNews = computed(() => {
-    return !loadingUser.value && hasAnyRole([1, 2, 3, 4]) // Superadmin, Admin, Manager, Editor
+    return !loadingUser.value && canAccessModule('news', currentRoleId.value)
 })
 
 const canAccessContent = computed(() => {
-    return !loadingUser.value && hasAnyRole([1, 2, 3]) // Superadmin, Admin, Manager
+    return !loadingUser.value && canAccessModule('content', currentRoleId.value)
 })
 
 const canAccessSettings = computed(() => {
-    return !loadingUser.value && hasAnyRole([1, 2]) // Superadmin, Admin only
+    return !loadingUser.value && canAccessModule('settings', currentRoleId.value)
+})
+
+const canAccessPermissions = computed(() => {
+    return !loadingUser.value && canAccessModule('permissions', currentRoleId.value)
+})
+
+const canAccessSettingsGroup = computed(() => {
+    return canAccessSettings.value || canAccessPermissions.value
 })
 
 // ========================================
@@ -360,6 +376,7 @@ const handleResponsive = () => {
 onMounted(() => {
     // Fetch current user info
     fetchCurrentUser()
+    fetchPermissionsConfig()
     
     // Initial responsive check
     handleResponsive()

@@ -63,44 +63,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
                 // Superadmin có tất cả quyền
                 if (user.role_id === 1) {
-                    // console.log('✅ Superadmin access granted');
                     resolve();
                     return;
                 }
 
-                // Kiểm tra quyền cho từng trang admin
-                if (to.path.startsWith("/admin/users") && ![1, 2, 3].includes(user.role_id)) {
-                    // console.log('🚫 User role not allowed for /admin/users, redirecting');
-                    resolve(navigateTo("/admin"));
-                    return;
-                }
+                const { fetchPermissionsConfig, canAccessPath } = usePermissionsConfig();
+                await fetchPermissionsConfig();
 
-                if (to.path.startsWith("/admin/contacts") && ![1, 2, 3, 5].includes(user.role_id)) {
-                    // console.log('🚫 User role not allowed for /admin/contacts, redirecting');
-                    resolve(navigateTo("/admin"));
-                    return;
-                }
-
-                if (to.path.startsWith("/admin/schools") && ![1, 2, 3].includes(user.role_id)) {
-                    // console.log('🚫 User role not allowed for /admin/schools, redirecting');
-                    resolve(navigateTo("/admin"));
-                    return;
-                }
-
-                if (to.path.startsWith("/admin/news") && ![1, 2, 3, 4].includes(user.role_id)) {
-                    // console.log('🚫 User role not allowed for /admin/news, redirecting');
-                    resolve(navigateTo("/admin"));
-                    return;
-                }
-
-                if (to.path.startsWith("/admin/content") && ![1, 2, 3].includes(user.role_id)) {
-                    // console.log('🚫 User role not allowed for /admin/content, redirecting');
-                    resolve(navigateTo("/admin"));
-                    return;
-                }
-
-                if (to.path.startsWith("/admin/settings") && ![1, 2].includes(user.role_id)) {
-                    // console.log('🚫 User role not allowed for /admin/settings, redirecting');
+                if (!canAccessPath(to.path, user.role_id)) {
                     resolve(navigateTo("/admin"));
                     return;
                 }
