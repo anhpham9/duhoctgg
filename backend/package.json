@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/app.js",
     "test:permissions": "node test-permissions-api.js",
-    "migrate": "node scripts/migrations/runMigrations.js"
+    "migrate": "node scripts/migrations/runMigrations.js",
+    "seed:settings": "node scripts/seeds/seedSettings.js"
   },
   "keywords": [],
   "author": "",

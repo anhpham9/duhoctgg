@@ -14,6 +14,13 @@ CREATE TABLE IF NOT EXISTS roles (
     description TEXT
 );
 
+-- ======================== SCHEMA_MIGRATIONS ========================
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    id SERIAL PRIMARY KEY,
+    file_name VARCHAR(255) UNIQUE NOT NULL,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ======================== PERMISSIONS ========================
 CREATE TABLE IF NOT EXISTS permissions (
     id SERIAL PRIMARY KEY,
@@ -325,6 +332,12 @@ CREATE TABLE IF NOT EXISTS settings (
     group_name VARCHAR(50) CHECK (group_name IN ('general', 'contact', 'seo', 'security')) NOT NULL
 );
 
+ALTER TABLE settings DROP CONSTRAINT IF EXISTS settings_group_name_check;
+ALTER TABLE settings DROP CONSTRAINT IF EXISTS settings_type_check;
+ALTER TABLE settings
+ADD CONSTRAINT settings_group_name_check
+CHECK (group_name IN ('general', 'contact', 'seo', 'security'));
+
 -- ======================== POPUP_CAMPAIGNS ========================
 
 CREATE TABLE IF NOT EXISTS popup_campaigns (
@@ -409,7 +422,8 @@ INSERT INTO notification_rules (type, notify_superadmin, notify_admins, notify_m
 ('contact_submission', TRUE, TRUE, TRUE, 'Liên hệ mới: {name}'),
 ('backup_completed', TRUE, TRUE, FALSE, 'Sao lưu hệ thống hoàn tất'),
 ('account_locked', TRUE, FALSE, FALSE, 'Tài khoản {username} bị tạm khóa'),
-('settings_changed', TRUE, TRUE, FALSE, 'Cài đặt {key} được thay đổi');
+('settings_changed', TRUE, TRUE, FALSE, 'Cài đặt {key} được thay đổi')
+ON CONFLICT (type) DO NOTHING;
 
 
 -- ======================== NOTIFICATION_SETTINGS ========================

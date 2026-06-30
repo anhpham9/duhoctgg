@@ -215,3 +215,38 @@ npm run test:permissions: thành công
 GET/PUT permissions config hoạt động đúng
 Guard động /api/news phản ánh thay đổi quyền ngay
 Restore config và cleanup user tạm đều done
+
+---
+
+1) Thêm một lệnh tổng hợp duy nhất ở root
+
+Đã tạo root script:
+package.json:5
+Bạn chỉ cần chạy tại root:
+npm run verify:permissions-all
+
+Chuỗi thực thi đúng thứ tự:
+
+migrate
+seed
+test:permissions
+test:permission-middleware
+Mình cũng bổ sung script seed riêng trong backend để tránh lỗi môi trường khi gọi từ root:
+package.json:11
+
+2) Tổng hợp cấu trúc SQL vào init_schema.sql
+Mình đã đồng bộ phần schema mới vào file gốc:
+
+Thêm bảng theo dõi migration:
+init_schema.sql:18
+Chuẩn hóa lại constraint settings để tương thích cả constraint cũ:
+init_schema.sql:336
+Đổi seed notification_rules sang idempotent:
+init_schema.sql:426
+Kết quả chạy thực tế
+
+Lệnh root tổng hợp đã chạy pass toàn bộ pipeline.
+migrate: No pending migrations
+seed: Seeded settings successfully
+backend permissions smoke test: pass
+frontend permission middleware matrix test: pass (Assertions passed: 140)
