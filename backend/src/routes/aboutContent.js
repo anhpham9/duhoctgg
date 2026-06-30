@@ -35,6 +35,7 @@ import {
 } from '../controllers/aboutContent.controller.js'
 import multer from 'multer'
 import { authenticate } from '../middlewares/auth.middleware.js'
+import { checkModuleAccess } from '../middlewares/permission.middleware.js'
 
 const upload = multer({ storage: multer.memoryStorage() })
 
@@ -55,45 +56,45 @@ const router = express.Router()
 
 // Static routes FIRST — must come before /:id to prevent route shadowing
 router.get('/team-members', getTeamMembers)
-router.get('/team-members/admin', authenticate, authorizeRole([1, 2, 3]), getTeamMembersAdmin)
-router.post('/team-members', authenticate, authorizeRole([1, 2, 3]), createTeamMember)
-router.post('/team-members/upload-image', authenticate, authorizeRole([1, 2, 3]), upload.single('image'), uploadTeamMemberImage)
+router.get('/team-members/admin', authenticate, checkModuleAccess('teamMembers'), authorizeRole([1, 2, 3]), getTeamMembersAdmin)
+router.post('/team-members', authenticate, checkModuleAccess('teamMembers'), authorizeRole([1, 2, 3]), createTeamMember)
+router.post('/team-members/upload-image', authenticate, checkModuleAccess('teamMembers'), authorizeRole([1, 2, 3]), upload.single('image'), uploadTeamMemberImage)
 
 // Dynamic routes AFTER static routes
 router.get('/team-members/:id', getTeamMemberById)
-router.put('/team-members/:id', authenticate, authorizeRole([1, 2, 3]), updateTeamMember)
-router.delete('/team-members/:id', authenticate, authorizeRole([1, 2]), deleteTeamMember)
+router.put('/team-members/:id', authenticate, checkModuleAccess('teamMembers'), authorizeRole([1, 2, 3]), updateTeamMember)
+router.delete('/team-members/:id', authenticate, checkModuleAccess('teamMembers'), authorizeRole([1, 2]), deleteTeamMember)
 
 // ============ About Stats ============
 
 router.get('/stats', getAboutStats)
-router.get('/stats/admin', authenticate, authorizeRole([1, 2, 3]), getAboutStatsAdmin)
-router.post('/stats', authenticate, authorizeRole([1, 2, 3]), createAboutStat)
-router.put('/stats/:id', authenticate, authorizeRole([1, 2, 3]), updateAboutStat)
-router.delete('/stats/:id', authenticate, authorizeRole([1, 2]), deleteAboutStat)
+router.get('/stats/admin', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), getAboutStatsAdmin)
+router.post('/stats', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), createAboutStat)
+router.put('/stats/:id', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), updateAboutStat)
+router.delete('/stats/:id', authenticate, checkModuleAccess('other'), authorizeRole([1, 2]), deleteAboutStat)
 
 // ============ About Reasons ============
 
 router.get('/reasons', getAboutReasons)
-router.get('/reasons/admin', authenticate, authorizeRole([1, 2, 3]), getAboutReasonsAdmin)
-router.post('/reasons', authenticate, authorizeRole([1, 2, 3]), createAboutReason)
-router.put('/reasons/:id', authenticate, authorizeRole([1, 2, 3]), updateAboutReason)
-router.delete('/reasons/:id', authenticate, authorizeRole([1, 2]), deleteAboutReason)
+router.get('/reasons/admin', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), getAboutReasonsAdmin)
+router.post('/reasons', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), createAboutReason)
+router.put('/reasons/:id', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), updateAboutReason)
+router.delete('/reasons/:id', authenticate, checkModuleAccess('other'), authorizeRole([1, 2]), deleteAboutReason)
 
 // ============ About Missions ============
 
 router.get('/missions', getAboutMissions)
-router.get('/missions/admin', authenticate, authorizeRole([1, 2, 3]), getAboutMissionsAdmin)
-router.post('/missions', authenticate, authorizeRole([1, 2, 3]), createAboutMission)
-router.put('/missions/:id', authenticate, authorizeRole([1, 2, 3]), updateAboutMission)
-router.delete('/missions/:id', authenticate, authorizeRole([1, 2]), deleteAboutMission)
+router.get('/missions/admin', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), getAboutMissionsAdmin)
+router.post('/missions', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), createAboutMission)
+router.put('/missions/:id', authenticate, checkModuleAccess('other'), authorizeRole([1, 2, 3]), updateAboutMission)
+router.delete('/missions/:id', authenticate, checkModuleAccess('other'), authorizeRole([1, 2]), deleteAboutMission)
 
 // ============ About Content ============
 
 router.get('/content', getAboutContent)
-router.get('/content/admin', authenticate, authorizeRole([1, 2, 3]), getAboutContentAdmin)
-router.post('/content', authenticate, authorizeRole([1, 2, 3]), createAboutContent)
-router.put('/content/:id', authenticate, authorizeRole([1, 2, 3]), updateAboutContent)
-router.delete('/content/:id', authenticate, authorizeRole([1, 2]), deleteAboutContent)
+router.get('/content/admin', authenticate, checkModuleAccess('content'), authorizeRole([1, 2, 3]), getAboutContentAdmin)
+router.post('/content', authenticate, checkModuleAccess('content'), authorizeRole([1, 2, 3]), createAboutContent)
+router.put('/content/:id', authenticate, checkModuleAccess('content'), authorizeRole([1, 2, 3]), updateAboutContent)
+router.delete('/content/:id', authenticate, checkModuleAccess('content'), authorizeRole([1, 2]), deleteAboutContent)
 
 export default router

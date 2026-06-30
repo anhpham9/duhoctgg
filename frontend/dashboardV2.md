@@ -114,3 +114,41 @@ Vào dashboard với role Admin/Manager/Consultant để thấy scope options kh
 Đổi scope giữa my, team, all và kiểm tra số liệu thay đổi.
 Kéo thả vài card trong từng vùng, F5 lại trang để xác nhận layout được lưu theo user.
 Đăng nhập user khác để thấy layout riêng của user đó.
+
+---
+
+Đã thực hiện xong cả 2 việc bạn yêu cầu.
+
+1) Thêm migration/seed cho cấu hình quyền mặc định
+
+Seed thêm key quyền mặc định permissions.modules.v1 trong settings: seedSettings.js:116
+Seed dùng group security: seedSettings.js:136
+Schema gốc cho môi trường mới đã cho phép group security: init_schema.sql:325
+Tạo migration riêng để nâng cấp DB hiện tại: 2026-06-30-allow-security-settings-group.sql
+2) Thêm backend guard dùng chung theo cấu hình quyền động
+
+Tạo guard checkModuleAccess đọc cấu hình từ settings key permissions.modules.v1, có fallback mặc định an toàn, Superadmin luôn được phép:
+permission.middleware.js:5
+permission.middleware.js:57
+Gắn guard vào các API quan trọng ở app-level:
+Users: app.js:168
+Settings: app.js:198
+Permissions config: app.js:211
+Giữ /api/about không chặn toàn cục để không ảnh hưởng public endpoint: app.js:214
+Gắn guard chi tiết cho các route admin trong about:
+Team members: aboutContent.js:59
+Other content (stats/reasons/missions): aboutContent.js:71
+About content admin: aboutContent.js:95
+Gắn guard cho homepage sections admin:
+homepageSections.routes.js:15
+Xác thực
+
+Đã pass syntax check các file backend thay đổi.
+Đã pass kiểm tra lỗi tĩnh (không có error).
+Chưa xác nhận runtime npm run dev lần cuối vì lệnh chạy server từ backend đã bị skip trong phiên này.
+Lệnh nên chạy ngay để áp DB (nếu bạn muốn mình cũng có thể chạy giúp)
+
+Áp migration:
+psql -d <your_db> -f 2026-06-30-allow-security-settings-group.sql
+Seed settings (bao gồm quyền mặc định):
+node seedSettings.js

@@ -1,5 +1,6 @@
 import "./config/env.js";
 import { authenticate } from "./middlewares/auth.middleware.js";
+import { checkModuleAccess } from "./middlewares/permission.middleware.js";
 import { requestLogger, logInfo } from "./utils/logger.js";
 import { errorHandler, notFoundHandler } from "./utils/errorHandler.js";
 import { rateLimiter } from "./middlewares/rateLimiter.js";
@@ -164,56 +165,56 @@ app.use("/api/auth", authRoutes);
 
 
 // users CRUD routes (RBAC protected)
-app.use("/api/users", authenticate, /*checkPermission('users:read')*/ usersRoutes);
+app.use("/api/users", authenticate, checkModuleAccess("users"), usersRoutes);
 
 // contacts CRUD routes (RBAC protected)
-app.use("/api/contacts", authenticate, /*checkPermission('contacts:read')*/ contactsRoutes);
+app.use("/api/contacts", authenticate, checkModuleAccess("contacts"), contactsRoutes);
 
 // news CRUD routes (RBAC protected)
-app.use("/api/news", authenticate, /*checkPermission('news:read')*/ newsRoutes);
+app.use("/api/news", authenticate, checkModuleAccess("news"), newsRoutes);
 
 // categories of news CRUD routes (RBAC protected)
-app.use("/api/categories", authenticate, /*checkPermission('categories:read')*/ categoriesRoutes);
+app.use("/api/categories", authenticate, checkModuleAccess("news"), categoriesRoutes);
 
 // schools CRUD routes (RBAC protected)
-app.use("/api/schools", authenticate, /*checkPermission('schools:read')*/ schoolsRoutes);
+app.use("/api/schools", authenticate, checkModuleAccess("schools"), schoolsRoutes);
 
 // regions of schools CRUD routes (RBAC protected)
-app.use("/api/regions", authenticate, /*checkPermission('regions:read')*/ regionsRoutes);
+app.use("/api/regions", authenticate, checkModuleAccess("schools"), regionsRoutes);
 
 // school types CRUD routes (RBAC protected)
-app.use("/api/school-types", authenticate, /*checkPermission('school_types:read')*/ schoolTypesRoutes);
+app.use("/api/school-types", authenticate, checkModuleAccess("schools"), schoolTypesRoutes);
 
 // FAQs CRUD routes (RBAC protected)
-app.use("/api/faqs", authenticate, /*checkPermission('faqs:read')*/ faqsRoutes);
+app.use("/api/faqs", authenticate, checkModuleAccess("faqs"), faqsRoutes);
 
 // school reviews CRUD routes (RBAC protected)
-app.use("/api/school-reviews", authenticate, /*checkPermission('school_reviews:read')*/ schoolReviewsRoutes);
+app.use("/api/school-reviews", authenticate, checkModuleAccess("schools"), schoolReviewsRoutes);
 
 // static pages CRUD routes (RBAC protected)
-app.use("/api/static-pages", authenticate, staticPagesRoutes);
+app.use("/api/static-pages", authenticate, checkModuleAccess("content"), staticPagesRoutes);
 
 // settings CRUD routes (RBAC protected)
-app.use("/api/settings", authenticate, settingsRoutes);
+app.use("/api/settings", authenticate, checkModuleAccess("settings"), settingsRoutes);
 
 // social links CRUD routes (RBAC protected)
-app.use("/api/settings/socials", authenticate, socialLinksRoutes);
-app.use("/api/settings/seo", authenticate, seoSettingsRoutes);
+app.use("/api/settings/socials", authenticate, checkModuleAccess("settings"), socialLinksRoutes);
+app.use("/api/settings/seo", authenticate, checkModuleAccess("settings"), seoSettingsRoutes);
 
 // notifications CRUD routes
-app.use("/api/notifications", authenticate, notificationsRoutes);
+app.use("/api/notifications", authenticate, checkModuleAccess("notifications"), notificationsRoutes);
 
 // dashboard overview route
-app.use("/api/dashboard", authenticate, dashboardRoutes);
+app.use("/api/dashboard", authenticate, checkModuleAccess("dashboard"), dashboardRoutes);
 
 // centralized permissions configuration route
-app.use("/api/permissions", authenticate, permissionsRoutes);
+app.use("/api/permissions", authenticate, checkModuleAccess("permissions"), permissionsRoutes);
 
 // about content CRUD routes
 app.use("/api/about", aboutContentRoutes);
 
 // homepage sections CRUD routes
-app.use("/api/homepage-sections", authenticate, homepageSectionsRoutes);
+app.use("/api/homepage-sections", authenticate, checkModuleAccess("content"), homepageSectionsRoutes);
 // notification_settings CRUD routes
 // app.use("/api/notification-settings", authenticate, notificationSettingsRoutes);
 // files CRUD routes

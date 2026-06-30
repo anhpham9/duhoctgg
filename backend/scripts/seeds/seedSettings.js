@@ -111,6 +111,29 @@ const settings = [
     value: "",
     description: "SEO setting: Facebook App ID",
     group_name: "seo"
+  },
+  {
+    key: "permissions.modules.v1",
+    value: JSON.stringify({
+      modules: [
+        { key: "dashboard", allowedRoles: [1, 2, 3, 4, 5] },
+        { key: "users", allowedRoles: [1, 2, 3] },
+        { key: "contacts", allowedRoles: [1, 2, 3, 5] },
+        { key: "schools", allowedRoles: [1, 2, 3] },
+        { key: "news", allowedRoles: [1, 2, 3, 4] },
+        { key: "content", allowedRoles: [1, 2, 3] },
+        { key: "teamMembers", allowedRoles: [1, 2, 3] },
+        { key: "other", allowedRoles: [1, 2, 3] },
+        { key: "faqs", allowedRoles: [1, 2, 3, 4, 5] },
+        { key: "notifications", allowedRoles: [1, 2, 3, 4, 5] },
+        { key: "profile", allowedRoles: [1, 2, 3, 4, 5] },
+        { key: "settings", allowedRoles: [1, 2] },
+        { key: "permissions", allowedRoles: [1, 2] }
+      ],
+      updatedAt: new Date().toISOString()
+    }),
+    description: "Role-based admin modules permissions",
+    group_name: "security"
   }
 ];
 

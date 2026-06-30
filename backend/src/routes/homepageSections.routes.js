@@ -1,5 +1,6 @@
 import express from "express";
 import { authenticate } from "../middlewares/auth.middleware.js";
+import { checkModuleAccess } from "../middlewares/permission.middleware.js";
 import { rateLimiter } from "../middlewares/rateLimiter.js";
 import {
     createHomepageSection,
@@ -11,6 +12,7 @@ import {
 const router = express.Router();
 
 router.use(authenticate);
+router.use(checkModuleAccess("content"));
 router.use(rateLimiter.staticPagesLimiter);
 
 router.get("/", getHomepageSectionsAdmin);
