@@ -11,6 +11,14 @@
                 <p class="page-description role-line">
                     Vai trò hiện tại: <strong>{{ roleName }}</strong>
                 </p>
+                <div class="dashboard-controls">
+                    <label for="scopeSelect">Phạm vi dữ liệu:</label>
+                    <select id="scopeSelect" v-model="scope" class="period-select" @change="fetchDashboardData">
+                        <option v-for="option in scopeOptions" :key="option" :value="option">
+                            {{ scopeLabel(option) }}
+                        </option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -37,7 +45,14 @@
 
             <!-- Stats Cards -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <div
+                    class="stat-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('stats', 'contactsToday') }"
+                    @dragstart="onWidgetDragStart('stats', 'contactsToday', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('stats', 'contactsToday')"
+                >
                     <div class="stat-icon primary">
                         <i class="fas fa-phone"></i>
                     </div>
@@ -51,7 +66,14 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div
+                    class="stat-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('stats', 'schoolsTotal') }"
+                    @dragstart="onWidgetDragStart('stats', 'schoolsTotal', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('stats', 'schoolsTotal')"
+                >
                     <div class="stat-icon success">
                         <i class="fas fa-university"></i>
                     </div>
@@ -65,7 +87,14 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div
+                    class="stat-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('stats', 'contactsPending') }"
+                    @dragstart="onWidgetDragStart('stats', 'contactsPending', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('stats', 'contactsPending')"
+                >
                     <div class="stat-icon warning">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -79,7 +108,14 @@
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div
+                    class="stat-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('stats', 'newsThisWeek') }"
+                    @dragstart="onWidgetDragStart('stats', 'newsThisWeek', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('stats', 'newsThisWeek')"
+                >
                     <div class="stat-icon info">
                         <i class="fas fa-newspaper"></i>
                     </div>
@@ -95,7 +131,14 @@
             </div>
 
             <div class="v2-row">
-                <div class="dashboard-card v2-card">
+                <div
+                    class="dashboard-card v2-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('v2', 'alerts') }"
+                    @dragstart="onWidgetDragStart('v2', 'alerts', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('v2', 'alerts')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">Cảnh báo hệ thống</h3>
                     </div>
@@ -120,7 +163,14 @@
                     </div>
                 </div>
 
-                <div class="dashboard-card v2-card">
+                <div
+                    class="dashboard-card v2-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('v2', 'todo') }"
+                    @dragstart="onWidgetDragStart('v2', 'todo', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('v2', 'todo')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">Việc cần làm hôm nay</h3>
                     </div>
@@ -147,7 +197,14 @@
             <!-- Main Dashboard Grid -->
             <div class="dashboard-grid">
                 <!-- Chart Section -->
-                <div class="dashboard-card chart-card">
+                <div
+                    class="dashboard-card chart-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('main', 'chart') }"
+                    @dragstart="onWidgetDragStart('main', 'chart', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('main', 'chart')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">Thống kê liên hệ tư vấn theo tuần</h3>
                         <div class="card-actions">
@@ -193,7 +250,14 @@
                 </div>
 
                 <!-- Recent Activity -->
-                <div class="dashboard-card">
+                <div
+                    class="dashboard-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('main', 'recentContacts') }"
+                    @dragstart="onWidgetDragStart('main', 'recentContacts', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('main', 'recentContacts')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">Liên hệ tư vấn gần đây</h3>
                         <NuxtLink to="/admin/contacts" class="view-all-btn">Xem tất cả</NuxtLink>
@@ -222,7 +286,14 @@
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="dashboard-card">
+                <div
+                    class="dashboard-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('main', 'quickActions') }"
+                    @dragstart="onWidgetDragStart('main', 'quickActions', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('main', 'quickActions')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">Thao tác nhanh</h3>
                     </div>
@@ -258,7 +329,14 @@
                 </div>
 
                 <!-- Top Schools -->
-                <div class="dashboard-card">
+                <div
+                    class="dashboard-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('main', 'topSchools') }"
+                    @dragstart="onWidgetDragStart('main', 'topSchools', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('main', 'topSchools')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">5 Trường đối tác</h3>
                         <NuxtLink to="/admin/schools" class="view-all-btn">Quản lý</NuxtLink>
@@ -287,7 +365,14 @@
                 </div>
 
                 <!-- Website Stats -->
-                <div class="dashboard-card">
+                <div
+                    class="dashboard-card draggable-widget"
+                    draggable="true"
+                    :style="{ order: getWidgetOrder('main', 'websiteStats') }"
+                    @dragstart="onWidgetDragStart('main', 'websiteStats', $event)"
+                    @dragover="onWidgetDragOver"
+                    @drop="onWidgetDrop('main', 'websiteStats')"
+                >
                     <div class="card-header">
                         <h3 class="card-title">Thống kê website</h3>
                         <button class="view-all-btn" @click="fetchDashboardData">Làm mới</button>
@@ -339,7 +424,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import "~/assets/css/admin/dashboard.css";
 
 definePageMeta({
@@ -352,13 +437,25 @@ const config = useRuntimeConfig();
 const API_BASE = config.public.apiBase;
 
 const period = ref("week");
+const scope = ref("all");
 const loading = ref(false);
 const error = ref("");
 const dashboardData = ref(null);
+const dragState = ref({ group: null, key: null });
+const widgetOrder = ref({
+    stats: ["contactsToday", "schoolsTotal", "contactsPending", "newsThisWeek"],
+    v2: ["alerts", "todo"],
+    main: ["chart", "recentContacts", "quickActions", "topSchools", "websiteStats"]
+});
+const layoutLoadedForUser = ref(null);
 
 const overview = computed(() => dashboardData.value?.overview || {});
 const role = computed(() => dashboardData.value?.role || {});
+const viewer = computed(() => dashboardData.value?.viewer || {});
 const roleName = computed(() => role.value?.name || "Unknown");
+const viewerId = computed(() => viewer.value?.id || "anonymous");
+const scopeMeta = computed(() => dashboardData.value?.scope || {});
+const scopeOptions = computed(() => scopeMeta.value?.options || ["my"]);
 const permissions = computed(() => dashboardData.value?.permissions || {});
 const visibleWidgets = computed(() => dashboardData.value?.visibleWidgets || []);
 const kpis = computed(() => dashboardData.value?.kpis || []);
@@ -415,6 +512,100 @@ const kpiTrendText = (key, fallback = "") => {
     return `${sign}${trend.delta} (${sign}${trend.deltaPercent}%)`;
 };
 
+const scopeLabel = (value) => {
+    const map = {
+        my: "Cá nhân",
+        team: "Nhóm",
+        all: "Toàn bộ"
+    };
+    return map[value] || value;
+};
+
+const defaultWidgetOrder = () => ({
+    stats: ["contactsToday", "schoolsTotal", "contactsPending", "newsThisWeek"],
+    v2: ["alerts", "todo"],
+    main: ["chart", "recentContacts", "quickActions", "topSchools", "websiteStats"]
+});
+
+const getLayoutStorageKey = () => `dashboard-v2-layout-${viewerId.value}`;
+
+const isValidLayout = (layout) => {
+    if (!layout || typeof layout !== "object") return false;
+    const defaults = defaultWidgetOrder();
+    const groups = Object.keys(defaults);
+
+    return groups.every((group) => {
+        if (!Array.isArray(layout[group])) return false;
+        const sortedIncoming = [...layout[group]].sort().join("|");
+        const sortedDefault = [...defaults[group]].sort().join("|");
+        return sortedIncoming === sortedDefault;
+    });
+};
+
+const restoreWidgetLayout = () => {
+    if (!process.client) return;
+    try {
+        const raw = localStorage.getItem(getLayoutStorageKey());
+        if (!raw) {
+            widgetOrder.value = defaultWidgetOrder();
+            return;
+        }
+
+        const parsed = JSON.parse(raw);
+        widgetOrder.value = isValidLayout(parsed) ? parsed : defaultWidgetOrder();
+    } catch {
+        widgetOrder.value = defaultWidgetOrder();
+    }
+};
+
+const persistWidgetLayout = () => {
+    if (!process.client) return;
+    localStorage.setItem(getLayoutStorageKey(), JSON.stringify(widgetOrder.value));
+};
+
+const getWidgetOrder = (group, key) => {
+    const index = widgetOrder.value[group]?.indexOf(key);
+    return index >= 0 ? index : 99;
+};
+
+const onWidgetDragStart = (group, key, event) => {
+    dragState.value = { group, key };
+    if (event?.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+    }
+};
+
+const onWidgetDragOver = (event) => {
+    if (event?.preventDefault) {
+        event.preventDefault();
+    }
+};
+
+const onWidgetDrop = (group, targetKey) => {
+    const { group: sourceGroup, key: sourceKey } = dragState.value;
+    if (!sourceGroup || !sourceKey || sourceGroup !== group || sourceKey === targetKey) {
+        dragState.value = { group: null, key: null };
+        return;
+    }
+
+    const next = [...(widgetOrder.value[group] || [])];
+    const sourceIndex = next.indexOf(sourceKey);
+    const targetIndex = next.indexOf(targetKey);
+    if (sourceIndex < 0 || targetIndex < 0) {
+        dragState.value = { group: null, key: null };
+        return;
+    }
+
+    next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, sourceKey);
+    widgetOrder.value = {
+        ...widgetOrder.value,
+        [group]: next
+    };
+    persistWidgetLayout();
+    dragState.value = { group: null, key: null };
+};
+
 const formatNumber = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return "-";
@@ -466,7 +657,7 @@ const fetchDashboardData = async () => {
     error.value = "";
 
     try {
-        const response = await fetch(`${API_BASE}/dashboard/overview?period=${period.value}`, {
+        const response = await fetch(`${API_BASE}/dashboard/overview?period=${period.value}&scope=${scope.value}`, {
             method: "GET",
             credentials: "include",
             headers: {
@@ -481,12 +672,25 @@ const fetchDashboardData = async () => {
         }
 
         dashboardData.value = data.data;
+        if (data.data?.scope?.selected) {
+            scope.value = data.data.scope.selected;
+        }
+        if (layoutLoadedForUser.value !== String(viewerId.value)) {
+            restoreWidgetLayout();
+            layoutLoadedForUser.value = String(viewerId.value);
+        }
     } catch (err) {
         error.value = err?.message || "Đã xảy ra lỗi khi tải dashboard";
     } finally {
         loading.value = false;
     }
 };
+
+watch(viewerId, () => {
+    if (!viewerId.value) return;
+    restoreWidgetLayout();
+    layoutLoadedForUser.value = String(viewerId.value);
+});
 
 onMounted(fetchDashboardData);
 </script>

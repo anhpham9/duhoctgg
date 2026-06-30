@@ -596,6 +596,27 @@
     color: #6c757d;
 }
 
+.dashboard-controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dashboard-controls label {
+    font-size: 0.9rem;
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.draggable-widget {
+    cursor: grab;
+}
+
+.draggable-widget:active {
+    cursor: grabbing;
+}
+
 .v2-row {
     display: grid;
     grid-template-columns: 1fr 1fr;

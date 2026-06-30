@@ -67,6 +67,22 @@ const ROLE_WIDGETS_MAP = {
     ]
 };
 
+const TEAM_ROLE_SCOPE_MAP = {
+    1: [2, 3, 4, 5],
+    2: [3, 4, 5],
+    3: [5],
+    4: [4],
+    5: [5]
+};
+
+const ROLE_SCOPE_OPTIONS_MAP = {
+    1: ["my", "team", "all"],
+    2: ["my", "team", "all"],
+    3: ["my", "team", "all"],
+    4: ["my", "team"],
+    5: ["my"]
+};
+
 const toInt = (value, fallback = 0) => {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -75,6 +91,42 @@ const toInt = (value, fallback = 0) => {
 const normalizePeriod = (period) => {
     if (!period || typeof period !== "string") return "week";
     return PERIOD_DAY_MAP[period] ? period : "week";
+};
+
+const getAllowedScopes = (roleId) => {
+    return ROLE_SCOPE_OPTIONS_MAP[roleId] || ["my"];
+};
+
+const normalizeScope = (requestedScope, roleId) => {
+    const allowed = getAllowedScopes(roleId);
+    if (!requestedScope || typeof requestedScope !== "string") {
+        return allowed.includes("all") ? "all" : allowed[0];
+    }
+
+    const normalized = requestedScope.toLowerCase();
+    if (allowed.includes(normalized)) return normalized;
+    return allowed.includes("all") ? "all" : allowed[0];
+};
+
+const uniqueInts = (values = []) => {
+    return [...new Set(values.map((item) => toInt(item)).filter((item) => item > 0))];
+};
+
+const resolveScopeUserIds = async ({ scope, userId, roleId }) => {
+    if (scope === "all") return null;
+    if (scope === "my") return [userId];
+
+    const teamRoles = TEAM_ROLE_SCOPE_MAP[roleId] || [roleId];
+    const result = await db.query(
+        `SELECT id
+         FROM users
+         WHERE role_id = ANY($1::int[])
+           AND COALESCE(is_active, TRUE) = TRUE`,
+        [teamRoles]
+    );
+
+    const ids = uniqueInts([userId, ...result.rows.map((row) => row.id)]);
+    return ids.length > 0 ? ids : [userId];
 };
 
 const safePercent = (numerator, denominator) => {
@@ -101,17 +153,24 @@ const getStatusCount = (rows = [], status) => {
     return toInt(found?.count);
 };
 
-const loadContactOverview = async () => {
+const loadContactOverview = async (scopeUserIds = null) => {
+    const scopeAnd = scopeUserIds ? "AND assigned_to = ANY($1::int[])" : "";
+    const scopeWhere = scopeUserIds ? "WHERE assigned_to = ANY($1::int[])" : "";
+    const scopeParams = scopeUserIds ? [scopeUserIds] : [];
+
     const [todayResult, totalResult, statusResult, recentResult] = await Promise.all([
         db.query(
             `SELECT COUNT(*)::int AS total
              FROM contacts
-             WHERE DATE(created_at) = CURRENT_DATE`
+             WHERE DATE(created_at) = CURRENT_DATE
+             ${scopeAnd}`,
+            scopeParams
         ),
-        db.query("SELECT COUNT(*)::int AS total FROM contacts"),
+        db.query(`SELECT COUNT(*)::int AS total FROM contacts ${scopeWhere}`, scopeParams),
         db.query(
             `SELECT status, COUNT(*)::int AS count
              FROM contacts
+             ${scopeWhere}
              GROUP BY status
              ORDER BY
                 CASE status
@@ -120,13 +179,16 @@ const loadContactOverview = async () => {
                     WHEN 'responded' THEN 3
                     WHEN 'closed' THEN 4
                     ELSE 99
-                END`
+                END`,
+            scopeParams
         ),
         db.query(
             `SELECT id, name, email, phone, message, status, created_at
              FROM contacts
+             ${scopeWhere}
              ORDER BY created_at DESC
-             LIMIT 5`
+             LIMIT 5`,
+            scopeParams
         )
     ]);
 
@@ -138,7 +200,10 @@ const loadContactOverview = async () => {
     };
 };
 
-const loadContactTrend = async (days) => {
+const loadContactTrend = async (days, scopeUserIds = null) => {
+    const scopeJoin = scopeUserIds ? "AND c.assigned_to = ANY($2::int[])" : "";
+    const params = scopeUserIds ? [days, scopeUserIds] : [days];
+
     const result = await db.query(
         `SELECT
             day::date,
@@ -151,9 +216,10 @@ const loadContactTrend = async (days) => {
          ) AS day
          LEFT JOIN contacts c
             ON DATE(c.created_at) = day::date
+            ${scopeJoin}
          GROUP BY day
          ORDER BY day ASC`,
-        [days]
+        params
     );
 
     return result.rows.map((row) => ({
@@ -163,19 +229,26 @@ const loadContactTrend = async (days) => {
     }));
 };
 
-const loadContactOverdueStats = async () => {
+const loadContactOverdueStats = async (scopeUserIds = null) => {
+    const scopeAnd = scopeUserIds ? "AND assigned_to = ANY($1::int[])" : "";
+    const scopeParams = scopeUserIds ? [scopeUserIds] : [];
+
     const [overdue24hResult, overdue48hResult] = await Promise.all([
         db.query(
             `SELECT COUNT(*)::int AS total
              FROM contacts
              WHERE status IN ('new', 'pending')
-               AND created_at <= NOW() - INTERVAL '24 hours'`
+               AND created_at <= NOW() - INTERVAL '24 hours'
+               ${scopeAnd}`,
+            scopeParams
         ),
         db.query(
             `SELECT COUNT(*)::int AS total
              FROM contacts
              WHERE status IN ('new', 'pending')
-               AND created_at <= NOW() - INTERVAL '48 hours'`
+               AND created_at <= NOW() - INTERVAL '48 hours'
+               ${scopeAnd}`,
+            scopeParams
         )
     ]);
 
@@ -216,17 +289,24 @@ const loadSchoolOverview = async () => {
     };
 };
 
-const loadNewsOverview = async () => {
+const loadNewsOverview = async (scopeUserIds = null) => {
+    const scopeWhere = scopeUserIds ? "WHERE author_id = ANY($1::int[])" : "";
+    const scopeAnd = scopeUserIds ? "AND author_id = ANY($1::int[])" : "";
+    const scopeParams = scopeUserIds ? [scopeUserIds] : [];
+
     const [totalResult, weeklyResult, statusResult, recentResult] = await Promise.all([
-        db.query("SELECT COUNT(*)::int AS total FROM news"),
+        db.query(`SELECT COUNT(*)::int AS total FROM news ${scopeWhere}`, scopeParams),
         db.query(
             `SELECT COUNT(*)::int AS total
              FROM news
-             WHERE created_at >= date_trunc('week', CURRENT_DATE)`
+             WHERE created_at >= date_trunc('week', CURRENT_DATE)
+             ${scopeAnd}`,
+            scopeParams
         ),
         db.query(
             `SELECT status, COUNT(*)::int AS count
              FROM news
+             ${scopeWhere}
              GROUP BY status
              ORDER BY
                 CASE status
@@ -234,13 +314,16 @@ const loadNewsOverview = async () => {
                     WHEN 'published' THEN 2
                     WHEN 'archived' THEN 3
                     ELSE 99
-                END`
+                END`,
+            scopeParams
         ),
         db.query(
             `SELECT id, title, status, created_at
              FROM news
+             ${scopeWhere}
              ORDER BY created_at DESC
-             LIMIT 5`
+             LIMIT 5`,
+            scopeParams
         )
     ]);
 
@@ -298,6 +381,8 @@ export const getDashboardOverview = async (req, res) => {
         const roleId = req.user?.role_id;
         const userId = req.user?.id;
         const period = normalizePeriod(req.query?.period);
+        const allowedScopes = getAllowedScopes(roleId);
+        const scope = normalizeScope(req.query?.scope, roleId);
         const days = PERIOD_DAY_MAP[period];
 
         const canViewContacts = CONTACT_ROLES.includes(roleId);
@@ -305,15 +390,20 @@ export const getDashboardOverview = async (req, res) => {
         const canViewNews = NEWS_ROLES.includes(roleId);
         const canViewSystem = [1, 2].includes(roleId);
 
+        const scopeUserIds = await resolveScopeUserIds({ scope, userId, roleId });
+        const contactScopeAnd = scopeUserIds ? "AND assigned_to = ANY($1::int[])" : "";
+        const newsScopeAnd = scopeUserIds ? "AND author_id = ANY($1::int[])" : "";
+        const scopeParams = scopeUserIds ? [scopeUserIds] : [];
+
         const previousPeriodStart = `CURRENT_DATE - INTERVAL '${days * 2 - 1} days'`;
         const previousPeriodEnd = `CURRENT_DATE - INTERVAL '${days} days'`;
 
         const [contactOverview, contactTrend, schoolOverview, newsOverview, overdueStats, backupLatest, lockedUsersCount, unreadNotifications, previousContactsResult, previousNewsResult] = await Promise.all([
-            canViewContacts ? loadContactOverview() : Promise.resolve(null),
-            canViewContacts ? loadContactTrend(days) : Promise.resolve([]),
+            canViewContacts ? loadContactOverview(scopeUserIds) : Promise.resolve(null),
+            canViewContacts ? loadContactTrend(days, scopeUserIds) : Promise.resolve([]),
             canViewSchools ? loadSchoolOverview() : Promise.resolve(null),
-            canViewNews ? loadNewsOverview() : Promise.resolve(null),
-            canViewContacts ? loadContactOverdueStats() : Promise.resolve({ overdue24h: 0, overdue48h: 0 }),
+            canViewNews ? loadNewsOverview(scopeUserIds) : Promise.resolve(null),
+            canViewContacts ? loadContactOverdueStats(scopeUserIds) : Promise.resolve({ overdue24h: 0, overdue48h: 0 }),
             canViewSystem ? safeLoad(loadBackupLatest, null) : Promise.resolve(null),
             canViewSystem ? safeLoad(loadLockedUsersCount, 0) : Promise.resolve(0),
             safeLoad(() => loadUnreadNotifications(userId), 0),
@@ -322,7 +412,9 @@ export const getDashboardOverview = async (req, res) => {
                     `SELECT COUNT(*)::int AS total
                      FROM contacts
                      WHERE created_at >= ${previousPeriodStart}
-                       AND created_at < ${previousPeriodEnd}`
+                       AND created_at < ${previousPeriodEnd}
+                       ${contactScopeAnd}`,
+                    scopeParams
                 )
                 : Promise.resolve({ rows: [{ total: 0 }] }),
             canViewNews
@@ -330,7 +422,9 @@ export const getDashboardOverview = async (req, res) => {
                     `SELECT COUNT(*)::int AS total
                      FROM news
                      WHERE created_at >= ${previousPeriodStart}
-                       AND created_at < ${previousPeriodEnd}`
+                       AND created_at < ${previousPeriodEnd}
+                       ${newsScopeAnd}`,
+                    scopeParams
                 )
                 : Promise.resolve({ rows: [{ total: 0 }] })
         ]);
@@ -507,6 +601,13 @@ export const getDashboardOverview = async (req, res) => {
                 role: {
                     id: roleId,
                     name: ROLE_NAME_MAP[roleId] || `Role ${roleId || "unknown"}`
+                },
+                viewer: {
+                    id: userId
+                },
+                scope: {
+                    selected: scope,
+                    options: allowedScopes
                 },
                 permissions: {
                     contacts: canViewContacts,
