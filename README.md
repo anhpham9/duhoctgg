@@ -63,6 +63,32 @@ src/
 
 ## ⚙️ Cài đặt & chạy project
 
+### Quick Start từ root (khuyến nghị)
+
+Sau khi clone, đứng tại thư mục root project và chạy:
+
+```bash
+npm run setup:full
+```
+
+Lệnh trên sẽ:
+1. Cài dependencies cho backend + frontend
+2. Chạy migrate schema
+3. Chạy full seed dữ liệu (`seedAll`)
+
+Hoặc nếu muốn tách 2 bước:
+
+```bash
+npm run install:all
+npm run setup:db
+```
+
+Kiểm tra nhanh toàn bộ luồng phân quyền:
+
+```bash
+npm run verify:permissions-all
+```
+
 ### 1. Clone project
 
 ```bash

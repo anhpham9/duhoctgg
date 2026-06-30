@@ -8,7 +8,9 @@
     "dev": "nodemon src/app.js",
     "test:permissions": "node test-permissions-api.js",
     "migrate": "node scripts/migrations/runMigrations.js",
-    "seed:settings": "node scripts/seeds/seedSettings.js"
+    "seed:settings": "node scripts/seeds/seedSettings.js",
+    "seed:all": "node scripts/seeds/seedAll.cjs",
+    "db:setup": "npm run migrate && npm run seed:all"
   },
   "keywords": [],
   "author": "",
