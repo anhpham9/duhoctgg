@@ -3166,18 +3166,21 @@ Ví dụ repo của bạn
 ```Bash
 project-duhocNB
 ```
+
 Lưu ý: Bạn phải dùng SSH URL, không dùng HTTPS.
 
 SSH URL có dạng:
 ```Bash
 git@github.com:<username>/<repo>.git
 ```
+
 Ví dụ:
 ```Bash
 cd ~/apps/duhoctgg/repo
 
 git clone git@github.com:username/project-duhocNB.git .
 ```
+
 Dấu . ở cuối nghĩa là clone trực tiếp vào thư mục repo, không tạo thêm một thư mục con.
 
 Sau khi clone
@@ -3190,6 +3193,7 @@ frontend
 
 layouts
 ```
+
 ---
 
 ### Bước 9
