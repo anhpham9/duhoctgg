@@ -3520,7 +3520,7 @@ npm install
 ```
 
 ❌ Không làm:
-```
+```Bash
 cd repo/frontend
 npm install
 ```
@@ -3534,7 +3534,7 @@ Việc cài dependencies và build sẽ thực hiện ở bước deploy.
 ### Mình muốn cải tiến kiến trúc thêm một chút
 
 Hiện tại bạn dự định:
-```
+```Bash
 shared/
 
 backend/
@@ -3545,7 +3545,7 @@ logs
 ```
 
 Mình muốn bổ sung:
-```
+```Bash
 shared
 
 backend
@@ -3560,7 +3560,7 @@ backend
 ```
 
 Mặc dù hiện tại bạn dùng Cloudinary, nhưng:
-```
+```Bash
 file upload tạm,
 export Excel,
 import dữ liệu,
@@ -3570,7 +3570,7 @@ cache,
 vẫn có thể cần thư mục riêng.
 
 Tạo luôn:
-```
+```Bash
 mkdir -p ~/apps/duhoctgg/shared/backend/uploads
 mkdir -p ~/apps/duhoctgg/shared/backend/tmp
 ```
@@ -3933,6 +3933,8 @@ NODE_ENV=production
 
 PORT=3001
 
+HOST=127.0.0.1
+
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=duhoctgg_prod
@@ -3953,6 +3955,8 @@ Hiện tại chỉ cần tạo file và điền các giá trị bạn đã có (
 NODE_ENV=production
 
 PORT=3001
+
+HOST=127.0.0.1
 
 DB_HOST=localhost
 DB_PORT=5432
@@ -5799,6 +5803,7 @@ module.exports = {
 
       env: {
         NODE_ENV: "production",
+        HOST: "127.0.0.1",
         PORT: 3000
       }
     }
@@ -5912,6 +5917,878 @@ PM2
 Port 3000
 
 ```
+
+---
+
+## Bài 10 - Cài Nginx Reverse Proxy
+
+Đến thời điểm này, VPS của bạn đã ở trạng thái rất tốt:
+
+- ✅ Ubuntu 24.04
+- ✅ Firewall
+- ✅ Swap 4GB
+- ✅ PostgreSQL 16
+- ✅ Backend Express + PM2
+- ✅ Frontend Nuxt4 SSR + PM2
+
+Đây là lúc chúng ta cấu hình Nginx.
+
+Kiến trúc cuối cùng sẽ là:
+```Bash
+Internet
+      │
+      ▼
+    Nginx :80 / :443
+      │
+      ├────────────► Nuxt4 SSR (127.0.0.1:3000)
+      │
+      └────────────► Express API (127.0.0.1:3001)
+```
+
+Từ giờ trở đi:
+```Bash
+https://duhoctgg.edu.vn/
+```
+
+không truy cập trực tiếp vào NodeJS nữa.
+
+---
+
+### Bước 10.1 Cài nginx
+
+```Bash
+sudo apt update
+
+sudo apt install nginx -y
+```
+
+Kiểm tra
+```Bash
+nginx -v
+```
+
+Ví dụ
+```Bash
+nginx version: nginx/1.24.x
+```
+
+---
+
+### Bước 10.2 Khởi động nginx
+
+```Bash
+sudo systemctl enable nginx
+
+sudo systemctl start nginx
+```
+
+Kiểm tra
+```Bash
+sudo systemctl status nginx
+```
+
+phải thấy
+```Bash
+active (running)
+```
+
+---
+
+### Bước 10.3 Firewall
+
+Bạn đã mở
+```Bash
+80
+
+443
+```
+
+từ trước.
+
+Kiểm tra lại
+```Bash
+sudo ufw status
+```
+
+phải có
+```Bash
+80
+443
+```
+
+--- 
+
+### Bước 10.4 Xóa site mặc định
+
+```Bash
+sudo rm -f /etc/nginx/sites-enabled/default
+
+sudo rm -f /etc/nginx/sites-available/default
+```
+
+--- 
+
+### Bước 10.5 Tạo Virtual Host
+
+```Bash
+sudo nano /etc/nginx/sites-available/duhoctgg
+```
+
+Dán toàn bộ nội dung sau:
+
+
+```Bash
+server {
+
+    listen 80;
+
+    server_name duhoctgg.edu.vn www.duhoctgg.edu.vn;
+
+    client_max_body_size 25M;
+
+    location / {
+
+        proxy_pass http://127.0.0.1:3000;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location /api/ {
+
+        proxy_pass http://127.0.0.1:3001/api/;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+    }
+
+}
+```
+
+Lưu:
+```Bash
+Ctrl+O
+
+Enter
+
+Ctrl+X
+```
+
+---
+
+**Giải thích**
+```Bash
+Trang chủ
+
+/
+
+↓
+
+Nuxt4
+
+API
+
+/api
+
+↓
+
+Express
+```
+
+Sau này frontend chỉ gọi
+```Bash
+fetch("/api/news")
+```
+
+không cần biết backend chạy cổng bao nhiêu.
+
+---
+
+### Bước 10.6 Enable site
+
+```Bash
+sudo ln -s /etc/nginx/sites-available/duhoctgg \
+/etc/nginx/sites-enabled/
+```
+
+Kiểm tra
+
+```Bash
+ls /etc/nginx/sites-enabled
+```
+
+
+kỳ vọng
+```Bash
+duhoctgg
+```
+
+---
+
+### Bước 10.7 Kiểm tra cấu hình
+
+```Bash
+sudo nginx -t
+```
+
+Nếu đúng sẽ thấy
+```Bash
+syntax is ok
+
+test is successful
+```
+
+---
+
+### Bước 10.8 Reload nginx
+
+```Bash
+sudo systemctl reload nginx
+```
+
+---
+
+### Bước 10.9 Kiểm tra port
+
+```Bash
+sudo ss -ltnp | grep nginx
+```
+
+kỳ vọng
+```Bash
+*:80
+```
+
+---
+
+### Bước 10.10 Test nội bộ
+
+Ngay trên VPS
+```Bash
+curl http://127.0.0.1
+```
+
+Nếu cấu hình đúng, bạn sẽ thấy HTML của Nuxt (bắt đầu bằng <!DOCTYPE html>).
+
+Tiếp theo:
+```Bash
+curl http://127.0.0.1/api
+```
+
+hoặc một API public của bạn, ví dụ:
+```Bash
+curl http://127.0.0.1/api/public/settings
+```
+
+(nếu route đó tồn tại).
+
+---
+
+### Bước 10.11 Trỏ DNS (nếu chưa)
+
+Đây là điều kiện để tên miền hoạt động.
+
+Tại nơi bạn quản lý DNS của duhoctgg.edu.vn, tạo:
+
+|Type	|Name	|Value|
+|--|--|--|
+|A	|@	|IP VPS|
+|A	|www	|IP VPS|
+
+Ví dụ:
+```Bash
+@ → 103.xxx.xxx.xxx
+
+www → 103.xxx.xxx.xxx
+```
+
+Không cần AAAA nếu VPS chưa có IPv6.
+
+---
+
+### Roadmap Production (chuẩn)
+
+Mình sẽ hướng dẫn theo đúng quy trình mà mình dùng khi triển khai hệ thống cho doanh nghiệp.
+```Bash
+Phần 1. VPS
+✅ Bài 1 Ubuntu
+✅ Bài 2 Security
+✅ Bài 3 Folder
+✅ Bài 4 Git
+✅ Bài 5 Shared Config
+✅ Bài 6 PostgreSQL
+✅ Bài 7 Backend
+✅ Bài 8 PM2 Backend
+✅ Bài 9 Nuxt4
+✅ Bài 10 Nginx
+
+========================
+
+Phần 2. Production
+
+Bài 11 HTTPS (Let's Encrypt)
+
+Bài 12 Security Header
+
+Bài 13 Gzip + Cache
+
+Bài 14 Deploy Script
+
+Bài 15 Backup
+
+Bài 16 Log Rotate
+
+Bài 17 Monitoring
+
+Bài 18 Website thứ hai
+```
+
+Từ giờ chúng ta sẽ làm đúng chuẩn production, không còn chạy thử nữa.
+
+---
+
+## Bài 11 — HTTPS (Let's Encrypt)
+
+Mục tiêu
+```Bash
+http://duhoctgg.edu.vn
+
+↓
+
+301
+
+↓
+
+https://duhoctgg.edu.vn
+```
+
+SSL sẽ hoàn toàn miễn phí.
+
+---
+
+### Bước 11.1 Kiểm tra Nginx
+
+Trước tiên xác nhận Nginx đang hoạt động.
+
+Chạy
+```Bash
+sudo nginx -t
+```
+
+kỳ vọng
+```Bash
+syntax is ok
+test is successful
+```
+
+Kiểm tra
+```Bash
+sudo systemctl status nginx
+```
+
+kỳ vọng
+```Bash
+active (running)
+```
+
+---
+
+### Bước 11.2 Kiểm tra website
+
+Ngay trên VPS
+```Bash
+curl http://127.0.0.1
+```
+
+nếu thấy
+```Bash
+<!DOCTYPE html>
+```
+
+là OK.
+
+Kiểm tra
+```Bash
+curl http://duhoctgg.edu.vn
+```
+
+nếu cũng ra HTML là DNS và Nginx đã hoạt động.
+
+---
+
+### Bước 11.3 Kiểm tra Firewall
+
+```Bash
+sudo ufw status
+```
+
+phải có
+```Bash
+80/tcp
+
+443/tcp
+```
+
+---
+
+### Bước 11.4 Cài Certbot
+
+Ubuntu 24.04
+```Bash
+sudo apt update
+
+sudo apt install certbot python3-certbot-nginx -y
+```
+
+Kiểm tra
+```Bash
+certbot --version
+```
+
+Ví dụ
+```Bash
+certbot 2.x.x
+```
+
+---
+
+### Bước 11.5 Xin SSL
+
+Đây là lệnh mình luôn dùng.
+```Bash
+sudo certbot --nginx \
+-d duhoctgg.edu.vn \
+-d www.duhoctgg.edu.vn
+```
+
+Sau đó Certbot sẽ hỏi.
+
+**Email**
+
+Ví dụ
+```Bash
+admin@duhoctgg.edu.vn
+```
+
+hoặc email cá nhân.
+
+**Agree?**
+
+```Bash
+Y
+```
+
+**Share email?**
+
+```Bash
+N
+```
+
+**Redirect HTTP sang HTTPS?**
+
+Chọn
+
+```Bash
+2
+```
+
+hoặc
+
+```Bash
+Redirect
+```
+
+
+Sau khoảng 20–30 giây sẽ thấy
+
+```Bash
+Congratulations!
+```
+
+---
+
+### Bước 11.6 Kiểm tra
+
+```Bash
+https://duhoctgg.edu.vn
+```
+
+Nếu mở được là thành công.
+
+
+---
+
+### Bước 11.7 Kiểm tra tự gia hạn
+
+```Bash
+sudo systemctl status certbot.timer
+```
+
+
+phải thấy
+```Bash
+active
+```
+
+**Test**
+
+```Bash
+sudo certbot renew --dry-run
+```
+
+Nếu thấy
+```Bash
+Congratulations
+```
+
+là SSL sẽ tự gia hạn sau này.
+
+---
+
+**Nếu Certbot báo lỗi**
+
+Có 2 lỗi phổ biến.
+
+Lỗi 1
+```Bash
+Timeout during connect
+```
+
+=> DNS chưa cập nhật hết.
+
+
+Lỗi 2
+```Bash
+404
+```
+
+=> Nginx chưa đúng.
+
+---
+
+## Bài 11. Nâng cao: Tối ưu Nginx
+
+Đầu tiên mở file cấu hình.
+```Bash
+sudo nano /etc/nginx/sites-available/duhoctgg
+```
+
+---
+
+### Bước 11.1 – Sao lưu cấu hình hiện tại
+
+Đầu tiên tạo bản backup:
+```Bash
+sudo cp /etc/nginx/sites-available/duhoctgg \
+/etc/nginx/sites-available/duhoctgg.backup
+```
+
+Kiểm tra:
+```Bash
+ls -l /etc/nginx/sites-available/
+```
+
+phải thấy
+```Bash
+duhoctgg
+duhoctgg.backup
+```
+
+---
+
+### Bước 11.2 – Mở file
+
+```Bash
+sudo nano /etc/nginx/sites-available/duhoctgg
+```
+
+---
+
+### Bước 11.3 – Đổi sang HTTP/2
+
+Tìm dòng
+```Bash
+listen 443 ssl;
+```
+
+đổi thành
+```Bash
+listen 443 ssl http2;
+```
+
+Không sửa gì khác.
+
+Lưu file.
+
+Kiểm tra:
+```Bash
+sudo nginx -t
+```
+
+Nếu
+```Bash
+syntax is ok
+test is successful
+```
+
+thì
+```Bash
+sudo systemctl reload nginx
+```
+
+---
+
+### Bước 11.4 – Thêm gzip
+
+Ngay sau
+```Bash
+client_max_body_size 25M;
+```
+
+thêm:
+```Bash
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+
+    gzip_types
+    text/plain
+    text/css
+    text/xml
+    application/json
+    application/javascript
+    application/xml
+    application/rss+xml
+    application/vnd.ms-fontobject
+    application/x-font-ttf
+    font/opentype
+    image/svg+xml;
+```
+
+Kiểm tra
+```Bash
+sudo nginx -t
+```
+
+Nếu OK
+```Bash
+sudo systemctl reload nginx
+```
+
+---
+
+### Bước 11.5 – Thêm Security Headers
+
+Ngay dưới phần gzip thêm:
+```Bash
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```
+
+Reload:
+```Bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+---
+
+### Bước 11.6 – Cache Nuxt *có thể không cần*
+
+Ngay trước
+```Bash
+location / {
+```
+
+thêm
+```Bash
+    location /_nuxt/ {
+
+        proxy_pass http://127.0.0.1:3000;
+
+        expires 30d;
+
+        add_header Cache-Control "public, immutable";
+
+    }
+```
+
+Nuxt build sẽ sinh các file có hash (app.abc123.js), nên cache 30 ngày là hoàn toàn an toàn.
+
+
+---
+
+### Bước 11.7 – Cache ảnh *có thể không cần*
+
+Thêm tiếp:
+```Bash
+
+    location ~* \.(jpg|jpeg|png|gif|ico|svg|webp)$ {
+
+        proxy_pass http://127.0.0.1:3000;
+
+        expires 30d;
+
+        access_log off;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+```
+
+---
+
+### Bước 11.8 – Tối ưu proxy
+
+Trong cả hai location / và location /api/, thêm các dòng sau nếu chưa có:
+```Bash
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+```
+
+Riêng location / nên có thêm:
+```Bash
+        proxy_cache_bypass $http_upgrade;
+```
+
+để hỗ trợ WebSocket và các kết nối nâng cấp.
+
+---
+
+**Lệnh xem nội dung file**
+
+```Bash
+sudo cat /etc/nginx/sites-available/duhoctgg
+```
+
+---
+
+**Lệnh sửa nội dung file**
+
+```Bash
+sudo nano /etc/nginx/sites-available/duhoctgg
+```
+
+sau khi sửa xong, muốn lưu phải nhấn
+```Bash
+Ctr + O
+Enter
+Ctrl + X
+```
+
+và reload lại nginx
+```Bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+---
+
+### Bước 11.9 – Kiểm tra cuối
+
+Sau khi hoàn tất:
+```Bash
+sudo nginx -t
+```
+
+Nếu thành công:
+```Bash
+sudo systemctl reload nginx
+```
+
+Kiểm tra nhanh:
+```Bash
+curl -I https://duhoctgg.edu.vn
+```
+
+Bạn sẽ thấy các header như:
+```Bash
+strict-transport-security
+x-frame-options
+x-content-type-options
+```
+
+---
+
+### Bước 11.10 – Đánh giá SSL
+
+Cuối cùng, truy cập:
+```Bash
+https://www.ssllabs.com/ssltest/
+```
+
+Nhập:
+```Bash
+duhoctgg.edu.vn
+```
+
+hoặc
+```Bash
+www.duhoctgg.edu.vn
+```
+
+Chờ khoảng 2–5 phút để hệ thống phân tích. Mục tiêu của chúng ta là đạt A hoặc A+.
+
+---
+
+## Bài 12 - Hardening VPS (Bảo mật máy chủ)
+
+Mục tiêu của bài này là chỉ cho phép những dịch vụ thực sự cần thiết được truy cập từ Internet và giảm nguy cơ bị tấn công brute-force. UFW và Fail2Ban là hai thành phần cơ bản nhưng rất quan trọng trong một VPS public.
+
+### Bước 12.1 - Kiểm tra cổng đang mở
+
+Chạy:
+```Bash
+sudo ss -ltnp
+```
+
+và
+```Bash
+sudo ufw status verbose
+```
+
+Đừng cấu hình UFW ngay.
+
+Hãy gửi kết quả của hai lệnh này trước.
+
+Mình muốn xem:
+```Bash
+SSH đang dùng port 22 hay port khác
+PostgreSQL có đang lộ ra Internet không
+Node 3000 có mở public không
+Node 3001 có mở public không
+```
+
+Nếu cấu hình sai, bật firewall ngay có thể làm mất kết nối SSH.
+
+---
+
+
+
+
 
 
 

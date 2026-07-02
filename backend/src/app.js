@@ -228,7 +228,9 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async () => {
+const HOST = process.env.HOST || "127.0.0.1";
+
+app.listen(PORT, HOST, async () => {
     // Initialize settings keys in database
     // await ensureMediaAssetTableExists();
     // await ensureSettingsKeysExist();

@@ -157,7 +157,7 @@ const homepageSections = computed(() => {
             type: 'paragraph',
             paragraph_text: 'Hãy thêm section mới để hiển thị nội dung động trên trang chủ.',
             image_url: '',
-            contact_btn_show: true,
+            contact_btn_show: false,
             contact_btn_text: 'Liên hệ tư vấn',
             image_position: 1,
             list_icon: '',
