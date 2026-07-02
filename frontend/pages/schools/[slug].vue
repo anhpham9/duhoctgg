@@ -281,13 +281,21 @@ const fallbackImage = "/assets/images/school-1.jpg";
 const route = useRoute();
 const config = useRuntimeConfig();
 const slug = computed(() => String(route.params.slug || "").trim());
+const hasSlug = computed(() => Boolean(slug.value));
 
 const {
     data: schoolResponse,
     pending: pendingSchool,
     error: schoolError
-} = await useFetch(() => `${config.public.apiBase}/public/schools/${encodeURIComponent(slug.value)}`, {
+} = await useAsyncData(() => hasSlug.value ? `public-school-${slug.value}` : "public-school-empty", () => {
+    if (!hasSlug.value) {
+        return null;
+    }
+
+    return $fetch(`${config.public.apiBase}/public/schools/${encodeURIComponent(slug.value)}`);
+}, {
     key: () => `public-school-${slug.value}`,
+    default: () => null,
     watch: [slug]
 });
 
@@ -298,8 +306,15 @@ const { faqs: schoolFaqs } = usePublicFAQs('school', schoolId)
 const {
     data: detailResponse,
     pending: pendingDetail
-} = await useFetch(() => `${config.public.apiBase}/public/schools/${encodeURIComponent(slug.value)}/detail-content`, {
+} = await useAsyncData(() => hasSlug.value ? `public-school-detail-content-${slug.value}` : "public-school-detail-content-empty", () => {
+    if (!hasSlug.value) {
+        return null;
+    }
+
+    return $fetch(`${config.public.apiBase}/public/schools/${encodeURIComponent(slug.value)}/detail-content`);
+}, {
     key: () => `public-school-detail-content-${slug.value}`,
+    default: () => null,
     watch: [slug]
 });
 
@@ -307,10 +322,18 @@ const { data: schoolsListResponse } = await useFetch(`${config.public.apiBase}/p
     key: "public-school-related-list"
 });
 
-const { data: schoolReviewsResponse } = await useFetch(
-    () => `${config.public.apiBase}/public/schools/${encodeURIComponent(slug.value)}/reviews`,
+const { data: schoolReviewsResponse } = await useAsyncData(
+    () => hasSlug.value ? `public-school-reviews-${slug.value}` : "public-school-reviews-empty",
+    () => {
+        if (!hasSlug.value) {
+            return null;
+        }
+
+        return $fetch(`${config.public.apiBase}/public/schools/${encodeURIComponent(slug.value)}/reviews`);
+    },
     {
         key: () => `public-school-reviews-${slug.value}`,
+        default: () => null,
         watch: [slug]
     }
 );

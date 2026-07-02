@@ -148,7 +148,7 @@ const getToastIcon = (type) => {
 // GLOBAL NOTIFICATION API
 // ========================================
 
-const addNotification = (message, type = 'info', title = 'Thﾃｴng bﾃ｡o m盻嬖') => {
+const addNotification = (message, type = 'info', title = 'Thông báo') => {
     // Delegate to header component
     if (headerRef.value?.addNotification) {
         headerRef.value.addNotification(message, type, title)
