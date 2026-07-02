@@ -66,6 +66,9 @@ const checkPermission = (permission) => (req, res, next) => {
 
 const app = express();
 
+// Trust nginx reverse proxy
+app.set("trust proxy", 1);
+
 // Security headers
 app.use(helmet({
     contentSecurityPolicy: {
@@ -232,12 +235,12 @@ const HOST = process.env.HOST || "127.0.0.1";
 
 app.listen(PORT, HOST, async () => {
     // Initialize settings keys in database
-    // await ensureMediaAssetTableExists();
-    // await ensureSettingsKeysExist();
-    // await ensureAboutMissionsTableExists();
-    // await ensureAboutContentTableExists();
-    // await ensureHomepageSectionsTableExists();
-    // await ensurePopupCampaignsTableExists();
+    await ensureMediaAssetTableExists();
+    await ensureSettingsKeysExist();
+    await ensureAboutMissionsTableExists();
+    await ensureAboutContentTableExists();
+    await ensureHomepageSectionsTableExists();
+    await ensurePopupCampaignsTableExists();
     
     backupService.startBackupScheduler();
 

@@ -248,6 +248,12 @@ export const login = async (req, res) => {
             token: token
         });
     } catch (error) {
+
+        console.error("LOGIN ERROR");
+        console.error(error);
+
+        console.error(error.stack);
+
         logError('Login failed - System error', error, {
             stage: 'exception_handler',
             reason: 'system_error',

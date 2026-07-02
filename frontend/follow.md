@@ -6788,14 +6788,140 @@ Node 3001 có mở public không
 
 Nếu cấu hình sai, bật firewall ngay có thể làm mất kết nối SSH.
 
+
+**Gặp vấn đề với cổng *:3000 của frontend nhưng chatGPT đề nghị bỏ qua vì đã thử nhiều cách nhưng không hiệu quả.**
+
 ---
 
+## Bài 13 - Viết script deploy
+
+### Bước 1
+
+Tạo file
+```Bash
+nano ~/apps/duhoctgg/deploy.sh
+```
+
+Nội dung
+```Bash
+#!/bin/bash
+
+set -e
+
+echo "========== Deploy bắt đầu =========="
+
+cd ~/apps/duhoctgg/repo
+
+echo "Pull source..."
+git pull origin master
+
+echo "Backend..."
+
+cd backend
+
+npm install
+
+pm2 restart duhoctgg-backend
+
+echo "Frontend..."
+
+cd ../frontend
+
+npm install
+
+npm run build
+
+pm2 restart duhoctgg-frontend
+
+echo "Deploy hoàn tất."
+```
 
 
+Lưu
+```Bash
+Ctrl+O
+Enter
+Ctrl+X
+```
 
+---
 
+### Bước 2
 
+Cho phép chạy
+```Bash
+chmod +x ~/apps/duhoctgg/deploy.sh
+```
 
+---
+
+### Bước 3
+
+Chạy thử
+```Bash
+~/apps/duhoctgg/deploy.sh
+```
+
+Nếu mọi thứ đúng sẽ thấy
+```Bash
+Pull source...
+
+Backend...
+
+Frontend...
+
+Build...
+
+Restart...
+
+Deploy hoàn tất.
+
+```
+
+---
+
+## Bài 14. PM2 tự khởi động sau reboot
+
+Kiểm tra
+```Bash
+pm2 startup
+```
+
+PM2 sẽ in ra một lệnh kiểu
+```Bash
+sudo env PATH=...
+```
+
+Copy nguyên dòng đó chạy.
+
+Sau đó
+```Bash
+pm2 save
+```
+
+Kiểm tra
+```Bash
+pm2 resurrect
+```
+
+Sau đó reboot thử
+```Bash
+sudo reboot
+```
+
+Đợi khoảng 1 phút rồi SSH lại:
+```Bash
+pm2 list
+```
+
+Nếu thấy
+```Bash
+duhoctgg-backend
+
+duhoctgg-frontend
+```
+
+thì đạt.
 
 
 
